@@ -39,7 +39,7 @@ const formSchema = z.object({
     .refine((file) => ACCEPTED_FILE_TYPES.includes(file?.[0]?.type), "Only PDF, TXT, DOC, DOCX files are allowed."),
 });
 
-type UploadNoteFormValues = z.infer<typeof typeof formSchema>;
+type UploadNoteFormValues = z.infer<typeof formSchema>;
 
 const uploadDocumentNote = async (values: UploadNoteFormValues, userId: string) => { // Add userId parameter
   const file = values.document[0];
