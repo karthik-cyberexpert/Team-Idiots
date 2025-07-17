@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, FileText, Trash2, Edit, FileDown } from "lucide-react";
+import { PlusCircle, FileText, Trash2, Edit, FileDown, FileUp } from "lucide-react"; // Added FileUp
 import { showSuccess, showError } from "@/utils/toast";
 import {
   AlertDialog,
@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UploadNoteDialog } from "./UploadNoteDialog"; // Import the new dialog
+import { UploadNoteDialog } from "./UploadNoteDialog";
 
 interface Note {
   id: string;
@@ -30,7 +30,7 @@ interface Note {
   profiles: {
     full_name: string;
   } | null;
-  document_url?: string | null; // Add document_url to the interface
+  document_url?: string | null;
 }
 
 const fetchNotes = async (): Promise<Note[]> => {
@@ -133,7 +133,7 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
                 )}
               </CardContent>
               <div className="p-4 border-t flex justify-end gap-2">
-                {!note.document_url && ( // Only show edit for non-document notes
+                {!note.document_url && (
                   <Button variant="outline" size="sm" onClick={() => onSelectNote(note)}>
                     <Edit className="h-4 w-4 mr-2" /> Edit
                   </Button>
