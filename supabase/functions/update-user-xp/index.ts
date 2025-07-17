@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, xpChange, reason } = await req.json()
+    const { userId, xpChange, reason, relatedTaskId } = await req.json() // Added relatedTaskId
 
     if (!userId || typeof xpChange !== 'number' || !reason) {
       throw new Error("User ID, XP change amount, and reason are required.")
@@ -49,7 +49,8 @@ serve(async (req) => {
       .insert({
         user_id: userId,
         xp_change: xpChange,
-        reason: `Manual adjustment: ${reason}`,
+        reason: reason, // Use the provided reason directly
+        related_task_id: relatedTaskId || null, // Log related task ID if provided
       });
 
     if (logError) throw logError;
