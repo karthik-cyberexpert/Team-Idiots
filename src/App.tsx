@@ -20,43 +20,46 @@ import CodeSpacePage from "./pages/CodeSpacePage";
 import DataManagementPage from "./pages/admin/DataManagementPage";
 import EditProfilePage from "./pages/EditProfilePage";
 import SettingsPage from "./pages/SettingsPage";
+import { ThemeProvider } from "./contexts/ThemeProvider";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<LoginPage />} />
-            
-            <Route element={<ProtectedRoute />}>
-              <Route element={<DashboardLayout />}>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/dashboard/notes" element={<NotesPage />} />
-                <Route path="/dashboard/chat" element={<ChatPage />} />
-                <Route path="/dashboard/tasks" element={<TasksPage />} />
-                <Route path="/dashboard/codespace" element={<CodeSpacePage />} />
-                <Route path="/dashboard/profile" element={<EditProfilePage />} />
-                <Route path="/dashboard/settings" element={<SettingsPage />} />
-                <Route element={<AdminRoute />}>
-                  <Route path="/admin/users" element={<UserManagement />} />
-                  <Route path="/admin/tasks" element={<TaskManagement />} />
-                  <Route path="/admin/data-management" element={<DataManagementPage />} />
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<LoginPage />} />
+              
+              <Route element={<ProtectedRoute />}>
+                <Route element={<DashboardLayout />}>
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/dashboard/notes" element={<NotesPage />} />
+                  <Route path="/dashboard/chat" element={<ChatPage />} />
+                  <Route path="/dashboard/tasks" element={<TasksPage />} />
+                  <Route path="/dashboard/codespace" element={<CodeSpacePage />} />
+                  <Route path="/dashboard/profile" element={<EditProfilePage />} />
+                  <Route path="/dashboard/settings" element={<SettingsPage />} />
+                  <Route element={<AdminRoute />}>
+                    <Route path="/admin/users" element={<UserManagement />} />
+                    <Route path="/admin/tasks" element={<TaskManagement />} />
+                    <Route path="/admin/data-management" element={<DataManagementPage />} />
+                  </Route>
                 </Route>
               </Route>
-            </Route>
 
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
