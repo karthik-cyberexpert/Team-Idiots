@@ -1,19 +1,25 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, ArrowUpDown } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Task } from "@/types/task"
 import { Badge } from "@/components/ui/badge"
 
-export const getColumns = (onDelete: (taskId: string) => void, onEdit: (task: Task) => void): ColumnDef<Task>[] => [
+export const getColumns = (
+  onDelete: (taskId: string) => void, 
+  onEdit: (task: Task) => void,
+  onApprove: (taskId: string) => void,
+  onReject: (taskId: string) => void
+): ColumnDef<Task>[] => [
   {
     accessorKey: "title",
     header: "Title",
@@ -34,14 +40,6 @@ export const getColumns = (onDelete: (taskId: string) => void, onEdit: (task: Ta
     cell: ({ row }) => {
       const task = row.original;
       return <div>{task.profiles?.full_name || "N/A"}</div>;
-    }
-  },
-  {
-    accessorKey: "assigned_by",
-    header: "Assigned By",
-    cell: ({ row }) => {
-      const task = row.original;
-      return <div>{task.assigner_profile?.full_name || "N/A"}</div>;
     }
   },
   {
@@ -83,11 +81,19 @@ export const getColumns = (onDelete: (taskId: string) => void, onEdit: (task: Ta
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(task.id)}
-            >
-              Copy task ID
-            </DropdownMenuItem>
+            {task.status === 'waiting_for_approval' && (
+              <>
+                <DropdownMenuItem onClick={() => onApprove(task.id)}>
+                  <Check className="mr-2 h-4 w-4 text-green-500" />
+                  Approve
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onReject(task.id)}>
+                  <X className="mr-2 h-4 w-4 text-red-500" />
+                  Reject
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             <DropdownMenuItem onClick={() => onEdit(task)}>
               Edit task
             </DropdownMenuItem>

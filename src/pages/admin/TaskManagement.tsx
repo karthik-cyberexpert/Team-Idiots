@@ -22,7 +22,8 @@ import { Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
 import { AddTaskDialog } from "./tasks/AddTaskDialog";
-// import { EditTaskDialog } from "./tasks/EditTaskDialog"; // Will be added later
+import { EditTaskDialog } from "./tasks/EditTaskDialog";
+import { AddCommonTaskDialog } from "./tasks/AddCommonTaskDialog";
 
 const fetchAllTasks = async (): Promise<Task[]> => {
   const { data, error } = await supabase
@@ -46,11 +47,21 @@ const deleteTask = async (taskId: string) => {
   }
 };
 
+const updateTaskStatusByAdmin = async ({ taskId, status }: { taskId: string; status: 'completed' | 'rejected' }) => {
+  const { error } = await supabase
+    .from("tasks")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", taskId);
+  if (error) throw new Error(error.message);
+};
+
 const TaskManagement = () => {
   const queryClient = useQueryClient();
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null);
-  const [taskToEdit, setTaskToEdit] = React.useState<Task | null>(null); // For future edit functionality
+  const [taskToEdit, setTaskToEdit] = React.useState<Task | null>(null);
   const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = React.useState(false);
+  const [isAddCommonTaskDialogOpen, setIsAddCommonTaskDialogOpen] = React.useState(false);
+  const [approvalAction, setApprovalAction] = React.useState<{ type: 'approve' | 'reject'; taskId: string } | null>(null);
 
   const { data: tasks, isLoading, error } = useQuery<Task[]>({
     queryKey: ["adminTasks"],
@@ -61,8 +72,7 @@ const TaskManagement = () => {
     mutationFn: deleteTask,
     onSuccess: () => {
       showSuccess("Task deleted successfully.");
-      queryClient.invalidateQueries({ queryKey: ["adminTasks"] });
-      queryClient.invalidateQueries({ queryKey: ["userTasks"] }); // Invalidate user tasks too
+      queryClient.invalidateQueries({ queryKey: ["adminTasks", "userTasks"] });
       setTaskToDelete(null);
     },
     onError: (err) => {
@@ -71,29 +81,41 @@ const TaskManagement = () => {
     },
   });
 
-  const handleDeleteRequest = React.useCallback((taskId: string) => {
-    setTaskToDelete(taskId);
-  }, []);
+  const updateStatusMutation = useMutation({
+    mutationFn: updateTaskStatusByAdmin,
+    onSuccess: (_, variables) => {
+      showSuccess(`Task has been ${variables.status}.`);
+      queryClient.invalidateQueries({ queryKey: ["adminTasks", "userTasks"] });
+      setApprovalAction(null);
+    },
+    onError: (err) => {
+      showError(err.message);
+      setApprovalAction(null);
+    },
+  });
 
-  const handleEditRequest = React.useCallback((task: Task) => {
-    setTaskToEdit(task);
-    // setIsEditTaskDialogOpen(true); // For future edit functionality
-  }, []);
+  const handleDeleteRequest = React.useCallback((taskId: string) => setTaskToDelete(taskId), []);
+  const handleEditRequest = React.useCallback((task: Task) => setTaskToEdit(task), []);
+  const handleApproveRequest = React.useCallback((taskId: string) => setApprovalAction({ type: 'approve', taskId }), []);
+  const handleRejectRequest = React.useCallback((taskId: string) => setApprovalAction({ type: 'reject', taskId }), []);
 
-  const columns = React.useMemo(() => getColumns(handleDeleteRequest, handleEditRequest), [handleDeleteRequest, handleEditRequest]);
+  const columns = React.useMemo(
+    () => getColumns(handleDeleteRequest, handleEditRequest, handleApproveRequest, handleRejectRequest),
+    [handleDeleteRequest, handleEditRequest, handleApproveRequest, handleRejectRequest]
+  );
 
   if (isLoading) {
     return (
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">Task Management</h1>
-          <Button disabled>Add Task</Button>
+          <div className="flex gap-2">
+            <Button disabled>Add Common Task</Button>
+            <Button disabled>Add Task</Button>
+          </div>
         </div>
         <div className="space-y-2">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" />
         </div>
       </div>
     );
@@ -112,11 +134,15 @@ const TaskManagement = () => {
   return (
     <>
       <AddTaskDialog open={isAddTaskDialogOpen} onOpenChange={setIsAddTaskDialogOpen} />
-      {/* <EditTaskDialog open={!!taskToEdit} onOpenChange={() => setTaskToEdit(null)} task={taskToEdit} /> */}
+      <AddCommonTaskDialog open={isAddCommonTaskDialogOpen} onOpenChange={setIsAddCommonTaskDialogOpen} />
+      <EditTaskDialog open={!!taskToEdit} onOpenChange={() => setTaskToEdit(null)} task={taskToEdit} />
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">Task Management</h1>
-          <Button onClick={() => setIsAddTaskDialogOpen(true)}>Add Task</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsAddCommonTaskDialogOpen(true)}>Add Common Task</Button>
+            <Button onClick={() => setIsAddTaskDialogOpen(true)}>Add Task</Button>
+          </div>
         </div>
         <DataTable columns={columns} data={tasks || []} />
       </div>
@@ -125,17 +151,32 @@ const TaskManagement = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone. This will permanently delete the task.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => taskToDelete && deleteMutation.mutate(taskToDelete)} disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending ? "Deleting..." : "Continue"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!approvalAction} onOpenChange={() => setApprovalAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Action</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the task.
+              Are you sure you want to {approvalAction?.type} this task submission?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => taskToDelete && deleteMutation.mutate(taskToDelete)}
-              disabled={deleteMutation.isPending}
+              onClick={() => approvalAction && updateStatusMutation.mutate({ taskId: approvalAction.taskId, status: approvalAction.type === 'approve' ? 'completed' : 'rejected' })}
+              disabled={updateStatusMutation.isPending}
             >
-              {deleteMutation.isPending ? "Deleting..." : "Continue"}
+              {updateStatusMutation.isPending ? "Processing..." : "Confirm"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
