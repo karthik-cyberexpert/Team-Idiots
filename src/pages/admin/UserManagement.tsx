@@ -22,6 +22,7 @@ import { Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
 import { AddUserDialog } from "./users/AddUserDialog";
+import { EditUserDialog } from "./users/EditUserDialog"; // Import the new component
 
 const fetchUsers = async (): Promise<User[]> => {
   const { data, error } = await supabase.functions.invoke("get-users");
@@ -43,6 +44,7 @@ const deleteUser = async (userId: string) => {
 const UserManagement = () => {
   const queryClient = useQueryClient();
   const [userToDelete, setUserToDelete] = React.useState<string | null>(null);
+  const [userToEdit, setUserToEdit] = React.useState<User | null>(null); // New state for editing
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = React.useState(false);
 
   const { data: users, isLoading, error } = useQuery<User[]>({
@@ -67,7 +69,11 @@ const UserManagement = () => {
     setUserToDelete(userId);
   }, []);
 
-  const columns = React.useMemo(() => getColumns(handleDeleteRequest), [handleDeleteRequest]);
+  const handleEditRequest = React.useCallback((user: User) => {
+    setUserToEdit(user);
+  }, []);
+
+  const columns = React.useMemo(() => getColumns(handleDeleteRequest, handleEditRequest), [handleDeleteRequest, handleEditRequest]);
 
   if (isLoading) {
     return (
@@ -99,6 +105,7 @@ const UserManagement = () => {
   return (
     <>
       <AddUserDialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen} />
+      <EditUserDialog open={!!userToEdit} onOpenChange={() => setUserToEdit(null)} user={userToEdit} /> {/* Render EditUserDialog */}
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">User Management</h1>

@@ -13,7 +13,7 @@ import {
 import { User } from "@/types/user"
 import { Badge } from "@/components/ui/badge"
 
-export const getColumns = (onDelete: (userId: string) => void): ColumnDef<User>[] => [
+export const getColumns = (onDelete: (userId: string) => void, onEdit: (user: User) => void): ColumnDef<User>[] => [
   {
     accessorKey: "full_name",
     header: "Full Name",
@@ -68,7 +68,9 @@ export const getColumns = (onDelete: (userId: string) => void): ColumnDef<User>[
             >
               Copy user ID
             </DropdownMenuItem>
-            <DropdownMenuItem>Edit user (coming soon)</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(user)}>
+              Edit user
+            </DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive"
               onClick={() => onDelete(user.id)}
