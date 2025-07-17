@@ -19,6 +19,7 @@ import {
 import { Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
+import { AddUserDialog } from "./users/AddUserDialog";
 
 const fetchUsers = async (): Promise<User[]> => {
   const { data, error } = await supabase.functions.invoke("get-users");
@@ -40,6 +41,7 @@ const deleteUser = async (userId: string) => {
 const UserManagement = () => {
   const queryClient = useQueryClient();
   const [userToDelete, setUserToDelete] = React.useState<string | null>(null);
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = React.useState(false);
 
   const { data: users, isLoading, error } = useQuery<User[]>({
     queryKey: ["users"],
@@ -94,10 +96,11 @@ const UserManagement = () => {
 
   return (
     <>
+      <AddUserDialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen} />
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">User Management</h1>
-          <Button>Add User (coming soon)</Button>
+          <Button onClick={() => setIsAddUserDialogOpen(true)}>Add User</Button>
         </div>
         <DataTable columns={columns} data={users || []} filterColumnId="email" filterPlaceholder="Filter by email..." />
       </div>
@@ -109,7 +112,7 @@ const UserManagement = () => {
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the user
               and their associated data from our servers.
-            </AlertDialogDescription>
+            </description>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
