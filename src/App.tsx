@@ -22,6 +22,7 @@ import EditProfilePage from "./pages/EditProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import { ThemeProvider } from "./contexts/ThemeProvider";
 import LeaderboardPage from "./pages/LeaderboardPage";
+import XpHistoryPage from "./pages/XpHistoryPage"; // Import the new XP History Page
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
                   <Route path="/dashboard/leaderboard" element={<LeaderboardPage />} />
                   <Route path="/dashboard/profile" element={<EditProfilePage />} />
                   <Route path="/dashboard/settings" element={<SettingsPage />} />
+                  <Route path="/dashboard/xp-history" element={<XpHistoryPage />} /> {/* New XP History Route */}
                   <Route element={<AdminRoute />}>
                     <Route path="/admin/users" element={<UserManagement />} />
                     <Route path="/admin/tasks" element={<TaskManagement />} />

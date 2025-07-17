@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, MessageSquare, ListTodo, Code } from "lucide-react"; // Removed Gamepad2 icon
+import { FileText, MessageSquare, ListTodo, Code } from "lucide-react";
+import { XpBar } from "@/components/dashboard/XpBar"; // Import XpBar
 
 const UserDashboard = () => {
   const userFeatures = [
@@ -36,6 +37,7 @@ const UserDashboard = () => {
       <p className="text-muted-foreground mt-2">
         Welcome to your personal dashboard. Here are your quick links:
       </p>
+      <XpBar /> {/* Add the XpBar component here */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {userFeatures.map((feature) => (
           <Link to={feature.link} key={feature.title}>
