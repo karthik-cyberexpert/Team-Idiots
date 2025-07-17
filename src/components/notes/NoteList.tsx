@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, FileText, Trash2, Edit } from "lucide-react";
+import { PlusCircle, FileText, Trash2, Edit, FileDown } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import {
   AlertDialog,
@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UploadNoteDialog } from "./UploadNoteDialog"; // Import the new dialog
 
 interface Note {
   id: string;
@@ -25,12 +26,20 @@ interface Note {
   content: string;
   created_at: string;
   updated_at: string;
+  user_id: string;
+  profiles: {
+    full_name: string;
+  } | null;
+  document_url?: string | null; // Add document_url to the interface
 }
 
 const fetchNotes = async (): Promise<Note[]> => {
   const { data, error } = await supabase
     .from("notes")
-    .select("*")
+    .select(`
+      *,
+      profiles(full_name)
+    `)
     .order("updated_at", { ascending: false });
   if (error) throw new Error(error.message);
   return data;
@@ -53,6 +62,7 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
   });
 
   const [noteToDelete, setNoteToDelete] = React.useState<string | null>(null);
+  const [isUploadNoteDialogOpen, setIsUploadNoteDialogOpen] = React.useState(false);
 
   const deleteMutation = useMutation({
     mutationFn: deleteNote,
@@ -83,11 +93,18 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
 
   return (
     <>
+      <UploadNoteDialog open={isUploadNoteDialogOpen} onOpenChange={setIsUploadNoteDialogOpen} />
+
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Your Notes</h2>
-        <Button onClick={() => onSelectNote(null)}>
-          <PlusCircle className="mr-2 h-4 w-4" /> New Note
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => onSelectNote(null)}>
+            <PlusCircle className="mr-2 h-4 w-4" /> New Note
+          </Button>
+          <Button variant="outline" onClick={() => setIsUploadNoteDialogOpen(true)}>
+            <FileUp className="mr-2 h-4 w-4" /> Upload Note
+          </Button>
+        </div>
       </div>
       {notes && notes.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -96,16 +113,31 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
               <CardHeader>
                 <CardTitle className="text-lg">{note.title}</CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">
+                  Created by: {note.profiles?.full_name || "Unknown User"}
+                  <br />
                   Last updated: {new Date(note.updated_at).toLocaleDateString()}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
-                <p className="text-sm line-clamp-3">{note.content || "No content"}</p>
+                {note.document_url ? (
+                  <a
+                    href={note.document_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center text-blue-600 hover:underline text-sm"
+                  >
+                    <FileDown className="h-4 w-4 mr-1" /> View Document
+                  </a>
+                ) : (
+                  <p className="text-sm line-clamp-3">{note.content || "No content"}</p>
+                )}
               </CardContent>
               <div className="p-4 border-t flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => onSelectNote(note)}>
-                  <Edit className="h-4 w-4 mr-2" /> Edit
-                </Button>
+                {!note.document_url && ( // Only show edit for non-document notes
+                  <Button variant="outline" size="sm" onClick={() => onSelectNote(note)}>
+                    <Edit className="h-4 w-4 mr-2" /> Edit
+                  </Button>
+                )}
                 <Button variant="destructive" size="sm" onClick={() => setNoteToDelete(note.id)}>
                   <Trash2 className="h-4 w-4 mr-2" /> Delete
                 </Button>

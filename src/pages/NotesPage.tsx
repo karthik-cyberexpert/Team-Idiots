@@ -10,6 +10,11 @@ interface Note {
   content: string;
   created_at: string;
   updated_at: string;
+  user_id: string;
+  profiles: {
+    full_name: string;
+  } | null;
+  document_url?: string | null;
 }
 
 const NotesPage = () => {

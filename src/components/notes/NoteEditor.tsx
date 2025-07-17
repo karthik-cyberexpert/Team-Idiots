@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { showSuccess, showError } from "@/utils/toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileDown } from "lucide-react";
 
 interface Note {
   id: string;
@@ -26,6 +26,11 @@ interface Note {
   content: string;
   created_at: string;
   updated_at: string;
+  user_id: string;
+  profiles?: {
+    full_name: string;
+  } | null;
+  document_url?: string | null; // Add document_url to the interface
 }
 
 const formSchema = z.object({
@@ -101,14 +106,29 @@ export const NoteEditor = ({ note, onBack }: NoteEditorProps) => {
     }
   };
 
+  const isDocumentNote = !!note?.document_url;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h2 className="text-2xl font-bold">{note ? "Edit Note" : "Create New Note"}</h2>
+        <h2 className="text-2xl font-bold">{note ? (isDocumentNote ? "View Document Note" : "Edit Note") : "Create New Note"}</h2>
       </div>
+      {isDocumentNote && note?.document_url && (
+        <div className="mb-4 p-4 border rounded-md bg-muted flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">This is a document note. You can view it below.</p>
+          <a
+            href={note.document_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center text-blue-600 hover:underline text-sm"
+          >
+            <FileDown className="h-4 w-4 mr-1" /> View Document
+          </a>
+        </div>
+      )}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
@@ -118,7 +138,7 @@ export const NoteEditor = ({ note, onBack }: NoteEditorProps) => {
               <FormItem>
                 <FormLabel>Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="My awesome note" {...field} />
+                  <Input placeholder="My awesome note" {...field} disabled={isDocumentNote} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -131,15 +151,17 @@ export const NoteEditor = ({ note, onBack }: NoteEditorProps) => {
               <FormItem>
                 <FormLabel>Content</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Write your note here..." rows={10} {...field} />
+                  <Textarea placeholder="Write your note here..." rows={10} {...field} disabled={isDocumentNote} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-            {note ? (updateMutation.isPending ? "Saving..." : "Save Changes") : (createMutation.isPending ? "Creating..." : "Create Note")}
-          </Button>
+          {!isDocumentNote && ( // Only show save button for non-document notes
+            <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+              {note ? (updateMutation.isPending ? "Saving..." : "Save Changes") : (createMutation.isPending ? "Creating..." : "Create Note")}
+            </Button>
+          )}
         </form>
       </Form>
     </div>
