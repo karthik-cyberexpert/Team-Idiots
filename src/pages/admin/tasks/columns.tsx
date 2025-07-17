@@ -67,6 +67,22 @@ export const getColumns = (
     }
   },
   {
+    accessorKey: "custom_xp_award",
+    header: "Custom XP",
+    cell: ({ row }) => {
+      const customXp = row.getValue("custom_xp_award") as number | null;
+      return <div>{customXp !== null ? customXp : 'N/A'}</div>;
+    }
+  },
+  {
+    accessorKey: "custom_due_days",
+    header: "Custom Due Days",
+    cell: ({ row }) => {
+      const customDueDays = row.getValue("custom_due_days") as number | null;
+      return <div>{customDueDays !== null ? customDueDays : 'N/A'}</div>;
+    }
+  },
+  {
     id: "actions",
     cell: ({ row }) => {
       const task = row.original
@@ -102,8 +118,7 @@ export const getColumns = (
               onClick={() => onDelete(task.id)}
             >
               Delete task
-            </DropdownMenuItem>
-          </DropdownMenuContent>
+            </DropdownMenuContent>
         </DropdownMenu>
       )
     },

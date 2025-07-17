@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { title, description, dueDate, assignedBy } = await req.json()
+    const { title, description, dueDate, assignedBy, customXpAward, customDueDays } = await req.json()
     if (!title || !assignedBy) {
       throw new Error("Title and assigner ID are required.")
     }
@@ -34,11 +34,13 @@ serve(async (req) => {
     const tasksToInsert = users.map(user => ({
       title,
       description: description || null,
-      due_date: dueDate ? new Date(dueDate).toISOString() : null,
+      due_date: dueDate, // dueDate is already calculated in the frontend
       assigned_by: assignedBy,
       assigned_to: user.id,
       status: 'pending',
       is_common_task: true,
+      custom_xp_award: customXpAward || null,
+      custom_due_days: customDueDays || null,
     }));
 
     const { error: insertError } = await supabaseAdmin

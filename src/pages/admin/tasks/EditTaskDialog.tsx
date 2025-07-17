@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import * => React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -27,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { showSuccess, showError } from "@/utils/toast";
@@ -37,18 +37,36 @@ const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }),
   description: z.string().optional(),
   dueDate: z.date().optional().nullable(),
+  customXpAward: z.coerce.number().int().min(0, { message: "XP must be a positive number." }).optional().nullable(),
+  customDueDays: z.coerce.number().int().min(0, { message: "Due days must be a positive number." }).optional().nullable(),
+}).superRefine((data, ctx) => {
+  if (data.customDueDays !== null && data.customDueDays !== undefined && data.dueDate !== null && data.dueDate !== undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Cannot set both Due Date and Custom Due Days. Please choose one.",
+      path: ["customDueDays"],
+    });
+  }
 });
 
 type EditTaskFormValues = z.infer<typeof formSchema>;
 
 const updateTask = async (values: EditTaskFormValues & { taskId: string }) => {
   const { taskId, ...updateData } = values;
+
+  let finalDueDate = updateData.dueDate;
+  if (updateData.customDueDays !== null && updateData.customDueDays !== undefined) {
+    finalDueDate = addDays(new Date(), updateData.customDueDays);
+  }
+
   const { error } = await supabase
     .from("tasks")
     .update({
       title: updateData.title,
       description: updateData.description,
-      due_date: updateData.dueDate ? updateData.dueDate.toISOString() : null,
+      due_date: finalDueDate ? finalDueDate.toISOString() : null,
+      custom_xp_award: updateData.customXpAward,
+      custom_due_days: updateData.customDueDays,
     })
     .eq("id", taskId);
 
@@ -75,6 +93,8 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
         title: task.title,
         description: task.description || "",
         dueDate: task.due_date ? new Date(task.due_date) : null,
+        customXpAward: task.custom_xp_award,
+        customDueDays: task.custom_due_days,
       });
     }
   }, [task, form]);
@@ -150,6 +170,7 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
                               "w-full pl-3 text-left font-normal",
                               !field.value && "text-muted-foreground"
                             )}
+                            disabled={form.watch("customDueDays") !== null && form.watch("customDueDays") !== undefined}
                           >
                             {field.value ? (
                               format(field.value, "PPP")
@@ -169,6 +190,45 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
                         />
                       </PopoverContent>
                     </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="customDueDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Custom Due Days (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="e.g., 7 (days from now)"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                        value={field.value === null ? "" : field.value}
+                        disabled={form.watch("dueDate") !== null}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="customXpAward"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Custom XP Award (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="e.g., 50"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                        value={field.value === null ? "" : field.value}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -86,6 +86,9 @@ const TaskManagement = () => {
     onSuccess: (_, variables) => {
       showSuccess(`Task has been ${variables.status}.`);
       queryClient.invalidateQueries({ queryKey: ["adminTasks", "userTasks"] });
+      queryClient.invalidateQueries({ queryKey: ["xpHistory"] }); // Invalidate XP history
+      queryClient.invalidateQueries({ queryKey: ["leaderboard"] }); // Invalidate leaderboard
+      queryClient.invalidateQueries({ queryKey: ["users"] }); // Invalidate users to update XP in admin table
       setApprovalAction(null);
     },
     onError: (err) => {

@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
 import { AddUserDialog } from "./users/AddUserDialog";
 import { EditUserDialog } from "./users/EditUserDialog";
+import { ManualXpChangeDialog } from "./users/ManualXpChangeDialog"; // Import the new dialog
 import { PaginationState } from "@tanstack/react-table";
 
 interface PaginatedUsersResponse {
@@ -53,6 +54,7 @@ const UserManagement = () => {
   const queryClient = useQueryClient();
   const [userToDelete, setUserToDelete] = React.useState<string | null>(null);
   const [userToEdit, setUserToEdit] = React.useState<User | null>(null);
+  const [userToChangeXp, setUserToChangeXp] = React.useState<User | null>(null); // New state for XP change
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = React.useState(false);
 
   const [pagination, setPagination] = React.useState<PaginationState>({
@@ -86,7 +88,11 @@ const UserManagement = () => {
     setUserToEdit(user);
   }, []);
 
-  const columns = React.useMemo(() => getColumns(handleDeleteRequest, handleEditRequest), [handleDeleteRequest, handleEditRequest]);
+  const handleChangeXpRequest = React.useCallback((user: User) => {
+    setUserToChangeXp(user);
+  }, []);
+
+  const columns = React.useMemo(() => getColumns(handleDeleteRequest, handleEditRequest, handleChangeXpRequest), [handleDeleteRequest, handleEditRequest, handleChangeXpRequest]);
 
   if (isLoading) {
     return (
@@ -119,6 +125,7 @@ const UserManagement = () => {
     <>
       <AddUserDialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen} />
       <EditUserDialog open={!!userToEdit} onOpenChange={() => setUserToEdit(null)} user={userToEdit} />
+      <ManualXpChangeDialog open={!!userToChangeXp} onOpenChange={() => setUserToChangeXp(null)} user={userToChangeXp} /> {/* New XP Change Dialog */}
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">User Management</h1>

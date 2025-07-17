@@ -13,7 +13,7 @@ import {
 import { User } from "@/types/user"
 import { Badge } from "@/components/ui/badge"
 
-export const getColumns = (onDelete: (userId: string) => void, onEdit: (user: User) => void): ColumnDef<User>[] => [
+export const getColumns = (onDelete: (userId: string) => void, onEdit: (user: User) => void, onChangeXp: (user: User) => void): ColumnDef<User>[] => [
   {
     accessorKey: "full_name",
     header: "Full Name",
@@ -38,6 +38,14 @@ export const getColumns = (onDelete: (userId: string) => void, onEdit: (user: Us
     cell: ({ row }) => {
       const role = row.getValue("role") as string;
       return <Badge variant={role === 'admin' ? 'default' : 'secondary'}>{role}</Badge>
+    }
+  },
+  {
+    accessorKey: "xp",
+    header: "XP",
+    cell: ({ row }) => {
+      const xp = row.getValue("xp") as number;
+      return <div>{xp}</div>;
     }
   },
   {
@@ -70,6 +78,9 @@ export const getColumns = (onDelete: (userId: string) => void, onEdit: (user: Us
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(user)}>
               Edit user
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onChangeXp(user)}>
+              Change XP
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive"
