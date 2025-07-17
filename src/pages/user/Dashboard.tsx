@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, MessageSquare, ListTodo, Gamepad2 } from "lucide-react";
+import { FileText, MessageSquare, ListTodo, Gamepad2, Code } from "lucide-react"; // Added Code icon
 
 const UserDashboard = () => {
   const userFeatures = [
@@ -27,6 +27,12 @@ const UserDashboard = () => {
       description: "Join or create sessions to play games with your team.",
       icon: <Gamepad2 className="h-8 w-8 text-primary" />,
       link: "/dashboard/games",
+    },
+    {
+      title: "Code Space",
+      description: "Collaborate on code snippets and documents in real-time.",
+      icon: <Code className="h-8 w-8 text-primary" />,
+      link: "/dashboard/codespace",
     },
   ];
 
