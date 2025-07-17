@@ -13,7 +13,9 @@ import { DashboardLayout } from "./components/dashboard/DashboardLayout";
 import UserManagement from "./pages/admin/UserManagement";
 import AdminRoute from "./components/AdminRoute";
 import NotesPage from "./pages/NotesPage";
-import ChatPage from "./pages/ChatPage"; // Import the new ChatPage
+import ChatPage from "./pages/ChatPage";
+import TasksPage from "./pages/TasksPage"; // Import the new TasksPage
+import TaskManagement from "./pages/admin/TaskManagement"; // Import the new TaskManagement page
 
 const queryClient = new QueryClient();
 
@@ -32,9 +34,11 @@ const App = () => (
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/dashboard/notes" element={<NotesPage />} />
-                <Route path="/dashboard/chat" element={<ChatPage />} /> {/* New route for Chat */}
+                <Route path="/dashboard/chat" element={<ChatPage />} />
+                <Route path="/dashboard/tasks" element={<TasksPage />} /> {/* New route for User Tasks */}
                 <Route element={<AdminRoute />}>
                   <Route path="/admin/users" element={<UserManagement />} />
+                  <Route path="/admin/tasks" element={<TaskManagement />} /> {/* New route for Admin Task Management */}
                 </Route>
               </Route>
             </Route>
