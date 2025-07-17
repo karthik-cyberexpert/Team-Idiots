@@ -22,14 +22,22 @@ import { Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
 import { AddUserDialog } from "./users/AddUserDialog";
-import { EditUserDialog } from "./users/EditUserDialog"; // Import the new component
+import { EditUserDialog } from "./users/EditUserDialog";
+import { PaginationState } from "@tanstack/react-table";
 
-const fetchUsers = async (): Promise<User[]> => {
-  const { data, error } = await supabase.functions.invoke("get-users");
+interface PaginatedUsersResponse {
+  users: User[];
+  totalCount: number;
+}
+
+const fetchUsers = async (page: number, perPage: number): Promise<PaginatedUsersResponse> => {
+  const { data, error } = await supabase.functions.invoke("get-users", {
+    body: { page, perPage },
+  });
   if (error) {
     throw new Error(`Failed to fetch users: ${error.message}`);
   }
-  return data.users || [];
+  return data as PaginatedUsersResponse;
 };
 
 const deleteUser = async (userId: string) => {
@@ -44,12 +52,17 @@ const deleteUser = async (userId: string) => {
 const UserManagement = () => {
   const queryClient = useQueryClient();
   const [userToDelete, setUserToDelete] = React.useState<string | null>(null);
-  const [userToEdit, setUserToEdit] = React.useState<User | null>(null); // New state for editing
+  const [userToEdit, setUserToEdit] = React.useState<User | null>(null);
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = React.useState(false);
 
-  const { data: users, isLoading, error } = useQuery<User[]>({
-    queryKey: ["users"],
-    queryFn: fetchUsers,
+  const [pagination, setPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const { data, isLoading, error } = useQuery<PaginatedUsersResponse>({
+    queryKey: ["users", pagination.pageIndex, pagination.pageSize],
+    queryFn: () => fetchUsers(pagination.pageIndex + 1, pagination.pageSize),
   });
 
   const deleteMutation = useMutation({
@@ -105,13 +118,19 @@ const UserManagement = () => {
   return (
     <>
       <AddUserDialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen} />
-      <EditUserDialog open={!!userToEdit} onOpenChange={() => setUserToEdit(null)} user={userToEdit} /> {/* Render EditUserDialog */}
+      <EditUserDialog open={!!userToEdit} onOpenChange={() => setUserToEdit(null)} user={userToEdit} />
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">User Management</h1>
           <Button onClick={() => setIsAddUserDialogOpen(true)}>Add User</Button>
         </div>
-        <DataTable columns={columns} data={users || []} />
+        <DataTable
+          columns={columns}
+          data={data?.users || []}
+          pageCount={Math.ceil((data?.totalCount || 0) / pagination.pageSize)}
+          pagination={pagination}
+          setPagination={setPagination}
+        />
       </div>
 
       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>

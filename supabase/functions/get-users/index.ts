@@ -12,6 +12,10 @@ serve(async (req) => {
   }
 
   try {
+    const { page, perPage } = await req.json();
+    const pageNumber = page ? parseInt(page, 10) : 1;
+    const itemsPerPage = perPage ? parseInt(perPage, 10) : 10; // Default to 10 items per page
+
     // Create a Supabase client with the service role key to bypass RLS
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -19,11 +23,14 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Get all users from auth
-    const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
+    // Get users from auth with pagination
+    const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers({
+      page: pageNumber,
+      perPage: itemsPerPage,
+    });
     if (usersError) throw usersError;
 
-    // Get all profiles
+    // Get all profiles (or consider paginating profiles if there are many)
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('profiles')
       .select('id, role, full_name');
@@ -44,8 +51,14 @@ serve(async (req) => {
       };
     });
 
+    // Get total count for pagination metadata
+    const { count, error: countError } = await supabaseAdmin
+      .from('profiles')
+      .select('*', { count: 'exact', head: true });
+    if (countError) throw countError;
+
     return new Response(
-      JSON.stringify({ users: combinedUsers }),
+      JSON.stringify({ users: combinedUsers, totalCount: count }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
