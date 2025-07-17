@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { showSuccess, showError } from "@/utils/toast";
 import { ArrowLeft, FileDown } from "lucide-react";
-import { useAuth } from "@/contexts/AuthProvider"; // Import useAuth
+import { useAuth } from "@/contexts/AuthProvider";
 
 interface Note {
   id: string;
@@ -31,7 +31,7 @@ interface Note {
   profiles?: {
     full_name: string;
   } | null;
-  document_url?: string | null; // Add document_url to the interface
+  document_url?: string | null;
 }
 
 const formSchema = z.object({
@@ -41,8 +41,8 @@ const formSchema = z.object({
 
 type NoteFormValues = z.infer<typeof formSchema>;
 
-const createNote = async (values: NoteFormValues, userId: string) => { // Add userId parameter
-  const { data, error } = await supabase.from("notes").insert({ ...values, user_id: userId }).select().single(); // Include user_id
+const createNote = async (values: NoteFormValues) => {
+  const { data, error } = await supabase.from("notes").insert(values).select().single();
   if (error) throw new Error(error.message);
   return data;
 };
@@ -60,7 +60,7 @@ interface NoteEditorProps {
 
 export const NoteEditor = ({ note, onBack }: NoteEditorProps) => {
   const queryClient = useQueryClient();
-  const { user } = useAuth(); // Get the current user
+  const { user } = useAuth();
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(formSchema),
@@ -79,8 +79,8 @@ export const NoteEditor = ({ note, onBack }: NoteEditorProps) => {
 
   const createMutation = useMutation({
     mutationFn: (values: NoteFormValues) => {
-      if (!user) throw new Error("User not authenticated."); // Ensure user exists
-      return createNote(values, user.id); // Pass user.id
+      if (!user) throw new Error("User not authenticated.");
+      return createNote(values);
     },
     onSuccess: () => {
       showSuccess("Note created successfully.");
@@ -163,7 +163,7 @@ export const NoteEditor = ({ note, onBack }: NoteEditorProps) => {
               </FormItem>
             )}
           />
-          {!isDocumentNote && ( // Only show save button for non-document notes
+          {!isDocumentNote && (
             <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
               {note ? (updateMutation.isPending ? "Saving..." : "Save Changes") : (createMutation.isPending ? "Creating..." : "Create Note")}
             </Button>

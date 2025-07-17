@@ -26,7 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { showSuccess, showError } from "@/utils/toast";
 import { FileUp } from "lucide-react";
-import { useAuth } from "@/contexts/AuthProvider"; // Import useAuth
+import { useAuth } from "@/contexts/AuthProvider";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_FILE_TYPES = [
@@ -34,9 +34,9 @@ const ACCEPTED_FILE_TYPES = [
   "text/plain",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "image/png", // Added PNG
-  "image/jpeg", // Added JPEG
-  "image/jpg",  // Added JPG
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
 ];
 
 const formSchema = z.object({
@@ -49,7 +49,7 @@ const formSchema = z.object({
 
 type UploadNoteFormValues = z.infer<typeof formSchema>;
 
-const uploadDocumentNote = async (values: UploadNoteFormValues, userId: string) => { // Add userId parameter
+const uploadDocumentNote = async (values: UploadNoteFormValues) => {
   const file = values.document[0];
   const fileName = `${Date.now()}-${file.name}`;
   const filePath = `public/${fileName}`;
@@ -75,13 +75,12 @@ const uploadDocumentNote = async (values: UploadNoteFormValues, userId: string) 
 
   const { error: insertError } = await supabase.from("notes").insert({
     title: values.title,
-    content: `Document: ${file.name}`, // Placeholder content
+    content: `Document: ${file.name}`,
     document_url: publicUrlData.publicUrl,
-    user_id: userId, // Include user_id
+    // user_id is no longer sent from the client; the database default will handle it.
   });
 
   if (insertError) {
-    // If database insert fails, try to delete the uploaded file to prevent orphans
     await supabase.storage.from('note-documents').remove([uploadData.path]);
     throw new Error(`Failed to create note entry: ${insertError.message}`);
   }
@@ -94,7 +93,7 @@ interface UploadNoteDialogProps {
 
 export const UploadNoteDialog = ({ open, onOpenChange }: UploadNoteDialogProps) => {
   const queryClient = useQueryClient();
-  const { user } = useAuth(); // Get the current user
+  const { user } = useAuth();
 
   const form = useForm<UploadNoteFormValues>({
     resolver: zodResolver(formSchema),
@@ -106,8 +105,8 @@ export const UploadNoteDialog = ({ open, onOpenChange }: UploadNoteDialogProps) 
 
   const mutation = useMutation({
     mutationFn: (values: UploadNoteFormValues) => {
-      if (!user) throw new Error("User not authenticated."); // Ensure user exists
-      return uploadDocumentNote(values, user.id); // Pass user.id
+      if (!user) throw new Error("User not authenticated.");
+      return uploadDocumentNote(values);
     },
     onSuccess: () => {
       showSuccess("Document note uploaded successfully.");
