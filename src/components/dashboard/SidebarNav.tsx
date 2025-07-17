@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText, MessageSquare, ListTodo, Code, Database } from "lucide-react";
+import { Home, Users, FileText, MessageSquare, ListTodo, Code, Database, Trophy } from "lucide-react";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -46,6 +46,11 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       href: "/dashboard/codespace",
       label: "Code Space",
       icon: <Code className="h-4 w-4" />,
+    },
+    {
+      href: "/dashboard/leaderboard",
+      label: "Leaderboard",
+      icon: <Trophy className="h-4 w-4" />,
     },
     {
       href: "/admin/users",

@@ -21,6 +21,7 @@ import DataManagementPage from "./pages/admin/DataManagementPage";
 import EditProfilePage from "./pages/EditProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import { ThemeProvider } from "./contexts/ThemeProvider";
+import LeaderboardPage from "./pages/LeaderboardPage";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
                   <Route path="/dashboard/chat" element={<ChatPage />} />
                   <Route path="/dashboard/tasks" element={<TasksPage />} />
                   <Route path="/dashboard/codespace" element={<CodeSpacePage />} />
+                  <Route path="/dashboard/leaderboard" element={<LeaderboardPage />} />
                   <Route path="/dashboard/profile" element={<EditProfilePage />} />
                   <Route path="/dashboard/settings" element={<SettingsPage />} />
                   <Route element={<AdminRoute />}>

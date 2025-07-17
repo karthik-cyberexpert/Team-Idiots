@@ -4,10 +4,12 @@ export interface Task {
   description: string | null;
   assigned_to: string;
   assigned_by: string;
-  status: 'pending' | 'completed';
+  status: 'pending' | 'completed' | 'waiting_for_approval' | 'rejected';
   due_date: string | null;
   created_at: string;
   updated_at: string;
+  completed_at: string | null;
+  is_common_task: boolean;
   profiles: {
     full_name: string;
   } | null; // For assigned_to user's name

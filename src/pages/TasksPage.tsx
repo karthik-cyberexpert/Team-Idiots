@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, CircleDashed, CalendarDays } from "lucide-react";
+import { CheckCircle, CircleDashed, CalendarDays, Send, ShieldQuestion, RefreshCw } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Task } from "@/types/task";
@@ -26,7 +26,7 @@ const fetchUserTasks = async (userId: string): Promise<Task[]> => {
   return data as Task[];
 };
 
-const updateTaskStatus = async (taskId: string, status: 'pending' | 'completed') => {
+const updateTaskStatus = async (taskId: string, status: 'waiting_for_approval' | 'pending') => {
   const { error } = await supabase
     .from("tasks")
     .update({ status, updated_at: new Date().toISOString() })
@@ -45,16 +45,75 @@ const TasksPage = () => {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ taskId, status }: { taskId: string; status: 'pending' | 'completed' }) =>
+    mutationFn: ({ taskId, status }: { taskId: string; status: 'waiting_for_approval' | 'pending' }) =>
       updateTaskStatus(taskId, status),
-    onSuccess: () => {
-      showSuccess("Task status updated successfully!");
+    onSuccess: (data, variables) => {
+      const message = variables.status === 'waiting_for_approval' 
+        ? "Task submitted for approval!"
+        : "Task status updated.";
+      showSuccess(message);
       queryClient.invalidateQueries({ queryKey: ["userTasks", user?.id] });
     },
     onError: (err) => {
       showError(err.message);
     },
   });
+
+  const getStatusBadge = (status: Task['status']) => {
+    const statusText = status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    switch (status) {
+      case 'completed':
+        return <Badge variant="default">{statusText}</Badge>;
+      case 'pending':
+        return <Badge variant="secondary">{statusText}</Badge>;
+      case 'waiting_for_approval':
+        return <Badge variant="outline">{statusText}</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">{statusText}</Badge>;
+      default:
+        return <Badge>{statusText}</Badge>;
+    }
+  };
+
+  const getTaskAction = (task: Task) => {
+    switch (task.status) {
+      case 'pending':
+        return (
+          <Button
+            size="sm"
+            onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: 'waiting_for_approval' })}
+            disabled={updateStatusMutation.isPending}
+          >
+            <Send className="h-4 w-4 mr-2" /> Submit for Approval
+          </Button>
+        );
+      case 'waiting_for_approval':
+        return (
+          <Button size="sm" disabled>
+            <ShieldQuestion className="h-4 w-4 mr-2" /> Pending Approval
+          </Button>
+        );
+      case 'rejected':
+        return (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: 'waiting_for_approval' })}
+            disabled={updateStatusMutation.isPending}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" /> Resubmit
+          </Button>
+        );
+      case 'completed':
+        return (
+          <div className="flex items-center text-green-600 font-semibold">
+            <CheckCircle className="h-4 w-4 mr-2" /> Completed
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -86,33 +145,15 @@ const TasksPage = () => {
               </CardHeader>
               <CardContent className="flex-grow space-y-2">
                 <p className="text-sm text-foreground">{task.description || "No description provided."}</p>
+
                 <div className="flex items-center text-sm text-muted-foreground">
                   <CalendarDays className="h-4 w-4 mr-1" />
                   Due: {task.due_date ? new Date(task.due_date).toLocaleDateString() : "No due date"}
                 </div>
-                <Badge variant={task.status === 'completed' ? 'default' : 'secondary'}>
-                  {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
-                </Badge>
+                {getStatusBadge(task.status)}
               </CardContent>
               <div className="p-4 border-t flex justify-end">
-                {task.status === 'pending' ? (
-                  <Button
-                    size="sm"
-                    onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: 'completed' })}
-                    disabled={updateStatusMutation.isPending}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" /> Mark as Complete
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: 'pending' })}
-                    disabled={updateStatusMutation.isPending}
-                  >
-                    <CircleDashed className="h-4 w-4 mr-2" /> Mark as Pending
-                  </Button>
-                )}
+                {getTaskAction(task)}
               </div>
             </Card>
           ))}

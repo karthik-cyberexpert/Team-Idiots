@@ -48,8 +48,16 @@ export const getColumns = (onDelete: (taskId: string) => void, onEdit: (task: Ta
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("status") as string;
-      return <Badge variant={status === 'completed' ? 'default' : 'secondary'}>{status}</Badge>
+      const status = row.getValue("status") as Task['status'];
+      const statusText = status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      
+      const variant: "default" | "secondary" | "destructive" | "outline" = 
+        status === 'completed' ? 'default' 
+        : status === 'pending' ? 'secondary'
+        : status === 'waiting_for_approval' ? 'outline'
+        : 'destructive';
+
+      return <Badge variant={variant}>{statusText}</Badge>
     }
   },
   {
