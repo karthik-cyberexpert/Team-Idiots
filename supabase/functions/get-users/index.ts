@@ -12,11 +12,16 @@ serve(async (req) => {
   }
 
   try {
-    const { page, perPage } = await req.json();
-    const pageNumber = page ? parseInt(page, 10) : 1;
-    const itemsPerPage = perPage ? parseInt(perPage, 10) : 10; // Default to 10 items per page
+    let page = 1;
+    let perPage = 10;
 
-    // Create a Supabase client with the service role key to bypass RLS
+    // Safely parse JSON body if it exists and is not empty
+    if (req.headers.get('content-type')?.includes('application/json') && req.body) {
+      const body = await req.json();
+      page = body.page ? parseInt(body.page, 10) : 1;
+      perPage = body.perPage ? parseInt(body.perPage, 10) : 10;
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -25,8 +30,8 @@ serve(async (req) => {
 
     // Get users from auth with pagination
     const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers({
-      page: pageNumber,
-      perPage: itemsPerPage,
+      page: page,
+      perPage: perPage,
     });
     if (usersError) throw usersError;
 
