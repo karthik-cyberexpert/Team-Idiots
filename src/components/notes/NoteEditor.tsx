@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { showSuccess, showError } from "@/utils/toast";
 import { ArrowLeft, FileDown } from "lucide-react";
+import { useAuth } from "@/contexts/AuthProvider"; // Import useAuth
 
 interface Note {
   id: string;
@@ -40,8 +41,8 @@ const formSchema = z.object({
 
 type NoteFormValues = z.infer<typeof formSchema>;
 
-const createNote = async (values: NoteFormValues) => {
-  const { data, error } = await supabase.from("notes").insert(values).select().single();
+const createNote = async (values: NoteFormValues, userId: string) => { // Add userId parameter
+  const { data, error } = await supabase.from("notes").insert({ ...values, user_id: userId }).select().single(); // Include user_id
   if (error) throw new Error(error.message);
   return data;
 };
@@ -59,6 +60,8 @@ interface NoteEditorProps {
 
 export const NoteEditor = ({ note, onBack }: NoteEditorProps) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth(); // Get the current user
+
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -75,7 +78,10 @@ export const NoteEditor = ({ note, onBack }: NoteEditorProps) => {
   }, [note, form]);
 
   const createMutation = useMutation({
-    mutationFn: createNote,
+    mutationFn: (values: NoteFormValues) => {
+      if (!user) throw new Error("User not authenticated."); // Ensure user exists
+      return createNote(values, user.id); // Pass user.id
+    },
     onSuccess: () => {
       showSuccess("Note created successfully.");
       queryClient.invalidateQueries({ queryKey: ["notes"] });

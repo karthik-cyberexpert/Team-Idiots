@@ -26,6 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { showSuccess, showError } from "@/utils/toast";
 import { FileUp } from "lucide-react";
+import { useAuth } from "@/contexts/AuthProvider"; // Import useAuth
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_FILE_TYPES = ["application/pdf", "text/plain", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]; // PDF, TXT, DOC, DOCX
@@ -38,9 +39,9 @@ const formSchema = z.object({
     .refine((file) => ACCEPTED_FILE_TYPES.includes(file?.[0]?.type), "Only PDF, TXT, DOC, DOCX files are allowed."),
 });
 
-type UploadNoteFormValues = z.infer<typeof formSchema>;
+type UploadNoteFormValues = z.infer<typeof typeof formSchema>;
 
-const uploadDocumentNote = async (values: UploadNoteFormValues) => {
+const uploadDocumentNote = async (values: UploadNoteFormValues, userId: string) => { // Add userId parameter
   const file = values.document[0];
   const fileName = `${Date.now()}-${file.name}`;
   const filePath = `public/${fileName}`;
@@ -68,6 +69,7 @@ const uploadDocumentNote = async (values: UploadNoteFormValues) => {
     title: values.title,
     content: `Document: ${file.name}`, // Placeholder content
     document_url: publicUrlData.publicUrl,
+    user_id: userId, // Include user_id
   });
 
   if (insertError) {
@@ -84,6 +86,8 @@ interface UploadNoteDialogProps {
 
 export const UploadNoteDialog = ({ open, onOpenChange }: UploadNoteDialogProps) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth(); // Get the current user
+
   const form = useForm<UploadNoteFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -93,7 +97,10 @@ export const UploadNoteDialog = ({ open, onOpenChange }: UploadNoteDialogProps) 
   });
 
   const mutation = useMutation({
-    mutationFn: uploadDocumentNote,
+    mutationFn: (values: UploadNoteFormValues) => {
+      if (!user) throw new Error("User not authenticated."); // Ensure user exists
+      return uploadDocumentNote(values, user.id); // Pass user.id
+    },
     onSuccess: () => {
       showSuccess("Document note uploaded successfully.");
       queryClient.invalidateQueries({ queryKey: ["notes"] });
