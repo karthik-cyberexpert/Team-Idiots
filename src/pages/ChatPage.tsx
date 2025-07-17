@@ -6,10 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Send, PlusCircle } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AddChannelDialog } from "@/components/chat/AddChannelDialog";
 
 interface Channel {
   id: string;
@@ -58,9 +59,10 @@ const sendMessage = async ({ channelId, content, userId }: { channelId: string; 
 
 const ChatPage = () => {
   const queryClient = useQueryClient();
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [selectedChannelId, setSelectedChannelId] = React.useState<string | null>(null);
   const [newMessage, setNewMessage] = React.useState("");
+  const [isAddChannelDialogOpen, setIsAddChannelDialogOpen] = React.useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   const { data: channels, isLoading: channelsLoading, error: channelsError } = useQuery<Channel[]>({
@@ -146,89 +148,94 @@ const ChatPage = () => {
     return <div className="text-red-500">Error loading channels: {channelsError.message}</div>;
   }
 
-  if (!channels || channels.length === 0) {
-    return (
-      <div className="text-center py-10">
-        <p className="text-lg text-muted-foreground">No chat channels available. Please create one in Supabase.</p>
-      </div>
-    );
-  }
-
-  const selectedChannel = channels.find(c => c.id === selectedChannelId);
-
   return (
-    <div className="flex h-full border rounded-lg overflow-hidden">
-      <div className="w-1/4 border-r bg-muted/40 p-4">
-        <h2 className="text-xl font-bold mb-4">Channels</h2>
-        <nav className="space-y-2">
-          {channels.map((channel) => (
-            <Button
-              key={channel.id}
-              variant={selectedChannelId === channel.id ? "default" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => setSelectedChannelId(channel.id)}
-            >
-              # {channel.name}
-            </Button>
-          ))}
-        </nav>
-      </div>
-      <div className="flex-1 flex flex-col">
-        <Card className="flex-1 flex flex-col rounded-none border-none shadow-none">
-          <CardHeader className="border-b p-4">
-            <CardTitle className="text-xl">
-              {selectedChannel ? `# ${selectedChannel.name}` : "Select a Channel"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 p-4 overflow-y-auto space-y-4">
-            {messagesLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-              </div>
-            ) : messagesError ? (
-              <div className="text-red-500">Error loading messages: {messagesError.message}</div>
-            ) : messages && messages.length > 0 ? (
-              messages.map((message) => (
-                <div key={message.id} className="flex items-start space-x-3">
-                  <div className="flex-shrink-0">
-                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-semibold">
-                      {message.profiles?.full_name ? message.profiles.full_name[0].toUpperCase() : 'U'}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-baseline space-x-2">
-                      <p className="font-semibold">{message.profiles?.full_name || "Unknown User"}</p>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                    <p className="text-sm text-foreground">{message.content}</p>
-                  </div>
-                </div>
+    <>
+      <AddChannelDialog open={isAddChannelDialogOpen} onOpenChange={setIsAddChannelDialogOpen} />
+      <div className="flex h-full border rounded-lg overflow-hidden">
+        <div className="w-1/4 border-r bg-muted/40 p-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Channels</h2>
+            {profile?.role === 'admin' && (
+              <Button variant="ghost" size="icon" onClick={() => setIsAddChannelDialogOpen(true)}>
+                <PlusCircle className="h-5 w-5" />
+                <span className="sr-only">Add Channel</span>
+              </Button>
+            )}
+          </div>
+          <nav className="space-y-2">
+            {channels && channels.length > 0 ? (
+              channels.map((channel) => (
+                <Button
+                  key={channel.id}
+                  variant={selectedChannelId === channel.id ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => setSelectedChannelId(channel.id)}
+                >
+                  # {channel.name}
+                </Button>
               ))
             ) : (
-              <div className="text-center text-muted-foreground py-10">No messages yet. Be the first to say hello!</div>
+              <p className="text-sm text-muted-foreground">No channels available.</p>
             )}
-            <div ref={messagesEndRef} />
-          </CardContent>
-          <div className="border-t p-4">
-            <form onSubmit={handleSendMessage} className="flex gap-2">
-              <Input
-                placeholder="Type your message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                disabled={!selectedChannelId || sendMutation.isPending}
-              />
-              <Button type="submit" disabled={!selectedChannelId || sendMutation.isPending || !newMessage.trim()}>
-                <Send className="h-4 w-4" />
-              </Button>
-            </form>
-          </div>
-        </Card>
+          </nav>
+        </div>
+        <div className="flex-1 flex flex-col">
+          <Card className="flex-1 flex flex-col rounded-none border-none shadow-none">
+            <CardHeader className="border-b p-4">
+              <CardTitle className="text-xl">
+                {selectedChannel ? `# ${selectedChannel.name}` : "Select a Channel"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 p-4 overflow-y-auto space-y-4">
+              {messagesLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : messagesError ? (
+                <div className="text-red-500">Error loading messages: {messagesError.message}</div>
+              ) : messages && messages.length > 0 ? (
+                messages.map((message) => (
+                  <div key={message.id} className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-semibold">
+                        {message.profiles?.full_name ? message.profiles.full_name[0].toUpperCase() : 'U'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-baseline space-x-2">
+                        <p className="font-semibold">{message.profiles?.full_name || "Unknown User"}</p>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-foreground">{message.content}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-muted-foreground py-10">No messages yet. Be the first to say hello!</div>
+              )}
+              <div ref={messagesEndRef} />
+            </CardContent>
+            <div className="border-t p-4">
+              <form onSubmit={handleSendMessage} className="flex gap-2">
+                <Input
+                  placeholder="Type your message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  disabled={!selectedChannelId || sendMutation.isPending}
+                />
+                <Button type="submit" disabled={!selectedChannelId || sendMutation.isPending || !newMessage.trim()}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
+            </div>
+          </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
