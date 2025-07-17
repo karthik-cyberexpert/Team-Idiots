@@ -34,15 +34,33 @@ serve(async (req) => {
       throw new Error("Session ID is required.");
     }
 
-    // Check if the session exists and is active
+    // Check if the session exists, is active, and has space
     const { data: session, error: sessionFetchError } = await supabase
       .from('game_sessions')
-      .select('id, status')
+      .select('id, status, max_players')
       .eq('id', sessionId)
       .single();
 
     if (sessionFetchError || !session) {
       throw new Error("Session not found or not active.");
+    }
+
+    if (session.status === 'ended') {
+      throw new Error("This session has ended.");
+    }
+
+    // Check current participant count
+    const { count: currentParticipants, error: countError } = await supabase
+      .from('game_session_participants')
+      .select('*', { count: 'exact', head: true })
+      .eq('session_id', sessionId);
+
+    if (countError) {
+      throw new Error(`Failed to count participants: ${countError.message}`);
+    }
+
+    if (session.max_players && currentParticipants! >= session.max_players) {
+      throw new Error("Session is full. Cannot join.");
     }
 
     // Add the user as a participant

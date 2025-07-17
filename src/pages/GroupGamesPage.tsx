@@ -4,7 +4,7 @@ import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Gamepad2, Upload, XCircle, Users, PlayCircle } from "lucide-react";
+import { Gamepad2, Upload, XCircle, Users, PlayCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Game } from "@/types/game";
@@ -12,6 +12,8 @@ import { useAuth } from "@/contexts/AuthProvider";
 import { AddGameDialog } from "./admin/games/AddGameDialog";
 import { showSuccess, showError } from "@/utils/toast";
 import { Separator } from "@/components/ui/separator";
+import { CreateGameSessionDialog } from "@/components/games/CreateGameSessionDialog";
+import { toast } from "sonner"; // Import sonner toast
 
 interface GameSession {
   id: string;
@@ -19,6 +21,8 @@ interface GameSession {
   host_id: string;
   status: 'waiting' | 'playing' | 'ended';
   created_at: string;
+  max_players: number | null; // New field
+  time_limit_minutes: number | null; // New field
   games: Game; // Joined game data
   profiles: { full_name: string } | null; // Host profile
 }
@@ -52,7 +56,9 @@ const fetchActiveSessions = async (): Promise<GameSession[]> => {
       host_id,
       status,
       created_at,
-      games (id, title, file_url),
+      max_players,
+      time_limit_minutes,
+      games (id, title, file_url, description),
       profiles (full_name)
     `)
     .in('status', ['waiting', 'playing'])
@@ -78,6 +84,7 @@ const GroupGamesPage = () => {
   const queryClient = useQueryClient();
   const [activeSession, setActiveSession] = React.useState<GameSession | null>(null);
   const [isAddGameDialogOpen, setIsAddGameDialogOpen] = React.useState(false);
+  const [isCreateSessionDialogOpen, setIsCreateSessionDialogOpen] = React.useState(false); // New state for create session dialog
   const [sessionParticipants, setSessionParticipants] = React.useState<SessionParticipant[]>([]);
 
   const { data: games, isLoading: gamesLoading, error: gamesError } = useQuery<Game[]>({
@@ -89,25 +96,6 @@ const GroupGamesPage = () => {
     queryKey: ["activeSessions"],
     queryFn: fetchActiveSessions,
     refetchInterval: 5000, // Refetch active sessions every 5 seconds
-  });
-
-  const createSessionMutation = useMutation({
-    mutationFn: async (gameId: string) => {
-      const { data, error } = await supabase.functions.invoke("create-game-session", {
-        body: { gameId },
-      });
-      if (error) throw new Error(error.message);
-      if (data.error) throw new Error(data.error);
-      return data.session as GameSession;
-    },
-    onSuccess: (newSession) => {
-      showSuccess("Game session created!");
-      queryClient.invalidateQueries({ queryKey: ["activeSessions"] });
-      setActiveSession(newSession);
-    },
-    onError: (err) => {
-      showError(err.message);
-    },
   });
 
   const joinSessionMutation = useMutation({
@@ -149,21 +137,17 @@ const GroupGamesPage = () => {
     },
   });
 
-  const handleCreateSession = (gameId: string) => {
-    if (!user) {
-      showError("You must be logged in to create a session.");
-      return;
-    }
-    createSessionMutation.mutate(gameId);
-  };
-
-  const handleJoinSession = async (session: GameSession) => {
+  const handleJoinSession = async (sessionToJoin: GameSession) => {
     if (!user) {
       showError("You must be logged in to join a session.");
       return;
     }
-    await joinSessionMutation.mutateAsync(session.id);
-    setActiveSession(session);
+    try {
+      await joinSessionMutation.mutateAsync(sessionToJoin.id);
+      setActiveSession(sessionToJoin);
+    } catch (error: any) {
+      showError(error.message);
+    }
   };
 
   const handleLeaveSession = () => {
@@ -212,6 +196,50 @@ const GroupGamesPage = () => {
       supabase.removeChannel(channel);
     };
   }, [activeSession?.id, queryClient]);
+
+  // Realtime subscription for new game sessions (notifications)
+  React.useEffect(() => {
+    if (!session) return; // Only listen if authenticated
+
+    const channel = supabase
+      .channel('game_sessions_notifications')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'game_sessions' },
+        async (payload) => {
+          const newSession = payload.new as GameSession;
+          // Fetch game details for the notification
+          const { data: gameData, error: gameError } = await supabase
+            .from('games')
+            .select('title')
+            .eq('id', newSession.game_id)
+            .single();
+
+          if (gameError) {
+            console.error("Error fetching game for notification:", gameError.message);
+            return;
+          }
+
+          const gameTitle = gameData?.title || "Unknown Game";
+          const hostName = newSession.profiles?.full_name || "Someone";
+
+          // Show toast notification
+          toast.info(`${hostName} started a new session for "${gameTitle}"!`, {
+            description: `Max Players: ${newSession.max_players || 'N/A'}${newSession.time_limit_minutes ? `, Time Limit: ${newSession.time_limit_minutes} min` : ''}`,
+            action: {
+              label: "Join",
+              onClick: () => handleJoinSession(newSession),
+            },
+            duration: 10000, // Keep notification for 10 seconds
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session, user, queryClient]); // Depend on session and user to re-subscribe if auth state changes
 
   if (authLoading || gamesLoading || sessionsLoading) {
     return (
@@ -286,6 +314,7 @@ const GroupGamesPage = () => {
   return (
     <>
       <AddGameDialog open={isAddGameDialogOpen} onOpenChange={setIsAddGameDialogOpen} />
+      <CreateGameSessionDialog open={isCreateSessionDialogOpen} onOpenChange={setIsCreateSessionDialogOpen} />
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl sm:text-3xl font-bold">Group Games</h1>
@@ -311,8 +340,16 @@ const GroupGamesPage = () => {
                     Status: {sessionItem.status.charAt(0).toUpperCase() + sessionItem.status.slice(1)}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="flex-grow">
+                <CardContent className="flex-grow space-y-2">
                   <p className="text-sm line-clamp-3">{sessionItem.games?.description || "No description provided."}</p>
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Users className="h-4 w-4 mr-1" /> Max Players: {sessionItem.max_players || 'N/A'}
+                  </div>
+                  {sessionItem.time_limit_minutes && (
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4 mr-1" /> Time Limit: {sessionItem.time_limit_minutes} min
+                    </div>
+                  )}
                 </CardContent>
                 <div className="p-4 border-t flex justify-end">
                   <Button size="sm" onClick={() => handleJoinSession(sessionItem)} disabled={joinSessionMutation.isPending}>
@@ -348,7 +385,7 @@ const GroupGamesPage = () => {
                   <p className="text-sm line-clamp-3">{game.description || "No description provided."}</p>
                 </CardContent>
                 <div className="p-4 border-t flex justify-end">
-                  <Button size="sm" onClick={() => handleCreateSession(game.id)} disabled={createSessionMutation.isPending}>
+                  <Button size="sm" onClick={() => setIsCreateSessionDialogOpen(true)}>
                     <PlayCircle className="h-4 w-4 mr-2" /> Create Session
                   </Button>
                 </div>

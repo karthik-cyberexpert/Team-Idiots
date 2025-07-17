@@ -29,7 +29,7 @@ serve(async (req) => {
       throw new Error("User not authenticated.");
     }
 
-    const { gameId } = await req.json();
+    const { gameId, maxPlayers, timeLimitMinutes } = await req.json();
     if (!gameId) {
       throw new Error("Game ID is required.");
     }
@@ -37,7 +37,13 @@ serve(async (req) => {
     // Create the game session
     const { data: sessionData, error: sessionError } = await supabase
       .from('game_sessions')
-      .insert({ game_id: gameId, host_id: user.id, status: 'waiting' })
+      .insert({
+        game_id: gameId,
+        host_id: user.id,
+        status: 'waiting',
+        max_players: maxPlayers || 2, // Default to 2 players if not provided
+        time_limit_minutes: timeLimitMinutes,
+      })
       .select()
       .single();
 
