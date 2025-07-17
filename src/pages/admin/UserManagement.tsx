@@ -112,7 +112,7 @@ const UserManagement = () => {
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the user
               and their associated data from our servers.
-            </description>
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
