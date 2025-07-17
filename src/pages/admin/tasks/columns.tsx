@@ -118,7 +118,8 @@ export const getColumns = (
               onClick={() => onDelete(task.id)}
             >
               Delete task
-            </DropdownMenuContent>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
         </DropdownMenu>
       )
     },
