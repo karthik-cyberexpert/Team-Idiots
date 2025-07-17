@@ -17,6 +17,7 @@ const profileFormSchema = z.object({
 });
 
 const passwordFormSchema = z.object({
+  oldPassword: z.string().min(1, { message: "Old password is required." }),
   newPassword: z.string().min(8, { message: "Password must be at least 8 characters." }),
   confirmPassword: z.string(),
 }).refine(data => data.newPassword === data.confirmPassword, {
@@ -38,7 +39,7 @@ const EditProfilePage = () => {
 
   const passwordForm = useForm<z.infer<typeof passwordFormSchema>>({
     resolver: zodResolver(passwordFormSchema),
-    defaultValues: { newPassword: '', confirmPassword: '' },
+    defaultValues: { oldPassword: '', newPassword: '', confirmPassword: '' },
   });
 
   const emailForm = useForm<z.infer<typeof emailFormSchema>>({
@@ -68,8 +69,14 @@ const EditProfilePage = () => {
 
   const updatePasswordMutation = useMutation({
     mutationFn: async (values: z.infer<typeof passwordFormSchema>) => {
-      const { error } = await supabase.auth.updateUser({ password: values.newPassword });
-      if (error) throw error;
+      const { error } = await supabase.functions.invoke("update-password", {
+        body: { oldPassword: values.oldPassword, newPassword: values.newPassword },
+      });
+      if (error) {
+        // The edge function might return a specific error message
+        const errorBody = await error.context.json();
+        throw new Error(errorBody.error || error.message);
+      }
     },
     onSuccess: () => {
       showSuccess("Password updated successfully!");
@@ -133,11 +140,18 @@ const EditProfilePage = () => {
       <Card>
         <CardHeader>
           <CardTitle>Change Password</CardTitle>
-          <CardDescription>Enter a new password for your account.</CardDescription>
+          <CardDescription>Enter your old password and a new password for your account.</CardDescription>
         </CardHeader>
         <Form {...passwordForm}>
           <form onSubmit={passwordForm.handleSubmit((v) => updatePasswordMutation.mutate(v))}>
             <CardContent className="space-y-4">
+              <FormField control={passwordForm.control} name="oldPassword" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Old Password</FormLabel>
+                  <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
               <FormField control={passwordForm.control} name="newPassword" render={({ field }) => (
                 <FormItem>
                   <FormLabel>New Password</FormLabel>
