@@ -53,6 +53,12 @@ export function UserNav() {
           <DropdownMenuItem onClick={() => navigate('/dashboard')}>
             Dashboard
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>
+            Edit Profile
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/dashboard/settings')}>
+            Settings
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>

@@ -17,7 +17,9 @@ import ChatPage from "./pages/ChatPage";
 import TasksPage from "./pages/TasksPage";
 import TaskManagement from "./pages/admin/TaskManagement";
 import CodeSpacePage from "./pages/CodeSpacePage";
-import DataManagementPage from "./pages/admin/DataManagementPage"; // Import the new page
+import DataManagementPage from "./pages/admin/DataManagementPage";
+import EditProfilePage from "./pages/EditProfilePage";
+import SettingsPage from "./pages/SettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -39,10 +41,12 @@ const App = () => (
                 <Route path="/dashboard/chat" element={<ChatPage />} />
                 <Route path="/dashboard/tasks" element={<TasksPage />} />
                 <Route path="/dashboard/codespace" element={<CodeSpacePage />} />
+                <Route path="/dashboard/profile" element={<EditProfilePage />} />
+                <Route path="/dashboard/settings" element={<SettingsPage />} />
                 <Route element={<AdminRoute />}>
                   <Route path="/admin/users" element={<UserManagement />} />
                   <Route path="/admin/tasks" element={<TaskManagement />} />
-                  <Route path="/admin/data-management" element={<DataManagementPage />} /> {/* New route */}
+                  <Route path="/admin/data-management" element={<DataManagementPage />} />
                 </Route>
               </Route>
             </Route>
