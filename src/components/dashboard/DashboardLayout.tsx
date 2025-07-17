@@ -10,17 +10,22 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 export function DashboardLayout() {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const [isMobileSheetOpen, setIsMobileSheetOpen] = React.useState(false); // New state for mobile sheet
   const isMobile = useIsMobile();
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
 
+  const handleMobileLinkClick = () => {
+    setIsMobileSheetOpen(false); // Close the sheet when a link is clicked
+  };
+
   if (isMobile) {
     return (
       <div className="flex min-h-screen w-full flex-col">
         <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
-          <Sheet>
+          <Sheet open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="shrink-0 md:hidden">
                 <Menu className="h-5 w-5" />
@@ -33,7 +38,7 @@ export function DashboardLayout() {
                   <Rocket className="h-6 w-6" />
                   <span>Team-Idiots</span>
                 </Link>
-                <SidebarNav isCollapsed={false} />
+                <SidebarNav isCollapsed={false} onLinkClick={handleMobileLinkClick} />
               </nav>
             </SheetContent>
           </Sheet>

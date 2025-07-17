@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText, MessageSquare, ListTodo } from "lucide-react"; // Import ListTodo icon
+import { Home, Users, FileText, MessageSquare, ListTodo } from "lucide-react";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -12,7 +12,12 @@ interface NavLink {
   adminOnly?: boolean;
 }
 
-export function SidebarNav({ isCollapsed }: { isCollapsed: boolean }) {
+interface SidebarNavProps {
+  isCollapsed: boolean;
+  onLinkClick?: () => void; // New optional prop
+}
+
+export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
   const { pathname } = useLocation();
   const { profile } = useAuth();
 
@@ -33,7 +38,7 @@ export function SidebarNav({ isCollapsed }: { isCollapsed: boolean }) {
       icon: <MessageSquare className="h-4 w-4" />,
     },
     {
-      href: "/dashboard/tasks", // New route for user tasks
+      href: "/dashboard/tasks",
       label: "Tasks",
       icon: <ListTodo className="h-4 w-4" />,
     },
@@ -44,7 +49,7 @@ export function SidebarNav({ isCollapsed }: { isCollapsed: boolean }) {
       adminOnly: true,
     },
     {
-      href: "/admin/tasks", // New route for admin task management
+      href: "/admin/tasks",
       label: "Task Management",
       icon: <ListTodo className="h-4 w-4" />,
       adminOnly: true,
@@ -71,6 +76,7 @@ export function SidebarNav({ isCollapsed }: { isCollapsed: boolean }) {
                     "h-9 w-9",
                     isActive && "dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white"
                   )}
+                  onClick={onLinkClick} // Call onLinkClick here
                 >
                   {link.icon}
                   <span className="sr-only">{link.label}</span>
@@ -92,6 +98,7 @@ export function SidebarNav({ isCollapsed }: { isCollapsed: boolean }) {
               isActive && "dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white",
               "justify-start"
             )}
+            onClick={onLinkClick} // Call onLinkClick here
           >
             {link.icon}
             <span className="ml-2">{link.label}</span>
