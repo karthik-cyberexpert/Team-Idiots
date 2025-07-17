@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -27,11 +27,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, addDays } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { CalendarIcon, Plus, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { showSuccess, showError } from "@/utils/toast";
-import { Task } from "@/types/task";
+import { Task, CustomAward } from "@/types/task";
 import {
   Select,
   SelectContent,
@@ -42,19 +42,23 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { User } from "@/types/user";
 
+const customAwardSchema = z.object({
+  xp: z.coerce.number().int().min(0, { message: "XP must be a positive number." }),
+  dueDays: z.coerce.number().int().min(0, { message: "Due days must be a positive number." }).nullable(),
+});
+
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }),
   description: z.string().optional(),
   assignedTo: z.string().uuid({ message: "Please select a user." }),
   dueDate: z.date().optional().nullable(),
-  customXpAward: z.coerce.number().int().min(0, { message: "XP must be a positive number." }).optional().nullable(),
-  customDueDays: z.coerce.number().int().min(0, { message: "Due days must be a positive number." }).optional().nullable(),
+  customAwards: z.array(customAwardSchema).optional(),
 }).superRefine((data, ctx) => {
-  if (data.customDueDays !== null && data.customDueDays !== undefined && data.dueDate !== null && data.dueDate !== undefined) {
+  if (data.customAwards && data.customAwards.length > 0 && data.dueDate !== null && data.dueDate !== undefined) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Cannot set both Due Date and Custom Due Days. Please choose one.",
-      path: ["customDueDays"],
+      message: "Cannot set both a specific Due Date and Custom Awards. Please choose one.",
+      path: ["dueDate"],
     });
   }
 });
@@ -72,19 +76,13 @@ const fetchAllUsers = async (): Promise<User[]> => {
 const updateTask = async (values: EditTaskFormValues & { taskId: string }) => {
   const { taskId, ...updateData } = values;
 
-  let finalDueDate = updateData.dueDate;
-  if (updateData.customDueDays !== null && updateData.customDueDays !== undefined) {
-    finalDueDate = addDays(new Date(), updateData.customDueDays);
-  }
-
   const { error } = await supabase
     .from("tasks")
     .update({
       title: updateData.title,
       description: updateData.description,
-      due_date: finalDueDate ? finalDueDate.toISOString() : null,
-      custom_xp_award: updateData.customXpAward,
-      custom_due_days: updateData.customDueDays,
+      due_date: updateData.dueDate ? updateData.dueDate.toISOString() : null,
+      custom_awards: updateData.customAwards && updateData.customAwards.length > 0 ? updateData.customAwards : null,
     })
     .eq("id", taskId);
 
@@ -101,8 +99,15 @@ interface EditTaskDialogProps {
 
 export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps) => {
   const queryClient = useQueryClient();
+  const [showCustomAwardsSection, setShowCustomAwardsSection] = React.useState(false);
+
   const form = useForm<EditTaskFormValues>({
     resolver: zodResolver(formSchema),
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "customAwards",
   });
 
   const { data: users, isLoading: usersLoading, error: usersError } = useQuery<User[]>({
@@ -115,11 +120,11 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
       form.reset({
         title: task.title,
         description: task.description || "",
-        assignedTo: task.assigned_to, // Set assignedTo from task
+        assignedTo: task.assigned_to,
         dueDate: task.due_date ? new Date(task.due_date) : null,
-        customXpAward: task.custom_xp_award,
-        customDueDays: task.custom_due_days,
+        customAwards: task.custom_awards || [],
       });
+      setShowCustomAwardsSection(!!task.custom_awards && task.custom_awards.length > 0);
     }
   }, [task, form]);
 
@@ -192,8 +197,8 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {usersLoading && <SelectItem value="loading" disabled>Loading users...</SelectItem>}
-                        {usersError && <SelectItem value="error" disabled>Error loading users</SelectItem>}
+                        {usersLoading && <SelectItem value="loading-users" disabled>Loading users...</SelectItem>}
+                        {usersError && <SelectItem value="error-loading-users" disabled>Error loading users</SelectItem>}
                         {users && users.map((user) => (
                           <SelectItem key={user.id} value={user.id}>
                             {user.full_name} ({user.email})
@@ -220,7 +225,7 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
                               "w-full pl-3 text-left font-normal",
                               !field.value && "text-muted-foreground"
                             )}
-                            disabled={form.watch("customDueDays") !== null && form.watch("customDueDays") !== undefined}
+                            disabled={showCustomAwardsSection}
                           >
                             {field.value ? (
                               format(field.value, "PPP")
@@ -244,45 +249,79 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="customDueDays"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Custom Due Days (Optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="e.g., 7 (days from now)"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                        value={field.value === null ? "" : field.value}
-                        disabled={form.watch("dueDate") !== null}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCustomAwardsSection(!showCustomAwardsSection)}
+                  className="w-full"
+                  disabled={form.watch("dueDate") !== null}
+                >
+                  {showCustomAwardsSection ? "Hide Custom XP Awards" : "Add Custom XP Awards"}
+                </Button>
+
+                {showCustomAwardsSection && (
+                  <div className="border p-4 rounded-md space-y-4">
+                    <p className="text-sm text-muted-foreground">Define multiple XP awards and optional due days for this task.</p>
+                    {fields.map((item, index) => (
+                      <div key={item.id} className="flex items-end gap-2">
+                        <FormField
+                          control={form.control}
+                          name={`customAwards.${index}.xp`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className={cn(index !== 0 && "sr-only")}>XP</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder="XP"
+                                  {...field}
+                                  onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                                  value={field.value === null ? "" : field.value}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`customAwards.${index}.dueDays`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className={cn(index !== 0 && "sr-only")}>Due Days</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder="Due Days (optional)"
+                                  {...field}
+                                  onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                                  value={field.value === null ? "" : field.value}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                          <XCircle className="h-5 w-5 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => append({ xp: 0, dueDays: null })}
+                      className="w-full"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Add Award
+                    </Button>
+                  </div>
                 )}
-              />
-              <FormField
-                control={form.control}
-                name="customXpAward"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Custom XP Award (Optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="e.g., 50"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                        value={field.value === null ? "" : field.value}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              </div>
+
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
                 <Button type="submit" disabled={mutation.isPending}>
