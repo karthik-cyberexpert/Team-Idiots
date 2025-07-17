@@ -56,10 +56,9 @@ const EditProfilePage = () => {
   const updateProfileMutation = useMutation({
     mutationFn: async (values: z.infer<typeof profileFormSchema>) => {
       if (!user) throw new Error("User not found");
-      const { error: authError } = await supabase.auth.updateUser({ data: { full_name: values.fullName } });
-      if (authError) throw authError;
-      const { error: profileError } = await supabase.from('profiles').update({ full_name: values.fullName }).eq('id', user.id);
-      if (profileError) throw profileError;
+      // The new database trigger will automatically update the profiles table.
+      const { error } = await supabase.auth.updateUser({ data: { full_name: values.fullName } });
+      if (error) throw error;
     },
     onSuccess: () => {
       showSuccess("Profile updated successfully!");
