@@ -23,7 +23,7 @@ const LoginPage = () => {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Welcome to Team-Idiots</CardTitle>
           <CardDescription>
-            Sign in or create an account to continue
+            Sign in to your account to continue
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -32,7 +32,8 @@ const LoginPage = () => {
             appearance={{ theme: ThemeSupa }}
             providers={[]}
             theme="light"
-            showLinks={true}
+            view="sign_in"
+            showLinks={false}
             redirectTo={`${window.location.origin}/dashboard`}
           />
            <div className="mt-4 text-center text-sm text-muted-foreground">
