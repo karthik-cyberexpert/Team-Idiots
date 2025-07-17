@@ -16,7 +16,8 @@ import NotesPage from "./pages/NotesPage";
 import ChatPage from "./pages/ChatPage";
 import TasksPage from "./pages/TasksPage";
 import TaskManagement from "./pages/admin/TaskManagement";
-import GroupGamesPage from "./pages/GroupGamesPage"; // Import the new GroupGamesPage
+import GroupGamesPage from "./pages/GroupGamesPage";
+import GameManagement from "./pages/admin/GameManagement"; // Import the new GameManagement page
 
 const queryClient = new QueryClient();
 
@@ -37,10 +38,11 @@ const App = () => (
                 <Route path="/dashboard/notes" element={<NotesPage />} />
                 <Route path="/dashboard/chat" element={<ChatPage />} />
                 <Route path="/dashboard/tasks" element={<TasksPage />} />
-                <Route path="/dashboard/games" element={<GroupGamesPage />} /> {/* New route for Group Games */}
+                <Route path="/dashboard/games" element={<GroupGamesPage />} />
                 <Route element={<AdminRoute />}>
                   <Route path="/admin/users" element={<UserManagement />} />
                   <Route path="/admin/tasks" element={<TaskManagement />} />
+                  <Route path="/admin/games" element={<GameManagement />} /> {/* New route for Game Management */}
                 </Route>
               </Route>
             </Route>

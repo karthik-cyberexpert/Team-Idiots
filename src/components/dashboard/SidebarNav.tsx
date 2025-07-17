@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText, MessageSquare, ListTodo, Gamepad2 } from "lucide-react";
+import { Home, Users, FileText, MessageSquare, ListTodo, Gamepad2, Settings } from "lucide-react"; // Added Settings icon
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -14,7 +14,7 @@ interface NavLink {
 
 interface SidebarNavProps {
   isCollapsed: boolean;
-  onLinkClick?: () => void; // New optional prop
+  onLinkClick?: () => void;
 }
 
 export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
@@ -43,7 +43,7 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       icon: <ListTodo className="h-4 w-4" />,
     },
     {
-      href: "/dashboard/games", // New link for Group Games
+      href: "/dashboard/games",
       label: "Group Games",
       icon: <Gamepad2 className="h-4 w-4" />,
     },
@@ -57,6 +57,12 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       href: "/admin/tasks",
       label: "Task Management",
       icon: <ListTodo className="h-4 w-4" />,
+      adminOnly: true,
+    },
+    {
+      href: "/admin/games", // New link for Game Management
+      label: "Game Management",
+      icon: <Gamepad2 className="h-4 w-4" />, // Using Gamepad2 icon for consistency
       adminOnly: true,
     },
   ];
@@ -81,7 +87,7 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
                     "h-9 w-9",
                     isActive && "dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white"
                   )}
-                  onClick={onLinkClick} // Call onLinkClick here
+                  onClick={onLinkClick}
                 >
                   {link.icon}
                   <span className="sr-only">{link.label}</span>
@@ -103,7 +109,7 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
               isActive && "dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white",
               "justify-start"
             )}
-            onClick={onLinkClick} // Call onLinkClick here
+            onClick={onLinkClick}
           >
             {link.icon}
             <span className="ml-2">{link.label}</span>
