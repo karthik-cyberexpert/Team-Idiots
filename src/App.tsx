@@ -12,10 +12,11 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
 import UserManagement from "./pages/admin/UserManagement";
 import AdminRoute from "./components/AdminRoute";
-import NotesPage from "./pages/NotesPage"; // Import the new NotesPage
+import NotesPage from "./pages/NotesPage";
 import ChatPage from "./pages/ChatPage";
 import TasksPage from "./pages/TasksPage";
 import TaskManagement from "./pages/admin/TaskManagement";
+import GroupGamesPage from "./pages/GroupGamesPage"; // Import the new GroupGamesPage
 
 const queryClient = new QueryClient();
 
@@ -33,9 +34,10 @@ const App = () => (
             <Route element={<ProtectedRoute />}>
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/dashboard/notes" element={<NotesPage />} /> {/* New route for Notes */}
+                <Route path="/dashboard/notes" element={<NotesPage />} />
                 <Route path="/dashboard/chat" element={<ChatPage />} />
                 <Route path="/dashboard/tasks" element={<TasksPage />} />
+                <Route path="/dashboard/games" element={<GroupGamesPage />} /> {/* New route for Group Games */}
                 <Route element={<AdminRoute />}>
                   <Route path="/admin/users" element={<UserManagement />} />
                   <Route path="/admin/tasks" element={<TaskManagement />} />
