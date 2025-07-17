@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText } from "lucide-react"; // Import FileText icon
+import { Home, Users, FileText, MessageSquare } from "lucide-react"; // Import MessageSquare icon
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -23,9 +23,14 @@ export function SidebarNav({ isCollapsed }: { isCollapsed: boolean }) {
       icon: <Home className="h-4 w-4" />,
     },
     {
-      href: "/dashboard/notes", // New route for notes
+      href: "/dashboard/notes",
       label: "Notes",
-      icon: <FileText className="h-4 w-4" />, // Icon for notes
+      icon: <FileText className="h-4 w-4" />,
+    },
+    {
+      href: "/dashboard/chat", // New route for chat
+      label: "Chat",
+      icon: <MessageSquare className="h-4 w-4" />, // Icon for chat
     },
     {
       href: "/admin/users",
