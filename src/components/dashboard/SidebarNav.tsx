@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users } from "lucide-react";
+import { Home, Users, FileText } from "lucide-react"; // Import FileText icon
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -21,6 +21,11 @@ export function SidebarNav({ isCollapsed }: { isCollapsed: boolean }) {
       href: "/dashboard",
       label: "Dashboard",
       icon: <Home className="h-4 w-4" />,
+    },
+    {
+      href: "/dashboard/notes", // New route for notes
+      label: "Notes",
+      icon: <FileText className="h-4 w-4" />, // Icon for notes
     },
     {
       href: "/admin/users",

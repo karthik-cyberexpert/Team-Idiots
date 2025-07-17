@@ -12,6 +12,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
 import UserManagement from "./pages/admin/UserManagement";
 import AdminRoute from "./components/AdminRoute";
+import NotesPage from "./pages/NotesPage"; // Import the new NotesPage
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route element={<ProtectedRoute />}>
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/dashboard/notes" element={<NotesPage />} /> {/* New route for Notes */}
                 <Route element={<AdminRoute />}>
                   <Route path="/admin/users" element={<UserManagement />} />
                 </Route>

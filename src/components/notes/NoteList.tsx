@@ -1,0 +1,144 @@
+"use client";
+
+import * as React from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlusCircle, FileText, Trash2, Edit } from "lucide-react";
+import { showSuccess, showError } from "@/utils/toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface Note {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+const fetchNotes = async (): Promise<Note[]> => {
+  const { data, error } = await supabase
+    .from("notes")
+    .select("*")
+    .order("updated_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+const deleteNote = async (id: string) => {
+  const { error } = await supabase.from("notes").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+};
+
+interface NoteListProps {
+  onSelectNote: (note: Note | null) => void;
+}
+
+export const NoteList = ({ onSelectNote }: NoteListProps) => {
+  const queryClient = useQueryClient();
+  const { data: notes, isLoading, error } = useQuery<Note[]>({
+    queryKey: ["notes"],
+    queryFn: fetchNotes,
+  });
+
+  const [noteToDelete, setNoteToDelete] = React.useState<string | null>(null);
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteNote,
+    onSuccess: () => {
+      showSuccess("Note deleted successfully.");
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      setNoteToDelete(null);
+    },
+    onError: (err) => {
+      showError(err.message);
+      setNoteToDelete(null);
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-red-500">Error loading notes: {error.message}</div>;
+  }
+
+  return (
+    <>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Your Notes</h2>
+        <Button onClick={() => onSelectNote(null)}>
+          <PlusCircle className="mr-2 h-4 w-4" /> New Note
+        </Button>
+      </div>
+      {notes && notes.length > 0 ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {notes.map((note) => (
+            <Card key={note.id} className="flex flex-col">
+              <CardHeader>
+                <CardTitle className="text-lg">{note.title}</CardTitle>
+                <CardDescription className="text-sm text-muted-foreground">
+                  Last updated: {new Date(note.updated_at).toLocaleDateString()}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm line-clamp-3">{note.content || "No content"}</p>
+              </CardContent>
+              <div className="p-4 border-t flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => onSelectNote(note)}>
+                  <Edit className="h-4 w-4 mr-2" /> Edit
+                </Button>
+                <Button variant="destructive" size="sm" onClick={() => setNoteToDelete(note.id)}>
+                  <Trash2 className="h-4 w-4 mr-2" /> Delete
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-10">
+          <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <p className="text-lg text-muted-foreground">No notes yet. Start by creating a new one!</p>
+        </div>
+      )}
+
+      <AlertDialog open={!!noteToDelete} onOpenChange={() => setNoteToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your note.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => noteToDelete && deleteMutation.mutate(noteToDelete)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Continue"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
