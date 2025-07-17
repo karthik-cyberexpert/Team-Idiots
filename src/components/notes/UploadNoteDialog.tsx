@@ -29,14 +29,22 @@ import { FileUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthProvider"; // Import useAuth
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_FILE_TYPES = ["application/pdf", "text/plain", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]; // PDF, TXT, DOC, DOCX
+const ACCEPTED_FILE_TYPES = [
+  "application/pdf",
+  "text/plain",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "image/png", // Added PNG
+  "image/jpeg", // Added JPEG
+  "image/jpg",  // Added JPG
+];
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }),
   document: z.any()
     .refine((file) => file?.length > 0, "Document is required.")
     .refine((file) => file?.[0]?.size <= MAX_FILE_SIZE, `File size should be less than ${MAX_FILE_SIZE / (1024 * 1024)}MB.`)
-    .refine((file) => ACCEPTED_FILE_TYPES.includes(file?.[0]?.type), "Only PDF, TXT, DOC, DOCX files are allowed."),
+    .refine((file) => ACCEPTED_FILE_TYPES.includes(file?.[0]?.type), "Only PDF, TXT, DOC, DOCX, PNG, JPG, JPEG files are allowed."),
 });
 
 type UploadNoteFormValues = z.infer<typeof formSchema>;
