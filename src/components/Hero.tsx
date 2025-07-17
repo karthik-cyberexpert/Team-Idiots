@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom"; // Import Link
 
 const Hero = () => {
   return (
@@ -11,8 +12,10 @@ const Hero = () => {
         The best place for your team to collaborate and build amazing things.
         Get started by logging in.
       </p>
-      <Button size="lg">
-        Login <ArrowRight className="ml-2 h-5 w-5" />
+      <Button size="lg" asChild> {/* Use asChild to pass props to Link */}
+        <Link to="/login"> {/* Link to the new login page */}
+          Login <ArrowRight className="ml-2 h-5 w-5" />
+        </Link>
       </Button>
     </section>
   );
