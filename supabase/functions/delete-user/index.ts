@@ -23,14 +23,29 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
+    // Manually cascade delete all data related to the user
+    await supabaseAdmin.from('messages').delete().eq('user_id', userId)
+    await supabaseAdmin.from('notes').delete().eq('user_id', userId)
+    await supabaseAdmin.from('code_documents').delete().eq('user_id', userId)
+    await supabaseAdmin.from('tasks').delete().eq('assigned_to', userId)
+    await supabaseAdmin.from('tasks').delete().eq('assigned_by', userId)
+    await supabaseAdmin.from('xp_history').delete().eq('user_id', userId)
+    await supabaseAdmin.from('game_session_participants').delete().eq('user_id', userId)
+    await supabaseAdmin.from('game_sessions').delete().eq('host_id', userId)
+    await supabaseAdmin.from('games').delete().eq('uploaded_by', userId)
+    
+    // Delete the profile itself
+    await supabaseAdmin.from('profiles').delete().eq('id', userId)
 
-    if (error) {
-      throw error
+    // Finally, delete the user from the auth schema
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId)
+
+    if (authError) {
+      throw authError
     }
 
     return new Response(
-      JSON.stringify({ message: "User deleted successfully" }),
+      JSON.stringify({ message: "User and all related data deleted successfully" }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
