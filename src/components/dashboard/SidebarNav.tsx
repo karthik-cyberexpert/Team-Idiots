@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText, MessageSquare, ListTodo, Gamepad2, Code } from "lucide-react"; // Added Code icon
+import { Home, Users, FileText, MessageSquare, ListTodo, Code } from "lucide-react"; // Removed Gamepad2 icon
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -43,12 +43,7 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       icon: <ListTodo className="h-4 w-4" />,
     },
     {
-      href: "/dashboard/games",
-      label: "Group Games",
-      icon: <Gamepad2 className="h-4 w-4" />,
-    },
-    {
-      href: "/dashboard/codespace", // New link for Code Space
+      href: "/dashboard/codespace",
       label: "Code Space",
       icon: <Code className="h-4 w-4" />,
     },
@@ -62,12 +57,6 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       href: "/admin/tasks",
       label: "Task Management",
       icon: <ListTodo className="h-4 w-4" />,
-      adminOnly: true,
-    },
-    {
-      href: "/admin/games",
-      label: "Game Management",
-      icon: <Gamepad2 className="h-4 w-4" />,
       adminOnly: true,
     },
   ];

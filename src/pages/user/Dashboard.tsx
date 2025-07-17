@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, MessageSquare, ListTodo, Gamepad2, Code } from "lucide-react"; // Added Code icon
+import { FileText, MessageSquare, ListTodo, Code } from "lucide-react"; // Removed Gamepad2 icon
 
 const UserDashboard = () => {
   const userFeatures = [
@@ -21,12 +21,6 @@ const UserDashboard = () => {
       description: "View and manage tasks assigned to you.",
       icon: <ListTodo className="h-8 w-8 text-primary" />,
       link: "/dashboard/tasks",
-    },
-    {
-      title: "Group Games",
-      description: "Join or create sessions to play games with your team.",
-      icon: <Gamepad2 className="h-8 w-8 text-primary" />,
-      link: "/dashboard/games",
     },
     {
       title: "Code Space",

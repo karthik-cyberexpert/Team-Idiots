@@ -16,9 +16,7 @@ import NotesPage from "./pages/NotesPage";
 import ChatPage from "./pages/ChatPage";
 import TasksPage from "./pages/TasksPage";
 import TaskManagement from "./pages/admin/TaskManagement";
-import GroupGamesPage from "./pages/GroupGamesPage";
-import GameManagement from "./pages/admin/GameManagement";
-import CodeSpacePage from "./pages/CodeSpacePage"; // Import the new CodeSpacePage
+import CodeSpacePage from "./pages/CodeSpacePage";
 
 const queryClient = new QueryClient();
 
@@ -39,12 +37,10 @@ const App = () => (
                 <Route path="/dashboard/notes" element={<NotesPage />} />
                 <Route path="/dashboard/chat" element={<ChatPage />} />
                 <Route path="/dashboard/tasks" element={<TasksPage />} />
-                <Route path="/dashboard/games" element={<GroupGamesPage />} />
-                <Route path="/dashboard/codespace" element={<CodeSpacePage />} /> {/* New route for Code Space */}
+                <Route path="/dashboard/codespace" element={<CodeSpacePage />} />
                 <Route element={<AdminRoute />}>
                   <Route path="/admin/users" element={<UserManagement />} />
                   <Route path="/admin/tasks" element={<TaskManagement />} />
-                  <Route path="/admin/games" element={<GameManagement />} />
                 </Route>
               </Route>
             </Route>
