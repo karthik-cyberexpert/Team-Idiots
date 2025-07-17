@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, FileText, Trash2, Edit, FileDown, FileUp } from "lucide-react"; // Added FileUp
+import { PlusCircle, FileText, Trash2, Edit, FileDown } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import {
   AlertDialog,
@@ -18,7 +18,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UploadNoteDialog } from "./UploadNoteDialog";
 
 interface Note {
   id: string;
@@ -62,7 +61,6 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
   });
 
   const [noteToDelete, setNoteToDelete] = React.useState<string | null>(null);
-  const [isUploadNoteDialogOpen, setIsUploadNoteDialogOpen] = React.useState(false);
 
   const deleteMutation = useMutation({
     mutationFn: deleteNote,
@@ -93,16 +91,11 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
 
   return (
     <>
-      <UploadNoteDialog open={isUploadNoteDialogOpen} onOpenChange={setIsUploadNoteDialogOpen} />
-
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Your Notes</h2>
         <div className="flex gap-2">
           <Button onClick={() => onSelectNote(null)}>
             <PlusCircle className="mr-2 h-4 w-4" /> New Note
-          </Button>
-          <Button variant="outline" onClick={() => setIsUploadNoteDialogOpen(true)}>
-            <FileUp className="mr-2 h-4 w-4" /> Upload Note
           </Button>
         </div>
       </div>
