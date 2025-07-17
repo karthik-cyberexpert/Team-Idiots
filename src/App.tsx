@@ -9,6 +9,9 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import { AuthProvider } from "./contexts/AuthProvider";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { DashboardLayout } from "./components/dashboard/DashboardLayout";
+import UserManagement from "./pages/admin/UserManagement";
+import AdminRoute from "./components/AdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -24,7 +27,12 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             
             <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route element={<DashboardLayout />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route element={<AdminRoute />}>
+                  <Route path="/admin/users" element={<UserManagement />} />
+                </Route>
+              </Route>
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
