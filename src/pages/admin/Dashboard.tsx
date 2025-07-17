@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, ListTodo } from "lucide-react"; // Removed Gamepad2
+import { Users, ListTodo, Database } from "lucide-react";
 
 const AdminDashboard = () => {
   const adminFeatures = [
@@ -15,6 +15,12 @@ const AdminDashboard = () => {
       description: "Oversee and assign tasks to team members.",
       icon: <ListTodo className="h-8 w-8 text-primary" />,
       link: "/admin/tasks",
+    },
+    {
+      title: "Data Management",
+      description: "Clear chat history, notes, and other non-user data.",
+      icon: <Database className="h-8 w-8 text-primary" />,
+      link: "/admin/data-management",
     },
   ];
 

@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText, MessageSquare, ListTodo, Code } from "lucide-react"; // Removed Gamepad2 icon
+import { Home, Users, FileText, MessageSquare, ListTodo, Code, Database } from "lucide-react";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -57,6 +57,12 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       href: "/admin/tasks",
       label: "Task Management",
       icon: <ListTodo className="h-4 w-4" />,
+      adminOnly: true,
+    },
+    {
+      href: "/admin/data-management",
+      label: "Data Management",
+      icon: <Database className="h-4 w-4" />,
       adminOnly: true,
     },
   ];

@@ -17,6 +17,7 @@ import ChatPage from "./pages/ChatPage";
 import TasksPage from "./pages/TasksPage";
 import TaskManagement from "./pages/admin/TaskManagement";
 import CodeSpacePage from "./pages/CodeSpacePage";
+import DataManagementPage from "./pages/admin/DataManagementPage"; // Import the new page
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
                 <Route element={<AdminRoute />}>
                   <Route path="/admin/users" element={<UserManagement />} />
                   <Route path="/admin/tasks" element={<TaskManagement />} />
+                  <Route path="/admin/data-management" element={<DataManagementPage />} /> {/* New route */}
                 </Route>
               </Route>
             </Route>
