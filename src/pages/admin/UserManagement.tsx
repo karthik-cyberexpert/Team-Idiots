@@ -61,11 +61,11 @@ const UserManagement = () => {
     },
   });
 
-  const handleDeleteRequest = (userId: string) => {
+  const handleDeleteRequest = React.useCallback((userId: string) => {
     setUserToDelete(userId);
-  };
+  }, []);
 
-  const columns = React.useMemo(() => getColumns(handleDeleteRequest), []);
+  const columns = React.useMemo(() => getColumns(handleDeleteRequest), [handleDeleteRequest]);
 
   if (isLoading) {
     return (
