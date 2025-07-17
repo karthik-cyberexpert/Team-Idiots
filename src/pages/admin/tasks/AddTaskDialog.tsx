@@ -187,8 +187,8 @@ export const AddTaskDialog = ({ open, onOpenChange }: AddTaskDialogProps) => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {usersLoading && <SelectItem value="" disabled>Loading users...</SelectItem>}
-                      {usersError && <SelectItem value="" disabled>Error loading users</SelectItem>}
+                      {usersLoading && <SelectItem value="loading" disabled>Loading users...</SelectItem>}
+                      {usersError && <SelectItem value="error" disabled>Error loading users</SelectItem>}
                       {users && users.map((user) => (
                         <SelectItem key={user.id} value={user.id}>
                           {user.full_name} ({user.email})

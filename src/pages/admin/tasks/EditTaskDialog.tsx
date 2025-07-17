@@ -32,10 +32,20 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { showSuccess, showError } from "@/utils/toast";
 import { Task } from "@/types/task";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { User } from "@/types/user";
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }),
   description: z.string().optional(),
+  assignedTo: z.string().uuid({ message: "Please select a user." }),
   dueDate: z.date().optional().nullable(),
   customXpAward: z.coerce.number().int().min(0, { message: "XP must be a positive number." }).optional().nullable(),
   customDueDays: z.coerce.number().int().min(0, { message: "Due days must be a positive number." }).optional().nullable(),
@@ -50,6 +60,14 @@ const formSchema = z.object({
 });
 
 type EditTaskFormValues = z.infer<typeof formSchema>;
+
+const fetchAllUsers = async (): Promise<User[]> => {
+  const { data, error } = await supabase.functions.invoke("get-users");
+  if (error) {
+    throw new Error(`Failed to fetch users: ${error.message}`);
+  }
+  return data.users || [];
+};
 
 const updateTask = async (values: EditTaskFormValues & { taskId: string }) => {
   const { taskId, ...updateData } = values;
@@ -87,11 +105,17 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
     resolver: zodResolver(formSchema),
   });
 
+  const { data: users, isLoading: usersLoading, error: usersError } = useQuery<User[]>({
+    queryKey: ["allUsers"],
+    queryFn: fetchAllUsers,
+  });
+
   React.useEffect(() => {
     if (task) {
       form.reset({
         title: task.title,
         description: task.description || "",
+        assignedTo: task.assigned_to, // Set assignedTo from task
         dueDate: task.due_date ? new Date(task.due_date) : null,
         customXpAward: task.custom_xp_award,
         customDueDays: task.custom_due_days,
@@ -151,6 +175,32 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
                     <FormControl>
                       <Textarea placeholder="Provide details about the task..." {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="assignedTo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assign To</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a user" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {usersLoading && <SelectItem value="loading" disabled>Loading users...</SelectItem>}
+                        {usersError && <SelectItem value="error" disabled>Error loading users</SelectItem>}
+                        {users && users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.full_name} ({user.email})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
