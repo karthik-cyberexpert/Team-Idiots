@@ -29,8 +29,8 @@ const fetchAllTasks = async (): Promise<Task[]> => {
     .from("tasks")
     .select(`
       *,
-      profiles!tasks_assigned_to_fkey(full_name),
-      assigner_profile:profiles!tasks_assigned_by_fkey(full_name)
+      profiles!tasks_assigned_to_profile_fkey(full_name),
+      assigner_profile:profiles!tasks_assigned_by_profile_fkey(full_name)
     `)
     .order("created_at", { ascending: false });
   if (error) {

@@ -17,8 +17,8 @@ const fetchUserTasks = async (userId: string): Promise<Task[]> => {
     .from("tasks")
     .select(`
       *,
-      profiles!tasks_assigned_to_fkey(full_name),
-      assigner_profile:profiles!tasks_assigned_by_fkey(full_name)
+      profiles!tasks_assigned_to_profile_fkey(full_name),
+      assigner_profile:profiles!tasks_assigned_by_profile_fkey(full_name)
     `)
     .eq("assigned_to", userId)
     .order("due_date", { ascending: true, nullsFirst: false });
