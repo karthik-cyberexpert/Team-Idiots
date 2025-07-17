@@ -50,9 +50,6 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => navigate('/dashboard')}>
-            Dashboard
-          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>
             Edit Profile
           </DropdownMenuItem>
