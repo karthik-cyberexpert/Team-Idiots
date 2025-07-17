@@ -42,8 +42,11 @@ const formSchema = z.object({
 type NoteFormValues = z.infer<typeof formSchema>;
 
 const createNote = async (values: NoteFormValues) => {
-  const { data, error } = await supabase.from("notes").insert(values).select().single();
+  const { data, error } = await supabase.functions.invoke("create-note", {
+    body: { note: values },
+  });
   if (error) throw new Error(error.message);
+  if (data.error) throw new Error(data.error);
   return data;
 };
 
@@ -164,7 +167,7 @@ export const NoteEditor = ({ note, onBack }: NoteEditorProps) => {
             )}
           />
           {!isDocumentNote && (
-            <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+            <Button type="submit" disabled={createMutation.isPending || updateMutation.ispending}>
               {note ? (updateMutation.isPending ? "Saving..." : "Save Changes") : (createMutation.isPending ? "Creating..." : "Create Note")}
             </Button>
           )}

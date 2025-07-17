@@ -54,6 +54,7 @@ const uploadDocumentNote = async (values: UploadNoteFormValues) => {
   const fileName = `${Date.now()}-${file.name}`;
   const filePath = `public/${fileName}`;
 
+  // 1. Upload the file to storage
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from('note-documents')
     .upload(filePath, file, {
@@ -65,6 +66,7 @@ const uploadDocumentNote = async (values: UploadNoteFormValues) => {
     throw new Error(`Failed to upload document: ${uploadError.message}`);
   }
 
+  // 2. Get the public URL
   const { data: publicUrlData } = supabase.storage
     .from('note-documents')
     .getPublicUrl(uploadData.path);
@@ -73,16 +75,26 @@ const uploadDocumentNote = async (values: UploadNoteFormValues) => {
     throw new Error("Failed to get public URL for the uploaded document.");
   }
 
-  const { error: insertError } = await supabase.from("notes").insert({
+  // 3. Create the note entry via the Edge Function
+  const notePayload = {
     title: values.title,
     content: `Document: ${file.name}`,
     document_url: publicUrlData.publicUrl,
-    // user_id is no longer sent from the client; the database default will handle it.
+  };
+
+  const { data: functionData, error: functionError } = await supabase.functions.invoke("create-note", {
+    body: { note: notePayload },
   });
 
-  if (insertError) {
+  if (functionError) {
+    // If function fails, try to clean up the uploaded file
     await supabase.storage.from('note-documents').remove([uploadData.path]);
-    throw new Error(`Failed to create note entry: ${insertError.message}`);
+    throw new Error(`Failed to create note entry: ${functionError.message}`);
+  }
+  
+  if (functionData.error) {
+    await supabase.storage.from('note-documents').remove([uploadData.path]);
+    throw new Error(`Failed to create note entry: ${functionData.error}`);
   }
 };
 
