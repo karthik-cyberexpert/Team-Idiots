@@ -31,3 +31,6 @@ const Hero = () => {
       </Button>
     </section>
   );
+};
+
+export default Hero;
