@@ -102,7 +102,7 @@ const UserManagement = () => {
           <h1 className="text-2xl sm:text-3xl font-bold">User Management</h1>
           <Button onClick={() => setIsAddUserDialogOpen(true)}>Add User</Button>
         </div>
-        <DataTable columns={columns} data={users || []} filterColumnId="email" filterPlaceholder="Filter by email..." />
+        <DataTable columns={columns} data={users || []} />
       </div>
 
       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
