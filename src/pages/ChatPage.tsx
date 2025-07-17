@@ -76,6 +76,9 @@ const ChatPage = () => {
     enabled: !!selectedChannelId,
   });
 
+  // Define selectedChannel here
+  const selectedChannel = channels?.find(channel => channel.id === selectedChannelId);
+
   const sendMutation = useMutation({
     mutationFn: sendMessage,
     onSuccess: () => {
