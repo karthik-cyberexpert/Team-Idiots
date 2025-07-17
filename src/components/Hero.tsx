@@ -14,7 +14,9 @@ const Hero = () => {
       </p>
       <Button size="lg" asChild> {/* Use asChild to pass props to Link */}
         <Link to="/login"> {/* Link to the new login page */}
-          Login <ArrowRight className="ml-2 h-5 w-5" />
+          <span> {/* Wrap content in a span */}
+            Login <ArrowRight className="ml-2 h-5 w-5" />
+          </span>
         </Link>
       </Button>
     </section>
