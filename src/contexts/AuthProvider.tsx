@@ -44,7 +44,7 @@ const calculateLevelAndBadge = (xp: number) => {
 };
 
 
-export const AuthProvider = ({ children }: { ReactNode }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -98,29 +98,10 @@ export const AuthProvider = ({ children }: { ReactNode }) => {
       setLoading(false);
     });
 
-    // Listen for changes in the 'profiles' table for the current user
-    const profileChannel = supabase
-      .channel('public:profiles')
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'profiles',
-        filter: `id=eq.${user?.id}`,
-      }, (payload) => {
-        const updatedProfile = payload.new as Profile;
-        setProfile(updatedProfile);
-        const { level, badge } = calculateLevelAndBadge(updatedProfile.xp);
-        setUserLevel(level);
-        setUserBadge(badge);
-      })
-      .subscribe();
-
-
     return () => {
       authListener.subscription.unsubscribe();
-      supabase.removeChannel(profileChannel);
     };
-  }, [user?.id]); // Re-run effect if user ID changes
+  }, []);
 
   const signOut = async () => {
     await supabase.auth.signOut();
