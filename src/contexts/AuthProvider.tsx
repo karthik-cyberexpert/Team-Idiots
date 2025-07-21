@@ -53,6 +53,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userBadge, setUserBadge] = useState("Bronze");
 
   useEffect(() => {
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        if (profileData) {
+          setProfile(profileData as Profile);
+          const { level, badge } = calculateLevelAndBadge(profileData.xp);
+          setUserLevel(level);
+          setUserBadge(badge);
+        }
+      }
+      setLoading(false);
+    };
+
+    getInitialSession();
+
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -73,7 +96,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUserLevel(1);
         setUserBadge("Bronze");
       }
-      setLoading(false);
     });
 
     return () => {
