@@ -51,9 +51,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userBadge, setUserBadge] = useState("Bronze");
 
   useEffect(() => {
-    let isMounted = true;
+    let isMounted = true; // Flag to prevent state updates on unmounted component
 
-    const fetchSessionAndProfile = async (currentSession: Session | null) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
       if (!isMounted) return;
 
       setSession(currentSession);
@@ -86,28 +86,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
       if (isMounted) {
-        setLoading(false); // Ensure loading is set to false only after all async ops are done
+        setLoading(false); // Set loading to false ONLY after session and profile are processed
         console.log("AuthProvider: Loading set to false. Current session:", currentSession);
-      }
-    };
-
-    // Initial session check using getSession()
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      if (isMounted) {
-        fetchSessionAndProfile(initialSession);
-      }
-    }).catch(error => {
-      console.error("AuthProvider: Error getting initial session:", error);
-      if (isMounted) {
-        setLoading(false); // Ensure loading is false even on error
-      }
-    });
-
-    // Listen for auth state changes (for subsequent events like login/logout)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
-      if (isMounted) {
-        // For subsequent changes (login, logout, token refresh), update state
-        fetchSessionAndProfile(currentSession);
       }
     });
 
@@ -115,7 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isMounted = false;
       subscription?.unsubscribe();
     };
-  }, []);
+  }, []); // Empty dependency array
 
   // Real-time profile updates for XP, etc. (This is separate and fine)
   useEffect(() => {
