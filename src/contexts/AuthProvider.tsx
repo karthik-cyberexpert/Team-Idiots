@@ -50,63 +50,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userLevel, setUserLevel] = useState(1);
   const [userBadge, setUserBadge] = useState("Bronze");
 
-  // Helper function to update auth and profile states
-  const updateAuthAndProfileState = async (currentSession: Session | null) => {
-    setSession(currentSession);
-    setUser(currentSession?.user ?? null);
-
-    if (currentSession?.user) {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentSession.user.id)
-        .single();
-      
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
-        setProfile(null); // Ensure profile is null on error
-      } else if (profileData) {
-        const typedProfile = profileData as Profile;
-        setProfile(typedProfile);
-        const { level, badge } = calculateLevelAndBadge(typedProfile.xp);
-        setUserLevel(level);
-        setUserBadge(badge);
-      }
-    } else {
-      setProfile(null);
-      setUserLevel(1);
-      setUserBadge("Bronze");
-    }
-  };
-
   useEffect(() => {
     let isMounted = true; // Flag to prevent state updates on unmounted component
 
-    const initializeAuth = async () => {
-      // 1. Get initial session
-      const { data: { session: initialSession } } = await supabase.auth.getSession();
-      if (isMounted) {
-        await updateAuthAndProfileState(initialSession);
-        setLoading(false); // Set loading to false after initial session is processed
+    const handleAuthStateChange = async (_event: string, currentSession: Session | null) => {
+      if (!isMounted) return; // Prevent state updates if component unmounted
+
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+
+      if (currentSession?.user) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentSession.user.id)
+          .single();
+        
+        if (isMounted) { // Check mount status again before setting state
+          if (profileError) {
+            console.error("Error fetching profile:", profileError);
+            setProfile(null); // Ensure profile is null on error
+          } else if (profileData) {
+            const typedProfile = profileData as Profile;
+            setProfile(typedProfile);
+            const { level, badge } = calculateLevelAndBadge(typedProfile.xp);
+            setUserLevel(level);
+            setUserBadge(badge);
+          }
+        }
+      } else {
+        if (isMounted) { // Check mount status again before setting state
+          setProfile(null);
+          setUserLevel(1);
+          setUserBadge("Bronze");
+        }
+      }
+      if (isMounted) { // Set loading to false ONLY after session and profile are processed
+        setLoading(false);
       }
     };
 
-    // 2. Set up listener for subsequent changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
-      if (isMounted) {
-        await updateAuthAndProfileState(currentSession);
-        // No need to set loading to false here, it's already done by initializeAuth
-        // This listener handles changes *after* the initial load
-      }
-    });
+    // Subscribe to auth state changes. This listener fires immediately with the current session.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-    initializeAuth(); // Call immediately on mount
-
+    // Cleanup subscription on component unmount
     return () => {
       isMounted = false;
       subscription?.unsubscribe();
     };
-  }, []); // Empty dependency array
+  }, []); // Empty dependency array means this runs once on mount
 
   // Real-time profile updates for XP, etc. (This is separate and fine)
   useEffect(() => {
