@@ -51,10 +51,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userBadge, setUserBadge] = useState("Bronze");
 
   useEffect(() => {
-    let isMounted = true; // Flag to prevent state updates on unmounted component
+    let isMounted = true;
 
-    const handleAuthStateChange = async (_event: string, currentSession: Session | null) => {
-      if (!isMounted) return; // Prevent state updates if component unmounted
+    const fetchSessionAndProfile = async (currentSession: Session | null) => {
+      if (!isMounted) return;
 
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
@@ -66,10 +66,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           .eq('id', currentSession.user.id)
           .single();
         
-        if (isMounted) { // Check mount status again before setting state
+        if (isMounted) {
           if (profileError) {
             console.error("Error fetching profile:", profileError);
-            setProfile(null); // Ensure profile is null on error
+            setProfile(null);
           } else if (profileData) {
             const typedProfile = profileData as Profile;
             setProfile(typedProfile);
@@ -79,26 +79,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         }
       } else {
-        if (isMounted) { // Check mount status again before setting state
+        if (isMounted) {
           setProfile(null);
           setUserLevel(1);
           setUserBadge("Bronze");
         }
       }
-      if (isMounted) { // Set loading to false ONLY after session and profile are processed
-        setLoading(false);
+      if (isMounted) {
+        setLoading(false); // Ensure loading is set to false only after all async ops are done
+        console.log("AuthProvider: Loading set to false. Current session:", currentSession);
       }
     };
 
-    // Subscribe to auth state changes. This listener fires immediately with the current session.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+    // Initial session check using getSession()
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      if (isMounted) {
+        fetchSessionAndProfile(initialSession);
+      }
+    }).catch(error => {
+      console.error("AuthProvider: Error getting initial session:", error);
+      if (isMounted) {
+        setLoading(false); // Ensure loading is false even on error
+      }
+    });
 
-    // Cleanup subscription on component unmount
+    // Listen for auth state changes (for subsequent events like login/logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      if (isMounted) {
+        // For subsequent changes (login, logout, token refresh), update state
+        fetchSessionAndProfile(currentSession);
+      }
+    });
+
     return () => {
       isMounted = false;
       subscription?.unsubscribe();
     };
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
   // Real-time profile updates for XP, etc. (This is separate and fine)
   useEffect(() => {

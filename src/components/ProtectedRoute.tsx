@@ -6,11 +6,6 @@ import React from 'react';
 const ProtectedRoute = () => {
   const { session, loading } = useAuth();
 
-  // Add a console log to help debug the state
-  React.useEffect(() => {
-    console.log("ProtectedRoute state: loading =", loading, "session =", session);
-  }, [loading, session]);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
