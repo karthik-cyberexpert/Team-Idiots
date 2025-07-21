@@ -72,15 +72,36 @@ const TasksPage = () => {
   const updateStatusMutation = useMutation({
     mutationFn: ({ taskId, status }: { taskId: string; status: 'waiting_for_approval' | 'pending' }) =>
       updateTaskStatus(taskId, status),
+    onMutate: async ({ taskId, status }) => {
+      // Cancel any outgoing refetches for the tasks query
+      await queryClient.cancelQueries({ queryKey: ["userTasks", user?.id] });
+
+      // Snapshot the previous value
+      const previousTasks = queryClient.getQueryData<Task[]>(["userTasks", user?.id]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData<Task[]>(["userTasks", user?.id], (old) =>
+        old?.map((task) =>
+          task.id === taskId ? { ...task, status: status, updated_at: new Date().toISOString() } : task
+        )
+      );
+
+      return { previousTasks };
+    },
+    onError: (err, variables, context) => {
+      showError(err.message);
+      // Rollback to the previous value on error
+      queryClient.setQueryData(["userTasks", user?.id], context?.previousTasks);
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure data is in sync
+      queryClient.invalidateQueries({ queryKey: ["userTasks", user?.id] });
+    },
     onSuccess: (data, variables) => {
       const message = variables.status === 'waiting_for_approval' 
         ? "Task submitted for approval!"
         : "Task status updated.";
       showSuccess(message);
-      queryClient.invalidateQueries({ queryKey: ["userTasks", user?.id] });
-    },
-    onError: (err) => {
-      showError(err.message);
     },
   });
 

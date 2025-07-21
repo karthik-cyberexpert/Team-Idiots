@@ -101,17 +101,49 @@ const TaskManagement = () => {
 
   const updateStatusMutation = useMutation({
     mutationFn: updateTaskStatusByAdmin,
-    onSuccess: (_, variables) => {
-      showSuccess(`Task has been ${variables.status}.`);
-      queryClient.invalidateQueries({ queryKey: ["adminTasks", "userTasks"] });
+    onMutate: async ({ taskId, status }) => {
+      // Cancel any outgoing refetches for the tasks query
+      await queryClient.cancelQueries({ queryKey: ["adminTasks"] });
+      await queryClient.cancelQueries({ queryKey: ["userTasks"] });
+      await queryClient.cancelQueries({ queryKey: ["xpHistory"] });
+      await queryClient.cancelQueries({ queryKey: ["leaderboard"] });
+      await queryClient.cancelQueries({ queryKey: ["users"] });
+
+      // Snapshot the previous value
+      const previousAdminTasks = queryClient.getQueryData<Task[]>(["adminTasks"]);
+      const previousUserTasks = queryClient.getQueryData<Task[]>(["userTasks"]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData<Task[]>(["adminTasks"], (old) =>
+        old?.map((task) =>
+          task.id === taskId ? { ...task, status: status, updated_at: new Date().toISOString() } : task
+        )
+      );
+      queryClient.setQueryData<Task[]>(["userTasks"], (old) =>
+        old?.map((task) =>
+          task.id === taskId ? { ...task, status: status, updated_at: new Date().toISOString() } : task
+        )
+      );
+
+      return { previousAdminTasks, previousUserTasks };
+    },
+    onError: (err, variables, context) => {
+      showError(err.message);
+      // Rollback to the previous value on error
+      queryClient.setQueryData(["adminTasks"], context?.previousAdminTasks);
+      queryClient.setQueryData(["userTasks"], context?.previousUserTasks);
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure data is in sync
+      queryClient.invalidateQueries({ queryKey: ["adminTasks"] });
+      queryClient.invalidateQueries({ queryKey: ["userTasks"] });
       queryClient.invalidateQueries({ queryKey: ["xpHistory"] }); // Invalidate XP history
       queryClient.invalidateQueries({ queryKey: ["leaderboard"] }); // Invalidate leaderboard
       queryClient.invalidateQueries({ queryKey: ["users"] }); // Invalidate users to update XP in admin table
       setApprovalAction(null);
     },
-    onError: (err) => {
-      showError(err.message);
-      setApprovalAction(null);
+    onSuccess: (_, variables) => {
+      showSuccess(`Task has been ${variables.status}.`);
     },
   });
 
