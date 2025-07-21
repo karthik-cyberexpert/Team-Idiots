@@ -54,6 +54,24 @@ export const CodeDocumentList = ({ onSelectDocument }: CodeDocumentListProps) =>
 
   const [documentToDelete, setDocumentToDelete] = React.useState<string | null>(null);
 
+  // Real-time subscription for code documents
+  React.useEffect(() => {
+    const channel = supabase
+      .channel('public:code_documents')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'code_documents' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['codeDocuments'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   const deleteMutation = useMutation({
     mutationFn: deleteCodeDocument,
     onSuccess: () => {

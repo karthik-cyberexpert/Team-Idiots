@@ -62,6 +62,24 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
 
   const [noteToDelete, setNoteToDelete] = React.useState<string | null>(null);
 
+  // Real-time subscription for notes
+  React.useEffect(() => {
+    const channel = supabase
+      .channel('public:notes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notes' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['notes'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   const deleteMutation = useMutation({
     mutationFn: deleteNote,
     onSuccess: () => {
