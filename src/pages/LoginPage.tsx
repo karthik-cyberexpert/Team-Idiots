@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Eye, EyeOff, Terminal } from 'lucide-react';
 import { showError } from '@/utils/toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox'; // Import Checkbox
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -38,6 +39,7 @@ const LoginPage = () => {
   const { session } = useAuth();
   const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [rememberMe, setRememberMe] = React.useState(true); // State for remember me checkbox
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
@@ -55,6 +57,8 @@ const LoginPage = () => {
 
   const onSubmit = async (values: LoginFormValues) => {
     setError(null);
+    // Supabase's persistSession: true in client.ts already handles "remember me"
+    // This checkbox is for user's visual confirmation.
     const { error } = await supabase.auth.signInWithPassword({
       email: values.email,
       password: values.password,
@@ -132,6 +136,19 @@ const LoginPage = () => {
                   </FormItem>
                 )}
               />
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="remember-me"
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(!!checked)}
+                />
+                <label
+                  htmlFor="remember-me"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Remember me
+                </label>
+              </div>
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'Signing In...' : 'Sign In'}
               </Button>
