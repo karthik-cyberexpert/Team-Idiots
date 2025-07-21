@@ -68,6 +68,24 @@ const TaskManagement = () => {
     queryFn: fetchAllTasks,
   });
 
+  // Real-time subscription for task changes
+  React.useEffect(() => {
+    const channel = supabase
+      .channel('admin-tasks-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tasks' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['adminTasks'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   const deleteMutation = useMutation({
     mutationFn: deleteTask,
     onSuccess: () => {

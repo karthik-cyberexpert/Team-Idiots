@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userBadge, setUserBadge] = useState("Bronze");
 
   useEffect(() => {
-    const getSession = async () => {
+    const getSessionAndProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     };
 
-    getSession();
+    getSessionAndProfile();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
@@ -102,6 +102,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       authListener.subscription.unsubscribe();
     };
   }, []);
+
+  // Real-time profile updates for XP, etc.
+  useEffect(() => {
+    if (user?.id) {
+      const channel = supabase
+        .channel(`public:profiles:id=eq.${user.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+          (payload) => {
+            const newProfile = payload.new as Profile;
+            setProfile(newProfile);
+            const { level, badge } = calculateLevelAndBadge(newProfile.xp);
+            setUserLevel(level);
+            setUserBadge(badge);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user?.id]);
 
   const signOut = async () => {
     await supabase.auth.signOut();

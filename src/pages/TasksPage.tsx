@@ -44,6 +44,31 @@ const TasksPage = () => {
     enabled: !!user && !authLoading,
   });
 
+  // Real-time subscription for user's tasks
+  React.useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`user-tasks-realtime-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tasks',
+          filter: `assigned_to=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['userTasks', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
+
   const updateStatusMutation = useMutation({
     mutationFn: ({ taskId, status }: { taskId: string; status: 'waiting_for_approval' | 'pending' }) =>
       updateTaskStatus(taskId, status),
