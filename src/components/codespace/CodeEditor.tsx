@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { showSuccess, showError } from "@/utils/toast";
 import { ArrowLeft } from "lucide-react";
 import { CodeDocument } from "@/types/codeDocument";
+import { useAuth } from "@/contexts/AuthProvider"; // Import useAuth
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }),
@@ -53,6 +54,7 @@ interface CodeEditorProps {
 
 export const CodeEditor = ({ document, onBack }: CodeEditorProps) => {
   const queryClient = useQueryClient();
+  const { user, profile } = useAuth(); // Get user and profile
 
   const form = useForm<CodeDocumentFormValues>({
     resolver: zodResolver(formSchema),
@@ -71,25 +73,70 @@ export const CodeEditor = ({ document, onBack }: CodeEditorProps) => {
 
   const createMutation = useMutation({
     mutationFn: createCodeDocument,
+    onMutate: async (newDocData) => {
+      await queryClient.cancelQueries({ queryKey: ["codeDocuments"] });
+      const previousDocs = queryClient.getQueryData<CodeDocument[]>(["codeDocuments"]);
+
+      const optimisticDoc: CodeDocument = {
+        id: `optimistic-${Date.now()}`, // Temporary ID
+        title: newDocData.title,
+        content: newDocData.content || "",
+        user_id: user!.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        profiles: { full_name: profile?.full_name || "You" },
+      };
+
+      queryClient.setQueryData<CodeDocument[]>(["codeDocuments"], (old) =>
+        old ? [optimisticDoc, ...old] : [optimisticDoc]
+      );
+
+      onBack(); // Navigate back immediately
+      return { previousDocs };
+    },
     onSuccess: () => {
       showSuccess("Code document created successfully.");
-      queryClient.invalidateQueries({ queryKey: ["codeDocuments"] });
-      onBack();
     },
-    onError: (err) => {
+    onError: (err, newDocData, context) => {
       showError(err.message);
+      queryClient.setQueryData(["codeDocuments"], context?.previousDocs); // Rollback
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["codeDocuments"] }); // Ensure fresh data
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: (values: CodeDocumentFormValues) => updateCodeDocument(document!.id, values),
+    onMutate: async (updatedDocData) => {
+      await queryClient.cancelQueries({ queryKey: ["codeDocuments"] });
+      const previousDocs = queryClient.getQueryData<CodeDocument[]>(["codeDocuments"]);
+
+      queryClient.setQueryData<CodeDocument[]>(["codeDocuments"], (old) =>
+        old?.map((doc) =>
+          doc.id === document!.id
+            ? {
+                ...doc,
+                title: updatedDocData.title,
+                content: updatedDocData.content || "",
+                updated_at: new Date().toISOString(),
+              }
+            : doc
+        )
+      );
+
+      onBack(); // Navigate back immediately
+      return { previousDocs };
+    },
     onSuccess: () => {
       showSuccess("Code document updated successfully.");
-      queryClient.invalidateQueries({ queryKey: ["codeDocuments"] });
-      onBack();
     },
-    onError: (err) => {
+    onError: (err, updatedDocData, context) => {
       showError(err.message);
+      queryClient.setQueryData(["codeDocuments"], context?.previousDocs); // Rollback
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["codeDocuments"] }); // Ensure fresh data
     },
   });
 

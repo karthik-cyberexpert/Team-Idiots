@@ -81,14 +81,26 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
 
   const deleteMutation = useMutation({
     mutationFn: deleteNote,
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: ["notes"] });
+      const previousNotes = queryClient.getQueryData<Note[]>(["notes"]);
+
+      queryClient.setQueryData<Note[]>(["notes"], (old) =>
+        old?.filter((note) => note.id !== idToDelete)
+      );
+
+      setNoteToDelete(null); // Close dialog immediately
+      return { previousNotes };
+    },
     onSuccess: () => {
       showSuccess("Note deleted successfully.");
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-      setNoteToDelete(null);
     },
-    onError: (err) => {
+    onError: (err, idToDelete, context) => {
       showError(err.message);
-      setNoteToDelete(null);
+      queryClient.setQueryData(["notes"], context?.previousNotes); // Rollback
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] }); // Ensure fresh data
     },
   });
 

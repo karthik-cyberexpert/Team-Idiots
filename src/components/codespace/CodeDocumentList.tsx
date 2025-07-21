@@ -74,14 +74,26 @@ export const CodeDocumentList = ({ onSelectDocument }: CodeDocumentListProps) =>
 
   const deleteMutation = useMutation({
     mutationFn: deleteCodeDocument,
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: ["codeDocuments"] });
+      const previousDocs = queryClient.getQueryData<CodeDocument[]>(["codeDocuments"]);
+
+      queryClient.setQueryData<CodeDocument[]>(["codeDocuments"], (old) =>
+        old?.filter((doc) => doc.id !== idToDelete)
+      );
+
+      setDocumentToDelete(null); // Close dialog immediately
+      return { previousDocs };
+    },
     onSuccess: () => {
       showSuccess("Code document deleted successfully.");
-      queryClient.invalidateQueries({ queryKey: ["codeDocuments"] });
-      setDocumentToDelete(null);
     },
-    onError: (err) => {
+    onError: (err, idToDelete, context) => {
       showError(err.message);
-      setDocumentToDelete(null);
+      queryClient.setQueryData(["codeDocuments"], context?.previousDocs); // Rollback
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["codeDocuments"] }); // Ensure fresh data
     },
   });
 

@@ -64,7 +64,7 @@ interface NoteEditorProps {
 
 export const NoteEditor = ({ note, onBack }: NoteEditorProps) => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(formSchema),
@@ -88,25 +88,72 @@ export const NoteEditor = ({ note, onBack }: NoteEditorProps) => {
       if (!user) throw new Error("User not authenticated.");
       return createNote(values);
     },
+    onMutate: async (newNoteData) => {
+      await queryClient.cancelQueries({ queryKey: ["notes"] });
+      const previousNotes = queryClient.getQueryData<Note[]>(["notes"]);
+
+      const optimisticNote: Note = {
+        id: `optimistic-${Date.now()}`, // Temporary ID
+        title: newNoteData.title,
+        content: newNoteData.content || "",
+        document_url: newNoteData.document_url || null,
+        user_id: user!.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        profiles: { full_name: profile?.full_name || "You" },
+      };
+
+      queryClient.setQueryData<Note[]>(["notes"], (old) =>
+        old ? [optimisticNote, ...old] : [optimisticNote]
+      );
+
+      onBack(); // Navigate back immediately
+      return { previousNotes };
+    },
     onSuccess: () => {
       showSuccess("Note created successfully.");
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-      onBack();
     },
-    onError: (err) => {
+    onError: (err, newNoteData, context) => {
       showError(err.message);
+      queryClient.setQueryData(["notes"], context?.previousNotes); // Rollback
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] }); // Ensure fresh data
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: (values: NoteFormValues) => updateNote(note!.id, values),
+    onMutate: async (updatedNoteData) => {
+      await queryClient.cancelQueries({ queryKey: ["notes"] });
+      const previousNotes = queryClient.getQueryData<Note[]>(["notes"]);
+
+      queryClient.setQueryData<Note[]>(["notes"], (old) =>
+        old?.map((n) =>
+          n.id === note!.id
+            ? {
+                ...n,
+                title: updatedNoteData.title,
+                content: updatedNoteData.content || "",
+                document_url: updatedNoteData.document_url || null,
+                updated_at: new Date().toISOString(),
+              }
+            : n
+        )
+      );
+
+      onBack(); // Navigate back immediately
+      return { previousNotes };
+    },
     onSuccess: () => {
       showSuccess("Note updated successfully.");
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-      onBack();
     },
-    onError: (err) => {
+    onError: (err, updatedNoteData, context) => {
       showError(err.message);
+      queryClient.setQueryData(["notes"], context?.previousNotes); // Rollback
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] }); // Ensure fresh data
     },
   });
 
