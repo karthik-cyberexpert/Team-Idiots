@@ -38,8 +38,10 @@ serve(async (req) => {
     const { data, error } = await supabase
       .from('notes')
       .insert({
-        ...note,
-        user_id: user.id, // Explicitly set the user_id
+        title: note.title,
+        content: note.content || '',
+        document_url: note.document_url || null,
+        user_id: user.id,
       })
       .select()
       .single();

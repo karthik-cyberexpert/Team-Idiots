@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, FileText, Trash2, Edit, FileDown, FileUp } from "lucide-react";
+import { PlusCircle, FileText, Trash2, Edit, Link as LinkIcon } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import {
   AlertDialog,
@@ -18,7 +18,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UploadDocumentDialog } from "./UploadDocumentDialog";
 
 interface Note {
   id: string;
@@ -46,9 +45,7 @@ const fetchNotes = async (): Promise<Note[]> => {
 };
 
 const deleteNote = async (id: string) => {
-  const { error } = await supabase.functions.invoke("delete-note", {
-    body: { noteId: id },
-  });
+  const { error } = await supabase.from("notes").delete().eq("id", id);
   if (error) throw new Error(error.message);
 };
 
@@ -64,7 +61,6 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
   });
 
   const [noteToDelete, setNoteToDelete] = React.useState<string | null>(null);
-  const [isUploadDialogOpen, setIsUploadDialogOpen] = React.useState(false);
 
   React.useEffect(() => {
     const channel = supabase
@@ -112,17 +108,11 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
 
   return (
     <>
-      <UploadDocumentDialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen} />
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Your Notes</h2>
-        <div className="flex gap-2">
-          <Button onClick={() => onSelectNote(null)}>
-            <PlusCircle className="mr-2 h-4 w-4" /> New Note
-          </Button>
-          <Button variant="outline" onClick={() => setIsUploadDialogOpen(true)}>
-            <FileUp className="mr-2 h-4 w-4" /> Upload Document
-          </Button>
-        </div>
+        <Button onClick={() => onSelectNote(null)}>
+          <PlusCircle className="mr-2 h-4 w-4" /> New Note
+        </Button>
       </div>
       {notes && notes.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -144,18 +134,16 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
                     rel="noopener noreferrer"
                     className="flex items-center text-blue-600 hover:underline text-sm"
                   >
-                    <FileDown className="h-4 w-4 mr-1" /> View Document
+                    <LinkIcon className="h-4 w-4 mr-1" /> View Link
                   </a>
                 ) : (
                   <p className="text-sm line-clamp-3">{note.content || "No content"}</p>
                 )}
               </CardContent>
               <div className="p-4 border-t flex justify-end gap-2">
-                {!note.document_url && (
-                  <Button variant="outline" size="sm" onClick={() => onSelectNote(note)}>
-                    <Edit className="h-4 w-4 mr-2" /> Edit
-                  </Button>
-                )}
+                <Button variant="outline" size="sm" onClick={() => onSelectNote(note)}>
+                  <Edit className="h-4 w-4 mr-2" /> Edit
+                </Button>
                 <Button variant="destructive" size="sm" onClick={() => setNoteToDelete(note.id)}>
                   <Trash2 className="h-4 w-4 mr-2" /> Delete
                 </Button>
