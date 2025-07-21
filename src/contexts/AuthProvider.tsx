@@ -6,7 +6,7 @@ interface Profile {
   id: string;
   full_name: string;
   role: 'admin' | 'user';
-  xp: number; // Added xp to profile
+  xp: number;
 }
 
 interface AuthContextType {
@@ -32,7 +32,6 @@ const XP_LEVEL_THRESHOLDS = [
 const calculateLevelAndBadge = (xp: number) => {
   let level = 1;
   let badge = "Bronze";
-
   for (let i = XP_LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
     if (xp >= XP_LEVEL_THRESHOLDS[i].xp) {
       level = XP_LEVEL_THRESHOLDS[i].level;
@@ -43,7 +42,6 @@ const calculateLevelAndBadge = (xp: number) => {
   return { level, badge };
 };
 
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -52,59 +50,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userLevel, setUserLevel] = useState(1);
   const [userBadge, setUserBadge] = useState("Bronze");
 
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+  const updateUserState = async (currentSession: Session | null) => {
+    setSession(currentSession);
+    setUser(currentSession?.user ?? null);
 
-      if (session?.user) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        if (profileData) {
-          setProfile(profileData as Profile);
-          const { level, badge } = calculateLevelAndBadge(profileData.xp);
-          setUserLevel(level);
-          setUserBadge(badge);
-        }
-      } else {
-        setProfile(null);
-        setUserLevel(1);
-        setUserBadge("Bronze");
+    if (currentSession?.user) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', currentSession.user.id)
+        .single();
+      
+      if (profileData) {
+        const typedProfile = profileData as Profile;
+        setProfile(typedProfile);
+        const { level, badge } = calculateLevelAndBadge(typedProfile.xp);
+        setUserLevel(level);
+        setUserBadge(badge);
       }
+    } else {
+      setProfile(null);
+      setUserLevel(1);
+      setUserBadge("Bronze");
+    }
+  };
+
+  useEffect(() => {
+    setLoading(true);
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      await updateUserState(session);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      await updateUserState(session);
       setLoading(false);
     });
 
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
-
-  // Real-time profile updates for XP, etc.
-  useEffect(() => {
-    if (user?.id) {
-      const channel = supabase
-        .channel(`public:profiles:id=eq.${user.id}`)
-        .on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
-          (payload) => {
-            const newProfile = payload.new as Profile;
-            setProfile(newProfile);
-            const { level, badge } = calculateLevelAndBadge(newProfile.xp);
-            setUserLevel(level);
-            setUserBadge(badge);
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [user?.id]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
