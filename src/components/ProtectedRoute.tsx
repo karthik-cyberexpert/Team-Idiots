@@ -1,9 +1,15 @@
 import { useAuth } from '@/contexts/AuthProvider';
 import { Navigate, Outlet } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import React from 'react';
 
 const ProtectedRoute = () => {
   const { session, loading } = useAuth();
+
+  // Add a console log to help debug the state
+  React.useEffect(() => {
+    console.log("ProtectedRoute state: loading =", loading, "session =", session);
+  }, [loading, session]);
 
   if (loading) {
     return (

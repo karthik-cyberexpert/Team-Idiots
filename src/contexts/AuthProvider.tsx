@@ -13,7 +13,7 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
-  loading: boolean;
+  loading: boolean; // Indicates if initial auth state is being determined
   signOut: () => Promise<void>;
   userLevel: number;
   userBadge: string;
@@ -46,52 +46,73 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Still true initially
   const [userLevel, setUserLevel] = useState(1);
   const [userBadge, setUserBadge] = useState("Bronze");
 
-  const updateUserState = async (currentSession: Session | null) => {
-    setSession(currentSession);
-    setUser(currentSession?.user ?? null);
-
-    if (currentSession?.user) {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentSession.user.id)
-        .single();
-      
-      if (profileData) {
-        const typedProfile = profileData as Profile;
-        setProfile(typedProfile);
-        const { level, badge } = calculateLevelAndBadge(typedProfile.xp);
-        setUserLevel(level);
-        setUserBadge(badge);
-      }
-    } else {
-      setProfile(null);
-      setUserLevel(1);
-      setUserBadge("Bronze");
-    }
-  };
-
   useEffect(() => {
-    setLoading(true);
+    // This function will be called by onAuthStateChange for initial state and subsequent changes
+    const handleAuthStateChange = async (_event: string, currentSession: Session | null) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      await updateUserState(session);
-      setLoading(false);
-    });
+      if (currentSession?.user) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentSession.user.id)
+          .single();
+        
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
+          setProfile(null); // Ensure profile is null on error
+        } else if (profileData) {
+          const typedProfile = profileData as Profile;
+          setProfile(typedProfile);
+          const { level, badge } = calculateLevelAndBadge(typedProfile.xp);
+          setUserLevel(level);
+          setUserBadge(badge);
+        }
+      } else {
+        setProfile(null);
+        setUserLevel(1);
+        setUserBadge("Bronze");
+      }
+      setLoading(false); // Set loading to false ONLY after session and profile are processed
+    };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      await updateUserState(session);
-      setLoading(false);
-    });
+    // Subscribe to auth state changes. This listener fires immediately with the current session.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
+    // Cleanup subscription on component unmount
     return () => {
       subscription?.unsubscribe();
     };
-  }, []);
+  }, []); // Empty dependency array means this runs once on mount
+
+  // Real-time profile updates for XP, etc. (This is separate and fine)
+  useEffect(() => {
+    if (user?.id) {
+      const channel = supabase
+        .channel(`public:profiles:id=eq.${user.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+          (payload) => {
+            const newProfile = payload.new as Profile;
+            setProfile(newProfile);
+            const { level, badge } = calculateLevelAndBadge(newProfile.xp);
+            setUserLevel(level);
+            setUserBadge(badge);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user?.id]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
