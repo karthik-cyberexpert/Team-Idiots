@@ -81,12 +81,39 @@ const ChatPage = () => {
 
   const sendMutation = useMutation({
     mutationFn: sendMessage,
-    onSuccess: () => {
-      setNewMessage("");
-      queryClient.invalidateQueries({ queryKey: ["messages", selectedChannelId] });
+    onMutate: async ({ channelId, content, userId }) => {
+      // Cancel any outgoing refetches for the messages query
+      await queryClient.cancelQueries({ queryKey: ["messages", channelId] });
+
+      // Snapshot the previous value
+      const previousMessages = queryClient.getQueryData<Message[]>(["messages", channelId]);
+
+      // Optimistically update to the new value
+      const optimisticMessage: Message = {
+        id: `optimistic-${Date.now()}`, // Temporary ID
+        channel_id: channelId,
+        user_id: userId,
+        content: content,
+        created_at: new Date().toISOString(),
+        profiles: { full_name: profile?.full_name || "You" }, // Use current user's name
+      };
+
+      queryClient.setQueryData<Message[]>(["messages", channelId], (old) =>
+        old ? [...old, optimisticMessage] : [optimisticMessage]
+      );
+
+      setNewMessage(""); // Clear input immediately
+
+      return { previousMessages };
     },
-    onError: (err) => {
+    onError: (err, variables, context) => {
       showError(err.message);
+      // Rollback to the previous value on error
+      queryClient.setQueryData(["messages", variables.channelId], context?.previousMessages);
+    },
+    onSettled: (data, error, variables) => {
+      // Always refetch after error or success to ensure data is in sync
+      queryClient.invalidateQueries({ queryKey: ["messages", variables.channelId] });
     },
   });
 
