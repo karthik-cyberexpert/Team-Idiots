@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,12 +31,39 @@ const fetchXpHistory = async (userId: string): Promise<XpHistoryEntry[]> => {
 
 const XpHistoryPage = () => {
   const { user, loading: authLoading } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: xpHistory, isLoading, error } = useQuery<XpHistoryEntry[]>({
     queryKey: ["xpHistory", user?.id],
     queryFn: () => fetchXpHistory(user!.id),
     enabled: !!user && !authLoading,
   });
+
+  // Real-time subscription for XP history updates
+  React.useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`xp-history-realtime-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'xp_history',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['xpHistory', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
+
 
   if (authLoading || isLoading) {
     return (
