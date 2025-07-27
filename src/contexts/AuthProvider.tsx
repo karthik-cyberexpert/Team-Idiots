@@ -13,7 +13,7 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
-  loading: boolean; // Indicates if initial auth state is being determined (session only)
+  loading: boolean; // Indicates if initial auth state is being determined
   profileLoading: boolean; // Indicates if profile data is being fetched
   signOut: () => Promise<void>;
   userLevel: number;
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Start loading until session is checked
   const [profileLoading, setProfileLoading] = useState(false);
   const [userLevel, setUserLevel] = useState(1);
   const [userBadge, setUserBadge] = useState("Bronze");
@@ -57,79 +57,88 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchProfile = async (userId: string) => {
     setProfileLoading(true);
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    
-    if (profileError) {
-      console.error("Error fetching profile:", profileError);
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (profileError) throw profileError;
+
+      if (profileData) {
+        const typedProfile = profileData as Profile;
+        setProfile(typedProfile);
+        const { level, badge } = calculateLevelAndBadge(typedProfile.xp);
+        setUserLevel(level);
+        setUserBadge(badge);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
       setProfile(null);
-    } else if (profileData) {
-      const typedProfile = profileData as Profile;
-      setProfile(typedProfile);
-      const { level, badge } = calculateLevelAndBadge(typedProfile.xp);
-      setUserLevel(level);
-      setUserBadge(badge);
+    } finally {
+      setProfileLoading(false);
     }
-    setProfileLoading(false);
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Stop the main loading indicator as soon as we know the session status
-      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-        setLoading(false);
-      }
-
+    // On initial load, get the session
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-
       if (session?.user) {
-        fetchProfile(session.user.id); // Fetch profile, but don't block rendering
-
-        if (event === 'SIGNED_IN') {
-          try {
-            const { data: leaderboard, error: leaderboardError } = await supabase
-              .from('profiles')
-              .select('id, xp')
-              .order('xp', { ascending: false });
-
-            if (leaderboardError) throw leaderboardError;
-
-            const userRankIndex = leaderboard.findIndex(p => p.id === session.user.id);
-            
-            if (userRankIndex !== -1) {
-              const currentPosition = userRankIndex + 1;
-              const lastSeenPositionStr = localStorage.getItem(`leaderboard-seen-position-${session.user.id}`);
-              
-              if (lastSeenPositionStr) {
-                const lastSeenPosition = parseInt(lastSeenPositionStr, 10);
-                if (currentPosition < lastSeenPosition) {
-                  setLeaderboardPopupData({ position: currentPosition });
-                } else if (currentPosition > lastSeenPosition) {
-                  localStorage.setItem(`leaderboard-seen-position-${session.user.id}`, String(currentPosition));
-                }
-              } else {
-                setLeaderboardPopupData({ position: currentPosition });
-              }
-            }
-          } catch (error) {
-            console.error("Error checking leaderboard rank on sign-in:", error);
-          }
-        }
-      } else {
-        setProfile(null);
-        setUserLevel(1);
-        setUserBadge("Bronze");
+        fetchProfile(session.user.id);
       }
+      setLoading(false); // We're done with the initial session check
     });
 
+    // Then, set up a listener for future auth events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          // Fetch profile if it's a new session or user
+          if (!profile || profile.id !== session.user.id) {
+            fetchProfile(session.user.id);
+          }
+
+          if (_event === 'SIGNED_IN') {
+            // Leaderboard check logic
+            try {
+              const { data: leaderboard, error: leaderboardError } = await supabase
+                .from('profiles')
+                .select('id, xp')
+                .order('xp', { ascending: false });
+
+              if (leaderboardError) throw leaderboardError;
+
+              const userRankIndex = leaderboard.findIndex(p => p.id === session.user.id);
+              
+              if (userRankIndex !== -1) {
+                const currentPosition = userRankIndex + 1;
+                const lastSeenPositionStr = localStorage.getItem(`leaderboard-seen-position-${session.user.id}`);
+                
+                if (!lastSeenPositionStr || currentPosition < parseInt(lastSeenPositionStr, 10)) {
+                  setLeaderboardPopupData({ position: currentPosition });
+                }
+              }
+            } catch (error) {
+              console.error("Error checking leaderboard rank:", error);
+            }
+          }
+        } else {
+          setProfile(null);
+          setUserLevel(1);
+          setUserBadge("Bronze");
+        }
+      }
+    );
+
     return () => {
-      subscription?.unsubscribe();
+      subscription.unsubscribe();
     };
-  }, []);
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   const signOut = async () => {
     await supabase.auth.signOut();
