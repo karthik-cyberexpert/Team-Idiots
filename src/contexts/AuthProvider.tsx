@@ -77,31 +77,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    let isMounted = true;
-    const getInitialSession = async () => {
-      const { data: { session: initialSession } } = await supabase.auth.getSession();
-      if (isMounted) {
-        setSession(initialSession);
-        setUser(initialSession?.user ?? null);
-        setLoading(false);
-        if (initialSession?.user) {
-          fetchProfile(initialSession.user.id);
-        } else {
-          setProfile(null);
-          setUserLevel(1);
-          setUserBadge("Bronze");
+    setLoading(true);
+    // Fetch initial session and set up listener
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        console.error("Error fetching session on initial load:", error.message);
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+      } else {
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+        if (data.session?.user) {
+          fetchProfile(data.session.user.id);
         }
       }
-    };
+      setLoading(false);
+    });
 
-    getInitialSession();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
       setSession(currentSession);
       const currentUser = currentSession?.user ?? null;
@@ -133,7 +126,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   localStorage.setItem(`leaderboard-seen-position-${currentUser.id}`, String(currentPosition));
                 }
               } else {
-                // First time seeing rank, show the popup
                 setLeaderboardPopupData({ position: currentPosition });
               }
             }
