@@ -22,11 +22,11 @@ const Header = () => {
         <div className="flex items-center gap-2 sm:gap-4">
           {session ? (
             <>
-              <Button variant="ghost" onClick={() => navigate('/dashboard')}>Dashboard</Button>
-              <Button onClick={handleSignOut}>Logout</Button>
+              <Button variant="ghost" onClick={() => navigate('/dashboard')} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">Dashboard</Button>
+              <Button onClick={handleSignOut} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">Logout</Button>
             </>
           ) : (
-            <Button onClick={() => navigate('/login')}>Login</Button>
+            <Button onClick={() => navigate('/login')} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">Login</Button>
           )}
         </div>
       </div>

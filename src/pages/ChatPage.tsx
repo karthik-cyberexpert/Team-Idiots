@@ -186,7 +186,7 @@ const ChatPage = () => {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">Channels</h2>
             {profile?.role === 'admin' && (
-              <Button variant="ghost" size="icon" onClick={() => setIsAddChannelDialogOpen(true)}>
+              <Button variant="ghost" size="icon" onClick={() => setIsAddChannelDialogOpen(true)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
                 <PlusCircle className="h-5 w-5" />
                 <span className="sr-only">Add Channel</span>
               </Button>
@@ -198,7 +198,7 @@ const ChatPage = () => {
                 <Button
                   key={channel.id}
                   variant={selectedChannelId === channel.id ? "default" : "ghost"}
-                  className="w-full justify-start"
+                  className="w-full justify-start transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
                   onClick={() => setSelectedChannelId(channel.id)}
                 >
                   # {channel.name}
@@ -257,7 +257,7 @@ const ChatPage = () => {
                   onChange={(e) => setNewMessage(e.target.value)}
                   disabled={!selectedChannelId || sendMutation.isPending}
                 />
-                <Button type="submit" disabled={!selectedChannelId || sendMutation.isPending || !newMessage.trim()}>
+                <Button type="submit" disabled={!selectedChannelId || sendMutation.isPending || !newMessage.trim()} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
                   <Send className="h-4 w-4" />
                 </Button>
               </form>

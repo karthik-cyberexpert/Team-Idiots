@@ -149,7 +149,7 @@ const LoginPage = () => {
                   Remember me
                 </label>
               </div>
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+              <Button type="submit" className="w-full transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>

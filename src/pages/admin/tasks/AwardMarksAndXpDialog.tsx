@@ -127,8 +127,8 @@ export const AwardMarksAndXpDialog = ({ open, onOpenChange, task }: AwardMarksAn
               )}
             />
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button type="submit" disabled={mutation.isPending}>
+              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">Cancel</Button>
+              <Button type="submit" disabled={mutation.isPending} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
                 {mutation.isPending ? "Awarding..." : "Confirm & Award"}
               </Button>
             </DialogFooter>

@@ -36,8 +36,7 @@ const deleteCodeDocument = async (id: string) => {
   const { data, error } = await supabase.functions.invoke("delete-code-document", {
     body: { id },
   });
-  if (error) throw new Error(error.message);
-  if (data.error) throw new Error(data.error);
+  if (error) throw new Error(data.error);
   return data;
 };
 
@@ -115,14 +114,14 @@ export const CodeDocumentList = ({ onSelectDocument }: CodeDocumentListProps) =>
     <>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Shared Code Documents</h2>
-        <Button onClick={() => onSelectDocument(null)}>
+        <Button onClick={() => onSelectDocument(null)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
           <PlusCircle className="mr-2 h-4 w-4" /> New Document
         </Button>
       </div>
       {documents && documents.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {documents.map((doc) => (
-            <Card key={doc.id} className="flex flex-col">
+            <Card key={doc.id} className="flex flex-col group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:rotate-x-1 hover:rotate-y-1">
               <CardHeader>
                 <CardTitle className="text-lg">{doc.title}</CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">
@@ -137,10 +136,10 @@ export const CodeDocumentList = ({ onSelectDocument }: CodeDocumentListProps) =>
                 </pre>
               </CardContent>
               <div className="p-4 border-t flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => onSelectDocument(doc)}>
+                <Button variant="outline" size="sm" onClick={() => onSelectDocument(doc)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
                   <Edit className="h-4 w-4 mr-2" /> Edit
                 </Button>
-                <Button variant="destructive" size="sm" onClick={() => setDocumentToDelete(doc.id)}>
+                <Button variant="destructive" size="sm" onClick={() => setDocumentToDelete(doc.id)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
                   <Trash2 className="h-4 w-4 mr-2" /> Delete
                 </Button>
               </div>

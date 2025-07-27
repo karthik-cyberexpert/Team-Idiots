@@ -33,6 +33,7 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
     --font-size-multiplier: 1;
+    --perspective: 1000px; /* Added for 3D effects */
   }
 
   .dark {
@@ -92,6 +93,10 @@
 @layer base {
   * {
     @apply border-border;
+  }
+
+  html {
+    perspective: var(--perspective); /* Apply perspective to html */
   }
 
   body {

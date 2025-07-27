@@ -141,6 +141,7 @@ const TasksPage = () => {
             size="sm"
             onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: 'waiting_for_approval' })}
             disabled={updateStatusMutation.isPending}
+            className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
           >
             <Send className="h-4 w-4 mr-2" /> Submit for Approval
           </Button>
@@ -158,6 +159,7 @@ const TasksPage = () => {
             variant="outline"
             onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: 'waiting_for_approval' })}
             disabled={updateStatusMutation.isPending}
+            className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
           >
             <RefreshCw className="h-4 w-4 mr-2" /> Resubmit
           </Button>
@@ -194,7 +196,7 @@ const TasksPage = () => {
       {tasks && tasks.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {tasks.map((task) => (
-            <Card key={task.id} className="flex flex-col">
+            <Card key={task.id} className="flex flex-col group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:rotate-x-1 hover:rotate-y-1">
               <CardHeader>
                 <CardTitle className="text-lg">{task.title}</CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">

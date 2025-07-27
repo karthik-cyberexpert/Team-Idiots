@@ -159,8 +159,8 @@ const TaskManagement = () => {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">Task Management</h1>
           <div className="flex gap-2">
-            <Button disabled>Add Common Task</Button>
-            <Button disabled>Add Task</Button>
+            <Button disabled className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">Add Common Task</Button>
+            <Button disabled className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">Add Task</Button>
           </div>
         </div>
         <div className="space-y-2">
@@ -190,14 +190,14 @@ const TaskManagement = () => {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">Task Management</h1>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsAddCommonTaskDialogOpen(true)}>Add Common Task</Button>
-            <Button onClick={() => setIsAddTaskDialogOpen(true)}>Add Task</Button>
+            <Button variant="outline" onClick={() => setIsAddCommonTaskDialogOpen(true)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">Add Common Task</Button>
+            <Button onClick={() => setIsAddTaskDialogOpen(true)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">Add Task</Button>
           </div>
         </div>
         <DataTable columns={columns} data={tasks || []} />
       </div>
 
-      <AlertDialog open={!!taskToDelete} onOpenChange={() => setTaskToDelete(null)}>
+      <AlertDialog open={!!taskToDelete} onOpenChange={() => setUserToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

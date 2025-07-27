@@ -120,7 +120,7 @@ const UserManagement = () => {
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">User Management</h1>
-          <Button disabled>Add User</Button>
+          <Button disabled className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">Add User</Button>
         </div>
         <div className="space-y-2">
           <Skeleton className="h-12 w-full" />
@@ -150,7 +150,7 @@ const UserManagement = () => {
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">User Management</h1>
-          <Button onClick={() => setIsAddUserDialogOpen(true)}>Add User</Button>
+          <Button onClick={() => setIsAddUserDialogOpen(true)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">Add User</Button>
         </div>
         <DataTable
           columns={columns}

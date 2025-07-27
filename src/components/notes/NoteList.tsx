@@ -122,14 +122,14 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
     <>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Your Notes</h2>
-        <Button onClick={() => onSelectNote(null)}>
+        <Button onClick={() => onSelectNote(null)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
           <PlusCircle className="mr-2 h-4 w-4" /> New Note
         </Button>
       </div>
       {notes && notes.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {notes.map((note) => (
-            <Card key={note.id} className="flex flex-col">
+            <Card key={note.id} className="flex flex-col group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:rotate-x-1 hover:rotate-y-1">
               <CardHeader>
                 <CardTitle className="text-lg">{note.title}</CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">
@@ -153,10 +153,10 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
                 )}
               </CardContent>
               <div className="p-4 border-t flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => onSelectNote(note)}>
+                <Button variant="outline" size="sm" onClick={() => onSelectNote(note)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
                   <Edit className="h-4 w-4 mr-2" /> Edit
                 </Button>
-                <Button variant="destructive" size="sm" onClick={() => setNoteToDelete(note.id)}>
+                <Button variant="destructive" size="sm" onClick={() => setNoteToDelete(note.id)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
                   <Trash2 className="h-4 w-4 mr-2" /> Delete
                 </Button>
               </div>

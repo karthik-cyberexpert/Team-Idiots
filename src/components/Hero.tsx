@@ -24,7 +24,7 @@ const Hero = () => {
         The best place for your team to collaborate and build amazing things.
         Get started by logging in.
       </p>
-      <Button size="lg" onClick={handleGetStarted}>
+      <Button size="lg" onClick={handleGetStarted} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
         <span className="flex items-center">
           Get Started <ArrowRight className="ml-2 h-5 w-5" />
         </span>

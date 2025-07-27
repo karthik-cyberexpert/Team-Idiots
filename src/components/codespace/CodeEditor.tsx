@@ -151,7 +151,7 @@ export const CodeEditor = ({ document, onBack }: CodeEditorProps) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={onBack}>
+        <Button variant="ghost" size="icon" onClick={onBack} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h2 className="text-2xl font-bold">{document ? "Edit Code Document" : "Create New Code Document"}</h2>
@@ -189,7 +189,7 @@ export const CodeEditor = ({ document, onBack }: CodeEditorProps) => {
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+          <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
             {document ? (updateMutation.isPending ? "Saving..." : "Save Changes") : (createMutation.isPending ? "Creating..." : "Create Document")}
           </Button>
         </form>

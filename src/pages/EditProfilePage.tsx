@@ -111,7 +111,7 @@ const EditProfilePage = () => {
     <div className="space-y-6">
       <h1 className="text-2xl sm:text-3xl font-bold">Edit Profile</h1>
       
-      <Card>
+      <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5">
         <CardHeader>
           <CardTitle>Profile Information</CardTitle>
           <CardDescription>Update your full name here.</CardDescription>
@@ -128,7 +128,7 @@ const EditProfilePage = () => {
               )} />
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
-              <Button type="submit" disabled={updateProfileMutation.isPending}>
+              <Button type="submit" disabled={updateProfileMutation.isPending} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
                 {updateProfileMutation.isPending ? "Saving..." : "Save"}
               </Button>
             </CardFooter>
@@ -136,7 +136,7 @@ const EditProfilePage = () => {
         </Form>
       </Card>
 
-      <Card>
+      <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5">
         <CardHeader>
           <CardTitle>Change Password</CardTitle>
           <CardDescription>Enter your old password and a new password for your account.</CardDescription>
@@ -167,7 +167,7 @@ const EditProfilePage = () => {
               )} />
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
-              <Button type="submit" disabled={updatePasswordMutation.isPending}>
+              <Button type="submit" disabled={updatePasswordMutation.isPending} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
                 {updatePasswordMutation.isPending ? "Updating..." : "Update Password"}
               </Button>
             </CardFooter>
@@ -175,7 +175,7 @@ const EditProfilePage = () => {
         </Form>
       </Card>
 
-      <Card>
+      <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5">
         <CardHeader>
           <CardTitle>Change Email Address</CardTitle>
           <CardDescription>
@@ -194,7 +194,7 @@ const EditProfilePage = () => {
               )} />
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
-              <Button type="submit" disabled={updateEmailMutation.isPending}>
+              <Button type="submit" disabled={updateEmailMutation.isPending} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
                 {updateEmailMutation.isPending ? "Sending..." : "Request Email Change"}
               </Button>
             </CardFooter>

@@ -104,7 +104,7 @@ const LeaderboardPage = () => {
         <CardContent>
           <ul className="space-y-4">
             {profiles && profiles.map((profile, index) => (
-              <li key={profile.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <li key={profile.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:rotate-x-1 hover:rotate-y-1">
                 <div className="flex items-center gap-4">
                   <div className="font-bold text-lg w-8 text-center">{index + 1}</div>
                   {getRankIcon(index)}

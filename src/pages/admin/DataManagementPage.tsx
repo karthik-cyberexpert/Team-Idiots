@@ -79,7 +79,7 @@ const DataManagementPage = () => {
       </p>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-medium">Clear Chat Data</CardTitle>
             <MessageSquare className="h-6 w-6 text-primary" />
@@ -92,13 +92,14 @@ const DataManagementPage = () => {
               variant="destructive"
               onClick={() => setConfirmDeleteType("chats")}
               disabled={deleteChatsMutation.isPending}
+              className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
             >
               {deleteChatsMutation.isPending ? "Deleting..." : "Delete All Chats"}
             </Button>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-medium">Clear Notes Data</CardTitle>
             <FileText className="h-6 w-6 text-primary" />
@@ -111,6 +112,7 @@ const DataManagementPage = () => {
               variant="destructive"
               onClick={() => setConfirmDeleteType("notes")}
               disabled={deleteNotesMutation.isPending}
+              className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
             >
               {deleteNotesMutation.isPending ? "Deleting..." : "Delete All Notes"}
             </Button>

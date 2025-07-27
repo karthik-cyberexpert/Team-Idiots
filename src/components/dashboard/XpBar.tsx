@@ -33,8 +33,8 @@ export const XpBar = () => {
   const currentLevel = Math.floor(currentXp / XP_LEVEL_THRESHOLD) + 1;
 
   return (
-    <Link to="/dashboard/xp-history" className="block">
-      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+    <Link to="/dashboard/xp-history" className="block group">
+      <Card className="hover:shadow-lg transition-shadow cursor-pointer transform transition-transform-shadow duration-300 ease-in-out group-hover:scale-[1.02] group-hover:shadow-xl group-hover:rotate-x-1 group-hover:rotate-y-1">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-lg font-medium">Your XP Progress</CardTitle>
           <Sparkles className="h-6 w-6 text-yellow-500" />
