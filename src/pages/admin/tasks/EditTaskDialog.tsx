@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useForm } from "react-hook-form"; // Removed useFieldArray
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -27,11 +27,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react"; // Removed Plus, XCircle
+import { format, setHours, setMinutes } from "date-fns"; // Import setHours and setMinutes
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { showSuccess, showError } from "@/utils/toast";
-import { Task } from "@/types/task"; // Removed CustomAward import
+import { Task } from "@/types/task";
 import {
   Select,
   SelectContent,
@@ -47,7 +47,8 @@ const formSchema = z.object({
   description: z.string().optional(),
   assignedTo: z.string().uuid({ message: "Please select a user." }),
   dueDate: z.date().optional().nullable(),
-}); // Removed customAwards
+  dueTime: z.string().optional(), // New field for time
+});
 
 type EditTaskFormValues = z.infer<typeof formSchema>;
 
@@ -62,14 +63,28 @@ const fetchAllUsers = async (): Promise<User[]> => {
 const updateTask = async (values: EditTaskFormValues & { taskId: string }) => {
   const { taskId, ...updateData } = values;
 
+  let combinedDueDate = null;
+  if (updateData.dueDate) {
+    combinedDueDate = updateData.dueDate;
+    if (updateData.dueTime) {
+      const [hours, minutes] = updateData.dueTime.split(':').map(Number);
+      combinedDueDate = setHours(combinedDueDate, hours);
+      combinedDueDate = setMinutes(combinedDueDate, minutes);
+    } else {
+      // If no time is specified, default to end of day for consistency
+      combinedDueDate = setHours(combinedDueDate, 23);
+      combinedDueDate = setMinutes(combinedDueDate, 59);
+    }
+  }
+
   const { error } = await supabase
     .from("tasks")
     .update({
       title: updateData.title,
       description: updateData.description,
       assigned_to: updateData.assignedTo,
-      due_date: updateData.dueDate ? updateData.dueDate.toISOString() : null,
-      custom_awards: null, // Explicitly set to null to remove any existing custom awards
+      due_date: combinedDueDate ? combinedDueDate.toISOString() : null,
+      custom_awards: null,
     })
     .eq("id", taskId);
 
@@ -86,13 +101,10 @@ interface EditTaskDialogProps {
 
 export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps) => {
   const queryClient = useQueryClient();
-  // Removed showCustomAwardsSection state
 
   const form = useForm<EditTaskFormValues>({
     resolver: zodResolver(formSchema),
   });
-
-  // Removed useFieldArray
 
   const { data: users, isLoading: usersLoading, error: usersError } = useQuery<User[]>({
     queryKey: ["allUsers"],
@@ -101,13 +113,15 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
 
   React.useEffect(() => {
     if (task) {
+      const dueDate = task.due_date ? new Date(task.due_date) : null;
+      const dueTime = dueDate ? format(dueDate, "HH:mm") : "";
       form.reset({
         title: task.title,
         description: task.description || "",
         assignedTo: task.assigned_to,
-        dueDate: task.due_date ? new Date(task.due_date) : null,
-      }); // Removed customAwards
-      // Removed setShowCustomAwardsSection logic
+        dueDate: dueDate,
+        dueTime: dueTime,
+      });
     }
   }, [task, form]);
 
@@ -194,47 +208,59 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="dueDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Due Date (Optional)</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                              // Removed disabled={showCustomAwardsSection}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Removed Custom Awards Section */}
+                <div className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name="dueDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col flex-1">
+                        <FormLabel>Due Date (Optional)</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value || undefined}
+                              onSelect={field.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="dueTime"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col w-1/3">
+                        <FormLabel>Time</FormLabel>
+                        <FormControl>
+                          <Input type="time" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">Cancel</Button>

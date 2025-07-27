@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useForm } from "react-hook-form"; // Removed useFieldArray
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -37,17 +37,17 @@ import { useAuth } from "@/contexts/AuthProvider";
 import { User } from "@/types/user";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react"; // Removed Plus, XCircle
+import { format, setHours, setMinutes } from "date-fns"; // Import setHours and setMinutes
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-// Removed CustomAward import
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }),
   description: z.string().optional(),
   assignedTo: z.string().uuid({ message: "Please select a user." }),
   dueDate: z.date().optional().nullable(),
-}); // Removed customAwards
+  dueTime: z.string().optional(), // New field for time
+});
 
 type AddTaskFormValues = z.infer<typeof formSchema>;
 
@@ -60,14 +60,28 @@ const fetchAllUsers = async (): Promise<User[]> => {
 };
 
 const createTask = async (values: AddTaskFormValues, assignedBy: string) => {
+  let combinedDueDate = null;
+  if (values.dueDate) {
+    combinedDueDate = values.dueDate;
+    if (values.dueTime) {
+      const [hours, minutes] = values.dueTime.split(':').map(Number);
+      combinedDueDate = setHours(combinedDueDate, hours);
+      combinedDueDate = setMinutes(combinedDueDate, minutes);
+    } else {
+      // If no time is specified, default to end of day for consistency
+      combinedDueDate = setHours(combinedDueDate, 23);
+      combinedDueDate = setMinutes(combinedDueDate, 59);
+    }
+  }
+
   const { error } = await supabase.from("tasks").insert({
     title: values.title,
     description: values.description,
     assigned_to: values.assignedTo,
     assigned_by: assignedBy,
     status: 'pending',
-    due_date: values.dueDate ? values.dueDate.toISOString() : null,
-  }); // Removed custom_awards
+    due_date: combinedDueDate ? combinedDueDate.toISOString() : null,
+  });
   if (error) {
     throw new Error(`Failed to create task: ${error.message}`);
   }
@@ -81,7 +95,6 @@ interface AddTaskDialogProps {
 export const AddTaskDialog = ({ open, onOpenChange }: AddTaskDialogProps) => {
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
-  // Removed showCustomAwardsSection state
 
   const form = useForm<AddTaskFormValues>({
     resolver: zodResolver(formSchema),
@@ -90,15 +103,13 @@ export const AddTaskDialog = ({ open, onOpenChange }: AddTaskDialogProps) => {
       description: "",
       assignedTo: "",
       dueDate: null,
-    }, // Removed customAwards
+      dueTime: "",
+    },
   });
-
-  // Removed useFieldArray
 
   React.useEffect(() => {
     if (!open) {
       form.reset();
-      // Removed setShowCustomAwardsSection(false);
     }
   }, [open, form]);
 
@@ -192,47 +203,59 @@ export const AddTaskDialog = ({ open, onOpenChange }: AddTaskDialogProps) => {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="dueDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Due Date (Optional)</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                            // Removed disabled={showCustomAwardsSection}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value || undefined}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Removed Custom Awards Section */}
+              <div className="flex gap-2">
+                <FormField
+                  control={form.control}
+                  name="dueDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col flex-1">
+                      <FormLabel>Due Date (Optional)</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value || undefined}
+                            onSelect={field.onChange}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="dueTime"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col w-1/3">
+                      <FormLabel>Time</FormLabel>
+                      <FormControl>
+                        <Input type="time" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">Cancel</Button>

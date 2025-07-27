@@ -6,11 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, CircleDashed, CalendarDays, Send, ShieldQuestion, RefreshCw, XCircle, Star } from "lucide-react";
+import { CheckCircle, CircleDashed, CalendarDays, Send, ShieldQuestion, RefreshCw, XCircle, Star, Clock } from "lucide-react"; // Import Clock icon
 import { showSuccess, showError } from "@/utils/toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Task } from "@/types/task";
 import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns"; // Import format for time display
 
 const fetchUserTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
@@ -128,9 +129,15 @@ const TasksPage = () => {
 
     if (isOverdue) {
       return (
-        <div className="flex items-center text-vibrant-red font-semibold">
-          <XCircle className="h-4 w-4 mr-2" /> Failed (Overdue)
-        </div>
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: 'waiting_for_approval' })}
+          disabled={updateStatusMutation.isPending}
+          className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
+        >
+          <XCircle className="h-4 w-4 mr-2" /> Submit Late
+        </Button>
       );
     }
 
@@ -206,10 +213,18 @@ const TasksPage = () => {
               <CardContent className="flex-grow space-y-2">
                 <p className="text-sm text-foreground">{task.description || "No description provided."}</p>
 
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <CalendarDays className="h-4 w-4 mr-1" />
-                  Due: {task.due_date ? new Date(task.due_date).toLocaleDateString() : "No due date"}
-                </div>
+                {task.due_date && (
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <CalendarDays className="h-4 w-4 mr-1" />
+                    Due: {format(new Date(task.due_date), "PPP")}
+                  </div>
+                )}
+                {task.due_date && (
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4 mr-1" />
+                    Time: {format(new Date(task.due_date), "p")}
+                  </div>
+                )}
                 {getStatusBadge(task.status)}
                 {task.status === 'completed' && typeof task.marks_awarded === 'number' && (
                   <div className="flex items-center text-sm text-vibrant-gold font-semibold">
