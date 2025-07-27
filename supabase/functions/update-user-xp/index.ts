@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, xpChange, reason, relatedTaskId } = await req.json() // Added relatedTaskId
+    const { userId, xpChange, reason } = await req.json() // relatedTaskId is no longer passed from frontend
 
     if (!userId || typeof xpChange !== 'number' || !reason) {
       throw new Error("User ID, XP change amount, and reason are required.")
@@ -24,7 +24,7 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Update user's XP in the profiles table
+    // Fetch current XP to ensure we don't go below 0
     const { data: profile, error: fetchProfileError } = await supabaseAdmin
       .from('profiles')
       .select('xp')
@@ -49,8 +49,8 @@ serve(async (req) => {
       .insert({
         user_id: userId,
         xp_change: xpChange,
-        reason: reason, // Use the provided reason directly
-        related_task_id: relatedTaskId || null, // Log related task ID if provided
+        reason: reason,
+        related_task_id: null, // No related task ID for manual changes
       });
 
     if (logError) throw logError;

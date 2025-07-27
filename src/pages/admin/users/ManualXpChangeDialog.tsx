@@ -24,18 +24,18 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { showSuccess, showError } from "@/utils/toast";
 import { User } from "@/types/user";
+import { Switch } from "@/components/ui/switch"; // Import Switch
 
 const formSchema = z.object({
-  xpChange: z.coerce.number().int().min(-10000, { message: "XP change must be a number." }).max(10000, { message: "XP change must be a number." }),
-  reason: z.string().min(5, { message: "Reason must be at least 5 characters." }),
+  xpAmount: z.coerce.number().int().min(0, { message: "XP amount must be a non-negative number." }).max(10000, { message: "XP amount must be a number." }),
+  isAddition: z.boolean().default(true), // Toggle for add/deduct
 });
 
 type ManualXpChangeFormValues = z.infer<typeof formSchema>;
 
-const updateUserXp = async (values: ManualXpChangeFormValues & { userId: string }) => {
+const updateUserXp = async (values: { userId: string; xpChange: number; reason: string }) => {
   const { error } = await supabase.functions.invoke("update-user-xp", {
     body: values,
   });
@@ -55,14 +55,14 @@ export const ManualXpChangeDialog = ({ open, onOpenChange, user }: ManualXpChang
   const form = useForm<ManualXpChangeFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      xpChange: 0,
-      reason: "",
+      xpAmount: 0,
+      isAddition: true,
     },
   });
 
   React.useEffect(() => {
     if (!open) {
-      form.reset({ xpChange: 0, reason: "" });
+      form.reset({ xpAmount: 0, isAddition: true });
     }
   }, [open, form]);
 
@@ -82,7 +82,9 @@ export const ManualXpChangeDialog = ({ open, onOpenChange, user }: ManualXpChang
 
   const onSubmit = (values: ManualXpChangeFormValues) => {
     if (!user) return;
-    mutation.mutate({ ...values, userId: user.id });
+    const actualXpChange = values.isAddition ? values.xpAmount : -values.xpAmount;
+    const reason = values.isAddition ? `Manual XP award: ${values.xpAmount} XP` : `Manual XP deduction: ${values.xpAmount} XP`;
+    mutation.mutate({ userId: user.id, xpChange: actualXpChange, reason });
   };
 
   return (
@@ -98,12 +100,12 @@ export const ManualXpChangeDialog = ({ open, onOpenChange, user }: ManualXpChang
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="xpChange"
+              name="xpAmount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>XP Change Amount</FormLabel>
+                  <FormLabel>XP Amount</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="e.g., 50 or -20" {...field} />
+                    <Input type="number" min="0" placeholder="e.g., 50" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -111,14 +113,21 @@ export const ManualXpChangeDialog = ({ open, onOpenChange, user }: ManualXpChang
             />
             <FormField
               control={form.control}
-              name="reason"
+              name="isAddition"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Reason for Change</FormLabel>
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel>Action</FormLabel>
+                    <DialogDescription>
+                      {field.value ? "Add XP" : "Deduct XP"}
+                    </DialogDescription>
+                  </div>
                   <FormControl>
-                    <Textarea placeholder="e.g., Awarded for special project" {...field} />
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
