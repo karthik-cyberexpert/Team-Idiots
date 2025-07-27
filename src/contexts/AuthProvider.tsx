@@ -77,33 +77,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    setLoading(true);
-    // Fetch initial session and set up listener
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (error) {
-        console.error("Error fetching session on initial load:", error.message);
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-      } else {
-        setSession(data.session);
-        setUser(data.session?.user ?? null);
-        if (data.session?.user) {
-          fetchProfile(data.session.user.id);
-        }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Stop the main loading indicator as soon as we know the session status
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        setLoading(false);
       }
-      setLoading(false);
-    });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
-      setSession(currentSession);
-      const currentUser = currentSession?.user ?? null;
-      setUser(currentUser);
+      setSession(session);
+      setUser(session?.user ?? null);
 
-      if (currentUser) {
-        fetchProfile(currentUser.id);
+      if (session?.user) {
+        fetchProfile(session.user.id); // Fetch profile, but don't block rendering
 
-        if (_event === 'SIGNED_IN') {
+        if (event === 'SIGNED_IN') {
           try {
             const { data: leaderboard, error: leaderboardError } = await supabase
               .from('profiles')
@@ -112,18 +98,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             if (leaderboardError) throw leaderboardError;
 
-            const userRankIndex = leaderboard.findIndex(p => p.id === currentUser.id);
+            const userRankIndex = leaderboard.findIndex(p => p.id === session.user.id);
             
             if (userRankIndex !== -1) {
               const currentPosition = userRankIndex + 1;
-              const lastSeenPositionStr = localStorage.getItem(`leaderboard-seen-position-${currentUser.id}`);
+              const lastSeenPositionStr = localStorage.getItem(`leaderboard-seen-position-${session.user.id}`);
               
               if (lastSeenPositionStr) {
                 const lastSeenPosition = parseInt(lastSeenPositionStr, 10);
                 if (currentPosition < lastSeenPosition) {
                   setLeaderboardPopupData({ position: currentPosition });
                 } else if (currentPosition > lastSeenPosition) {
-                  localStorage.setItem(`leaderboard-seen-position-${currentUser.id}`, String(currentPosition));
+                  localStorage.setItem(`leaderboard-seen-position-${session.user.id}`, String(currentPosition));
                 }
               } else {
                 setLeaderboardPopupData({ position: currentPosition });
@@ -144,29 +130,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       subscription?.unsubscribe();
     };
   }, []);
-
-  useEffect(() => {
-    if (user?.id) {
-      const channel = supabase
-        .channel(`public:profiles:id=eq.${user.id}`)
-        .on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
-          (payload) => {
-            const newProfile = payload.new as Profile;
-            setProfile(newProfile);
-            const { level, badge } = calculateLevelAndBadge(newProfile.xp);
-            setUserLevel(level);
-            setUserBadge(badge);
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [user?.id]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
