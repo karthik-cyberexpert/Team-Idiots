@@ -212,7 +212,7 @@ const TasksPage = () => {
                 </div>
                 {getStatusBadge(task.status)}
                 {task.status === 'completed' && typeof task.marks_awarded === 'number' && (
-                  <div className="flex items-center text-sm text-vibrant-gold font-semibold mt-2">
+                  <div className="flex items-center text-sm text-vibrant-gold font-semibold">
                     <Star className="h-4 w-4 mr-1" />
                     Marks Awarded: {task.marks_awarded}/10
                   </div>

@@ -21,7 +21,7 @@ export const XpBar = () => {
           <Skeleton className="h-6 w-1/3" />
           <Skeleton className="h-6 w-6 rounded-full" />
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-2">
           <Skeleton className="h-4 w-1/2 mb-2" />
           <Skeleton className="h-4 w-full" />
         </CardContent>
@@ -40,11 +40,11 @@ export const XpBar = () => {
           <CardTitle className="text-lg font-medium">Your XP Progress</CardTitle>
           <Sparkles className="h-6 w-6 text-yellow-500" />
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold mb-2">
+        <CardContent className="space-y-2">
+          <div className="text-2xl font-bold">
             {currentXp} XP
           </div>
-          <p className="text-sm text-muted-foreground mb-2">
+          <p className="text-sm text-muted-foreground">
             Level {currentLevel} - {XP_LEVEL_THRESHOLD - (currentXp % XP_LEVEL_THRESHOLD)} XP to next level
           </p>
           <Progress 

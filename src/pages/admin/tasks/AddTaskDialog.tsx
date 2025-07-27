@@ -139,7 +139,7 @@ export const AddTaskDialog = ({ open, onOpenChange }: AddTaskDialogProps) => {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto px-1">
+            <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto px-1 space-y-4">
               <FormField
                 control={form.control}
                 name="title"

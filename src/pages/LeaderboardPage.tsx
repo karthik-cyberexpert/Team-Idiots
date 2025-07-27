@@ -102,7 +102,7 @@ const LeaderboardPage = () => {
           <CardTitle>Top Performers</CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="space-y-4">
+          <ul className="space-y-3">
             {profiles && profiles.map((profile, index) => (
               <li key={profile.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:rotate-x-1 hover:rotate-y-1 shadow-md">
                 <div className="flex items-center gap-4">
