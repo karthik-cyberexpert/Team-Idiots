@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true); // Start loading until session is checked
+  const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
   const [userLevel, setUserLevel] = useState(1);
   const [userBadge, setUserBadge] = useState("Bronze");
@@ -82,28 +82,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // On initial load, get the session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-      setLoading(false); // We're done with the initial session check
-    });
-
-    // Then, set up a listener for future auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        if (session?.user) {
-          // Fetch profile if it's a new session or user
-          if (!profile || profile.id !== session.user.id) {
-            fetchProfile(session.user.id);
-          }
 
-          if (_event === 'SIGNED_IN') {
+        if (event === 'INITIAL_SESSION') {
+          if (session?.user) {
+            await fetchProfile(session.user.id);
+          }
+          setLoading(false);
+        } else if (event === 'SIGNED_IN') {
+          if (session?.user) {
+            await fetchProfile(session.user.id);
             // Leaderboard check logic
             try {
               const { data: leaderboard, error: leaderboardError } = await supabase
@@ -127,7 +118,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               console.error("Error checking leaderboard rank:", error);
             }
           }
-        } else {
+        } else if (event === 'SIGNED_OUT') {
           setProfile(null);
           setUserLevel(1);
           setUserBadge("Bronze");
@@ -138,7 +129,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []);
 
   const signOut = async () => {
     await supabase.auth.signOut();
