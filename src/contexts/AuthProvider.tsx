@@ -18,6 +18,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   userLevel: number;
   userBadge: string;
+  leaderboardPopupData: { position: number } | null;
+  closeLeaderboardPopup: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,13 +49,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true); // Initial auth state loading (session only)
-  const [profileLoading, setProfileLoading] = useState(false); // New: Profile data loading
-
+  const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [userLevel, setUserLevel] = useState(1);
   const [userBadge, setUserBadge] = useState("Bronze");
+  const [leaderboardPopupData, setLeaderboardPopupData] = useState<{ position: number } | null>(null);
 
-  // Function to fetch profile
   const fetchProfile = async (userId: string) => {
     setProfileLoading(true);
     const { data: profileData, error: profileError } = await supabase
@@ -75,7 +76,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setProfileLoading(false);
   };
 
-  // Initial session check (runs once on mount)
   useEffect(() => {
     let isMounted = true;
     const getInitialSession = async () => {
@@ -83,9 +83,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (isMounted) {
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
-        setLoading(false); // Set main loading to false immediately after session check
+        setLoading(false);
         if (initialSession?.user) {
-          fetchProfile(initialSession.user.id); // Fetch profile if user is logged in
+          fetchProfile(initialSession.user.id);
         } else {
           setProfile(null);
           setUserLevel(1);
@@ -101,14 +101,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  // Listen for auth state changes (e.g., sign in, sign out, token refresh)
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
       setSession(currentSession);
-      setUser(currentSession?.user ?? null);
+      const currentUser = currentSession?.user ?? null;
+      setUser(currentUser);
 
-      if (currentSession?.user) {
-        fetchProfile(currentSession.user.id); // Fetch profile on auth state change
+      if (currentUser) {
+        fetchProfile(currentUser.id);
+
+        if (_event === 'SIGNED_IN') {
+          try {
+            const { data: leaderboard, error: leaderboardError } = await supabase
+              .from('profiles')
+              .select('id, xp')
+              .order('xp', { ascending: false });
+
+            if (leaderboardError) throw leaderboardError;
+
+            const userRankIndex = leaderboard.findIndex(p => p.id === currentUser.id);
+            
+            if (userRankIndex !== -1) {
+              const currentPosition = userRankIndex + 1;
+              const lastSeenPositionStr = localStorage.getItem(`leaderboard-seen-position-${currentUser.id}`);
+              
+              if (lastSeenPositionStr) {
+                const lastSeenPosition = parseInt(lastSeenPositionStr, 10);
+                if (currentPosition < lastSeenPosition) {
+                  setLeaderboardPopupData({ position: currentPosition });
+                } else {
+                  localStorage.setItem(`leaderboard-seen-position-${currentUser.id}`, String(currentPosition));
+                }
+              } else {
+                localStorage.setItem(`leaderboard-seen-position-${currentUser.id}`, String(currentPosition));
+              }
+            }
+          } catch (error) {
+            console.error("Error checking leaderboard rank on sign-in:", error);
+          }
+        }
       } else {
         setProfile(null);
         setUserLevel(1);
@@ -121,7 +152,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  // Real-time profile updates for XP, etc.
   useEffect(() => {
     if (user?.id) {
       const channel = supabase
@@ -149,15 +179,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
   };
 
+  const closeLeaderboardPopup = () => {
+    if (leaderboardPopupData && user) {
+      localStorage.setItem(`leaderboard-seen-position-${user.id}`, String(leaderboardPopupData.position));
+    }
+    setLeaderboardPopupData(null);
+  };
+
   const value = {
     session,
     user,
     profile,
     loading,
-    profileLoading, // Expose new loading state
+    profileLoading,
     signOut,
     userLevel,
     userBadge,
+    leaderboardPopupData,
+    closeLeaderboardPopup,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
