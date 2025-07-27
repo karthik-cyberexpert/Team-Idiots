@@ -129,11 +129,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 const lastSeenPosition = parseInt(lastSeenPositionStr, 10);
                 if (currentPosition < lastSeenPosition) {
                   setLeaderboardPopupData({ position: currentPosition });
-                } else {
+                } else if (currentPosition > lastSeenPosition) {
                   localStorage.setItem(`leaderboard-seen-position-${currentUser.id}`, String(currentPosition));
                 }
               } else {
-                localStorage.setItem(`leaderboard-seen-position-${currentUser.id}`, String(currentPosition));
+                // First time seeing rank, show the popup
+                setLeaderboardPopupData({ position: currentPosition });
               }
             }
           } catch (error) {
