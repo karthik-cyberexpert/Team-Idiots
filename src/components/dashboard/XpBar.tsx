@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Link } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils"; // Import cn for conditional classNames
 
 const XP_LEVEL_THRESHOLD = 100; // XP needed for one "level" or segment of the bar
 
@@ -46,7 +47,14 @@ export const XpBar = () => {
           <p className="text-sm text-muted-foreground mb-2">
             Level {currentLevel} - {XP_LEVEL_THRESHOLD - (currentXp % XP_LEVEL_THRESHOLD)} XP to next level
           </p>
-          <Progress value={progressValue} className="w-full" />
+          <Progress 
+            value={progressValue} 
+            className="w-full" 
+            indicatorClassName={cn(
+              "xp-gradient",
+              loading && "xp-loading-gradient" // Apply loading animation if still loading
+            )}
+          />
         </CardContent>
       </Card>
     </Link>

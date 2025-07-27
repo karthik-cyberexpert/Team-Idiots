@@ -4,22 +4,29 @@ import { SidebarNav } from "./SidebarNav";
 import { UserNav } from "./UserNav";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, Rocket, ChevronsLeft } from "lucide-react";
+import { Menu, Rocket, ChevronsLeft, Sun, Moon } from "lucide-react"; // Import Sun and Moon icons
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { RefreshButton } from "@/components/RefreshButton"; // Import RefreshButton
+import { RefreshButton } from "@/components/RefreshButton";
+import { Switch } from "@/components/ui/switch"; // Import Switch
+import { useTheme } from "@/contexts/ThemeProvider"; // Import useTheme
 
 export function DashboardLayout() {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
-  const [isMobileSheetOpen, setIsMobileSheetOpen] = React.useState(false); // New state for mobile sheet
+  const [isMobileSheetOpen, setIsMobileSheetOpen] = React.useState(false);
   const isMobile = useIsMobile();
+  const { theme, setTheme } = useTheme(); // Use theme context
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
 
   const handleMobileLinkClick = () => {
-    setIsMobileSheetOpen(false); // Close the sheet when a link is clicked
+    setIsMobileSheetOpen(false);
+  };
+
+  const handleThemeToggle = (checked: boolean) => {
+    setTheme(checked ? 'dark' : 'light');
   };
 
   if (isMobile) {
@@ -44,7 +51,15 @@ export function DashboardLayout() {
             </SheetContent>
           </Sheet>
           <div className="flex w-full items-center justify-end gap-4 md:ml-auto md:gap-2 lg:gap-4">
-            <RefreshButton /> {/* Add RefreshButton for mobile */}
+            <Switch
+              checked={theme === 'dark'}
+              onCheckedChange={handleThemeToggle}
+              className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-gray-200"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Moon className="h-4 w-4 text-white" /> : <Sun className="h-4 w-4 text-gray-800" />}
+            </Switch>
+            <RefreshButton />
             <UserNav />
           </div>
         </header>
@@ -83,7 +98,15 @@ export function DashboardLayout() {
       </div>
       <div className="flex flex-col">
         <header className="flex h-14 items-center justify-end gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-          <RefreshButton /> {/* Add RefreshButton for desktop */}
+          <Switch
+            checked={theme === 'dark'}
+            onCheckedChange={handleThemeToggle}
+            className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-gray-200"
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? <Moon className="h-4 w-4 text-white" /> : <Sun className="h-4 w-4 text-gray-800" />}
+          </Switch>
+          <RefreshButton />
           <UserNav />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">

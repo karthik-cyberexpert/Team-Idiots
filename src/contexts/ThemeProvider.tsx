@@ -14,7 +14,7 @@ interface ThemeProviderState {
 }
 
 const initialState: ThemeProviderState = {
-  theme: "light",
+  theme: "dark", // Changed default to dark
   fontSize: "md",
   fontFamily: "sans",
   setTheme: () => null,
@@ -25,7 +25,7 @@ const initialState: ThemeProviderState = {
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setThemeState] = useState<Theme>(() => (localStorage.getItem("theme") as Theme) || "light");
+  const [theme, setThemeState] = useState<Theme>(() => (localStorage.getItem("theme") as Theme) || "dark"); // Changed default to dark
   const [fontSize, setFontSizeState] = useState<FontSize>(() => (localStorage.getItem("font-size") as FontSize) || "md");
   const [fontFamily, setFontFamilyState] = useState<FontFamily>(() => (localStorage.getItem("font-family") as FontFamily) || "sans");
 
@@ -35,9 +35,11 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     root.classList.remove("light", "dark", "retro");
     
     if (theme === 'light') {
-        // The default is light, no class needed unless you want to be explicit
+        root.classList.add("light"); // Explicitly add light class
+    } else if (theme === 'dark') {
+        root.classList.add("dark"); // Explicitly add dark class
     } else {
-        root.classList.add(theme);
+        root.classList.add(theme); // For retro
     }
 
     localStorage.setItem("theme", theme);
