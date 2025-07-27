@@ -111,7 +111,7 @@ const EditProfilePage = () => {
     <div className="space-y-6">
       <h1 className="text-2xl sm:text-3xl font-bold">Edit Profile</h1>
       
-      <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5">
+      <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5 shadow-md">
         <CardHeader>
           <CardTitle>Profile Information</CardTitle>
           <CardDescription>Update your full name here.</CardDescription>
@@ -136,7 +136,7 @@ const EditProfilePage = () => {
         </Form>
       </Card>
 
-      <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5">
+      <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5 shadow-md">
         <CardHeader>
           <CardTitle>Change Password</CardTitle>
           <CardDescription>Enter your old password and a new password for your account.</CardDescription>
@@ -175,7 +175,7 @@ const EditProfilePage = () => {
         </Form>
       </Card>
 
-      <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5">
+      <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5 shadow-md">
         <CardHeader>
           <CardTitle>Change Email Address</CardTitle>
           <CardDescription>

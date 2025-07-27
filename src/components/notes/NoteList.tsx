@@ -129,7 +129,7 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
       {notes && notes.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {notes.map((note) => (
-            <Card key={note.id} className="flex flex-col group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:rotate-x-1 hover:rotate-y-1">
+            <Card key={note.id} className="flex flex-col group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:rotate-x-1 hover:rotate-y-1 shadow-md">
               <CardHeader>
                 <CardTitle className="text-lg">{note.title}</CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">

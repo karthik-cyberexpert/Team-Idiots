@@ -12,7 +12,7 @@ const SettingsPage = () => {
     <div className="space-y-6">
       <h1 className="text-2xl sm:text-3xl font-bold">Settings</h1>
       
-      <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5">
+      <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5 shadow-md">
         <CardHeader>
           <CardTitle>Appearance</CardTitle>
           <CardDescription>Customize the look and feel of the application.</CardDescription>
@@ -44,7 +44,7 @@ const SettingsPage = () => {
         </CardContent>
       </Card>
 
-      <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5">
+      <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5 shadow-md">
         <CardHeader>
           <CardTitle>Typography</CardTitle>
           <CardDescription>Adjust the font settings for better readability.</CardDescription>

@@ -41,7 +41,7 @@ const UserDashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {userFeatures.map((feature) => (
           <Link to={feature.link} key={feature.title} className="group">
-            <Card className="h-full flex flex-col justify-between transform transition-transform-shadow duration-300 ease-in-out group-hover:scale-[1.02] group-hover:shadow-xl group-hover:rotate-x-1 group-hover:rotate-y-1">
+            <Card className="h-full flex flex-col justify-between transform transition-transform-shadow duration-300 ease-in-out group-hover:scale-[1.02] group-hover:shadow-xl group-hover:rotate-x-1 group-hover:rotate-y-1 shadow-md">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-lg font-medium">{feature.title}</CardTitle>
                 {feature.icon}

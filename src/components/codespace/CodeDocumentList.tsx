@@ -121,7 +121,7 @@ export const CodeDocumentList = ({ onSelectDocument }: CodeDocumentListProps) =>
       {documents && documents.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {documents.map((doc) => (
-            <Card key={doc.id} className="flex flex-col group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:rotate-x-1 hover:rotate-y-1">
+            <Card key={doc.id} className="flex flex-col group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:rotate-x-1 hover:rotate-y-1 shadow-md">
               <CardHeader>
                 <CardTitle className="text-lg">{doc.title}</CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">

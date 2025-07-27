@@ -79,7 +79,7 @@ const DataManagementPage = () => {
       </p>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5">
+        <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5 shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-medium">Clear Chat Data</CardTitle>
             <MessageSquare className="h-6 w-6 text-primary" />
@@ -99,7 +99,7 @@ const DataManagementPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5">
+        <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5 shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-medium">Clear Notes Data</CardTitle>
             <FileText className="h-6 w-6 text-primary" />
