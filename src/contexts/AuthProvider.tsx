@@ -13,7 +13,8 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
-  loading: boolean; // Indicates if initial auth state is being determined
+  loading: boolean; // Indicates if initial auth state is being determined (session only)
+  profileLoading: boolean; // Indicates if profile data is being fetched
   signOut: () => Promise<void>;
   userLevel: number;
   userBadge: string;
@@ -46,58 +47,81 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true); // Start true
+  const [loading, setLoading] = useState(true); // Initial auth state loading (session only)
+  const [profileLoading, setProfileLoading] = useState(false); // New: Profile data loading
+
   const [userLevel, setUserLevel] = useState(1);
   const [userBadge, setUserBadge] = useState("Bronze");
 
+  // Function to fetch profile
+  const fetchProfile = async (userId: string) => {
+    setProfileLoading(true);
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    if (profileError) {
+      console.error("Error fetching profile:", profileError);
+      setProfile(null);
+    } else if (profileData) {
+      const typedProfile = profileData as Profile;
+      setProfile(typedProfile);
+      const { level, badge } = calculateLevelAndBadge(typedProfile.xp);
+      setUserLevel(level);
+      setUserBadge(badge);
+    }
+    setProfileLoading(false);
+  };
+
+  // Initial session check (runs once on mount)
   useEffect(() => {
-    let isMounted = true; // Flag to prevent state updates on unmounted component
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
-      if (!isMounted) return;
-
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-
-      if (currentSession?.user) {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentSession.user.id)
-          .single();
-        
-        if (isMounted) {
-          if (profileError) {
-            console.error("Error fetching profile:", profileError);
-            setProfile(null);
-          } else if (profileData) {
-            const typedProfile = profileData as Profile;
-            setProfile(typedProfile);
-            const { level, badge } = calculateLevelAndBadge(typedProfile.xp);
-            setUserLevel(level);
-            setUserBadge(badge);
-          }
-        }
-      } else {
-        if (isMounted) {
+    let isMounted = true;
+    const getInitialSession = async () => {
+      const { data: { session: initialSession } } = await supabase.auth.getSession();
+      if (isMounted) {
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+        setLoading(false); // Set main loading to false immediately after session check
+        if (initialSession?.user) {
+          fetchProfile(initialSession.user.id); // Fetch profile if user is logged in
+        } else {
           setProfile(null);
           setUserLevel(1);
           setUserBadge("Bronze");
         }
       }
-      if (isMounted) {
-        setLoading(false); // Set loading to false ONLY after session and profile are processed
-        console.log("AuthProvider: Loading set to false. Current session:", currentSession);
+    };
+
+    getInitialSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Listen for auth state changes (e.g., sign in, sign out, token refresh)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+
+      if (currentSession?.user) {
+        fetchProfile(currentSession.user.id); // Fetch profile on auth state change
+      } else {
+        setProfile(null);
+        setUserLevel(1);
+        setUserBadge("Bronze");
       }
     });
 
     return () => {
-      isMounted = false;
       subscription?.unsubscribe();
     };
-  }, []); // Empty dependency array
+  }, []);
 
-  // Real-time profile updates for XP, etc. (This is separate and fine)
+  // Real-time profile updates for XP, etc.
   useEffect(() => {
     if (user?.id) {
       const channel = supabase
@@ -130,6 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user,
     profile,
     loading,
+    profileLoading, // Expose new loading state
     signOut,
     userLevel,
     userBadge,
