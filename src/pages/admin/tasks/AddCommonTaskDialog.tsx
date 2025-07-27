@@ -99,7 +99,7 @@ export const AddCommonTaskDialog = ({ open, onOpenChange }: AddCommonTaskDialogP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create Common Task</DialogTitle>
+          <DialogTitle className="text-vibrant-orange dark:text-vibrant-green">Create Common Task</DialogTitle>
           <DialogDescription>
             This task will be assigned to every user in the system.
           </DialogDescription>

@@ -175,16 +175,16 @@ const ChatPage = () => {
   }
 
   if (channelsError) {
-    return <div className="text-red-500">Error loading channels: {channelsError.message}</div>;
+    return <div className="text-vibrant-red">Error loading channels: {channelsError.message}</div>;
   }
 
   return (
     <>
       <AddChannelDialog open={isAddChannelDialogOpen} onOpenChange={setIsAddChannelDialogOpen} />
-      <div className="flex h-full border rounded-lg overflow-hidden">
+      <div className="flex h-full border rounded-lg overflow-hidden shadow-md">
         <div className="w-1/4 border-r bg-muted/40 p-4">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Channels</h2>
+            <h2 className="text-xl font-bold text-vibrant-orange dark:text-vibrant-yellow">Channels</h2>
             {profile?.role === 'admin' && (
               <Button variant="ghost" size="icon" onClick={() => setIsAddChannelDialogOpen(true)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
                 <PlusCircle className="h-5 w-5" />
@@ -212,7 +212,7 @@ const ChatPage = () => {
         <div className="flex-1 flex flex-col">
           <Card className="flex-1 flex flex-col rounded-none border-none shadow-none">
             <CardHeader className="border-b p-4">
-              <CardTitle className="text-xl">
+              <CardTitle className="text-xl text-vibrant-green dark:text-vibrant-purple">
                 {selectedChannel ? `# ${selectedChannel.name}` : "Select a Channel"}
               </CardTitle>
             </CardHeader>
@@ -224,7 +224,7 @@ const ChatPage = () => {
                   <Skeleton className="h-12 w-full" />
                 </div>
               ) : messagesError ? (
-                <div className="text-red-500">Error loading messages: {messagesError.message}</div>
+                <div className="text-vibrant-red">Error loading messages: {messagesError.message}</div>
               ) : messages && messages.length > 0 ? (
                 messages.map((message) => (
                   <div key={message.id} className="flex items-start space-x-3">
@@ -235,7 +235,7 @@ const ChatPage = () => {
                     </div>
                     <div>
                       <div className="flex items-baseline space-x-2">
-                        <p className="font-semibold">{message.profiles?.full_name || "Unknown User"}</p>
+                        <p className="font-semibold text-vibrant-blue dark:text-vibrant-pink">{message.profiles?.full_name || "Unknown User"}</p>
                         <span className="text-xs text-muted-foreground">
                           {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>

@@ -132,7 +132,7 @@ export const AddTaskDialog = ({ open, onOpenChange }: AddTaskDialogProps) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
+          <DialogTitle className="text-vibrant-blue dark:text-vibrant-pink">Create New Task</DialogTitle>
           <DialogDescription>
             Enter the details for the new task and assign it to a team member.
           </DialogDescription>
@@ -183,7 +183,7 @@ export const AddTaskDialog = ({ open, onOpenChange }: AddTaskDialogProps) => {
                         {usersError && <SelectItem value="error-loading-users" disabled>Error loading users</SelectItem>}
                         {users && users.map((user) => (
                           <SelectItem key={user.id} value={user.id}>
-                            {user.full_name} ({user.email})
+                            {user.full_name} (<span className="text-vibrant-green">{user.email}</span>)
                           </SelectItem>
                         ))}
                       </SelectContent>

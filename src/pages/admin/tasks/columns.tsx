@@ -17,12 +17,16 @@ import { Badge } from "@/components/ui/badge"
 export const getColumns = (
   onDelete: (taskId: string) => void, 
   onEdit: (task: Task) => void,
-  onApprove: (taskId: string) => void,
+  onApprove: (task: Task) => void,
   onReject: (taskId: string) => void
 ): ColumnDef<Task>[] => [
   {
     accessorKey: "title",
     header: "Title",
+    cell: ({ row }) => {
+      const title = row.getValue("title") as string;
+      return <div className="text-vibrant-blue dark:text-vibrant-pink">{title}</div>;
+    }
   },
   {
     accessorKey: "assigned_to",
@@ -39,7 +43,7 @@ export const getColumns = (
     },
     cell: ({ row }) => {
       const task = row.original;
-      return <div>{task.profiles?.full_name || "N/A"}</div>;
+      return <div className="text-vibrant-green dark:text-vibrant-yellow">{task.profiles?.full_name || "N/A"}</div>;
     }
   },
   {
@@ -49,13 +53,25 @@ export const getColumns = (
       const status = row.getValue("status") as Task['status'];
       const statusText = status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       
-      const variant: "default" | "secondary" | "destructive" | "outline" = 
-        status === 'completed' ? 'default' 
-        : status === 'pending' ? 'secondary'
-        : status === 'waiting_for_approval' ? 'outline'
-        : 'destructive';
+      let variantClass = '';
+      switch (status) {
+        case 'completed':
+          variantClass = 'bg-vibrant-green text-white';
+          break;
+        case 'pending':
+          variantClass = 'bg-vibrant-orange text-white';
+          break;
+        case 'waiting_for_approval':
+          variantClass = 'bg-vibrant-blue text-white';
+          break;
+        case 'rejected':
+          variantClass = 'bg-vibrant-red text-white';
+          break;
+        default:
+          variantClass = 'bg-gray-500 text-white'; // Fallback
+      }
 
-      return <Badge variant={variant}>{statusText}</Badge>
+      return <Badge className={variantClass}>{statusText}</Badge>
     }
   },
   {
@@ -83,12 +99,12 @@ export const getColumns = (
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             {task.status === 'waiting_for_approval' && (
               <>
-                <DropdownMenuItem onClick={() => onApprove(task.id)}>
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
+                <DropdownMenuItem onClick={() => onApprove(task)}>
+                  <Check className="mr-2 h-4 w-4 text-vibrant-green" />
                   Approve
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onReject(task.id)}>
-                  <X className="mr-2 h-4 w-4 text-red-500" />
+                  <X className="mr-2 h-4 w-4 text-vibrant-red" />
                   Reject
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

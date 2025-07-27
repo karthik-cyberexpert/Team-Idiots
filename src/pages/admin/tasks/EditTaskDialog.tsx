@@ -133,7 +133,7 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Edit Task</DialogTitle>
+          <DialogTitle className="text-vibrant-blue dark:text-vibrant-pink">Edit Task</DialogTitle>
           <DialogDescription>
             Make changes to the task details below.
           </DialogDescription>
@@ -185,7 +185,7 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
                           {usersError && <SelectItem value="error-loading-users" disabled>Error loading users</SelectItem>}
                           {users && users.map((user) => (
                             <SelectItem key={user.id} value={user.id}>
-                              {user.full_name} ({user.email})
+                              {user.full_name} (<span className="text-vibrant-green">{user.email}</span>)
                             </SelectItem>
                           ))}
                         </SelectContent>

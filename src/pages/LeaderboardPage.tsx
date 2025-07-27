@@ -67,9 +67,9 @@ const LeaderboardPage = () => {
   }, [queryClient]);
 
   const getRankIcon = (rank: number) => {
-    if (rank === 0) return <Medal className="h-6 w-6 text-yellow-500" />;
-    if (rank === 1) return <Medal className="h-6 w-6 text-gray-400" />;
-    if (rank === 2) return <Medal className="h-6 w-6 text-yellow-700" />;
+    if (rank === 0) return <Medal className="h-6 w-6 text-vibrant-gold" />;
+    if (rank === 1) return <Medal className="h-6 w-6 text-vibrant-silver" />;
+    if (rank === 2) return <Medal className="h-6 w-6 text-vibrant-bronze" />;
     return <Award className="h-5 w-5 text-muted-foreground" />;
   };
 
@@ -96,8 +96,8 @@ const LeaderboardPage = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl sm:text-3xl font-bold">Leaderboard</h1>
-      <Card>
+      <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-purple dark:text-vibrant-pink">Leaderboard</h1>
+      <Card className="shadow-md">
         <CardHeader>
           <CardTitle>Top Performers</CardTitle>
         </CardHeader>
@@ -112,7 +112,7 @@ const LeaderboardPage = () => {
                     <AvatarImage src="" alt={profile.full_name} />
                     <AvatarFallback>{getInitials(profile.full_name)}</AvatarFallback>
                   </Avatar>
-                  <span className="font-medium">{profile.full_name}</span>
+                  <span className="font-medium text-foreground">{profile.full_name}</span>
                 </div>
                 <div className="font-bold text-primary">{profile.xp} XP</div>
               </li>

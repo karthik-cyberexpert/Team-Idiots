@@ -171,7 +171,7 @@ export const NoteEditor = ({ note, onBack }: NoteEditorProps) => {
         <Button variant="ghost" size="icon" onClick={onBack} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h2 className="text-2xl font-bold">{note ? "Edit Note" : "Create New Note"}</h2>
+        <h2 className="text-2xl font-bold text-vibrant-orange dark:text-vibrant-green">{note ? "Edit Note" : "Create New Note"}</h2>
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

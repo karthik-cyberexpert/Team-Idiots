@@ -8,33 +8,33 @@ const UserDashboard = () => {
     {
       title: "Notes",
       description: "Keep track of your personal notes and documents.",
-      icon: <FileText className="h-8 w-8 text-primary" />,
+      icon: <FileText className="h-8 w-8 text-vibrant-green" />,
       link: "/dashboard/notes",
     },
     {
       title: "Chat",
       description: "Communicate with your team in real-time channels.",
-      icon: <MessageSquare className="h-8 w-8 text-primary" />,
+      icon: <MessageSquare className="h-8 w-8 text-vibrant-blue" />,
       link: "/dashboard/chat",
     },
     {
       title: "Tasks",
       description: "View and manage tasks assigned to you.",
-      icon: <ListTodo className="h-8 w-8 text-primary" />,
+      icon: <ListTodo className="h-8 w-8 text-vibrant-orange" />,
       link: "/dashboard/tasks",
     },
     {
       title: "Code Space",
       description: "Collaborate on code snippets and documents in real-time.",
-      icon: <Code className="h-8 w-8 text-primary" />,
+      icon: <Code className="h-8 w-8 text-vibrant-purple" />,
       link: "/dashboard/codespace",
     },
   ];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl sm:text-3xl font-bold">Your Dashboard</h1>
-      <p className="text-muted-foreground mt-2">
+      <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-pink dark:text-vibrant-blue">Your Dashboard</h1>
+      <p className="text-muted-foreground mt-2 text-vibrant-brown dark:text-vibrant-silver">
         Welcome to your personal dashboard. Here are your quick links:
       </p>
       <XpBar /> {/* Add the XpBar component here */}

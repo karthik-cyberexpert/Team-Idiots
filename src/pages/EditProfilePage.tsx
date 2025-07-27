@@ -109,7 +109,7 @@ const EditProfilePage = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl sm:text-3xl font-bold">Edit Profile</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-blue dark:text-vibrant-pink">Edit Profile</h1>
       
       <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5 shadow-md">
         <CardHeader>
@@ -179,7 +179,7 @@ const EditProfilePage = () => {
         <CardHeader>
           <CardTitle>Change Email Address</CardTitle>
           <CardDescription>
-            Your current email is: <strong>{user?.email}</strong>
+            Your current email is: <strong className="text-vibrant-green dark:text-vibrant-yellow">{user?.email}</strong>
           </CardDescription>
         </CardHeader>
         <Form {...emailForm}>

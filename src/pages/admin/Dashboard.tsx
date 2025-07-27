@@ -7,27 +7,27 @@ const AdminDashboard = () => {
     {
       title: "User Management",
       description: "Manage user accounts, roles, and permissions.",
-      icon: <Users className="h-8 w-8 text-primary" />,
+      icon: <Users className="h-8 w-8 text-vibrant-red" />,
       link: "/admin/users",
     },
     {
       title: "Task Management",
       description: "Oversee and assign tasks to team members.",
-      icon: <ListTodo className="h-8 w-8 text-primary" />,
+      icon: <ListTodo className="h-8 w-8 text-vibrant-green" />,
       link: "/admin/tasks",
     },
     {
       title: "Data Management",
       description: "Clear chat history, notes, and other non-user data.",
-      icon: <Database className="h-8 w-8 text-primary" />,
+      icon: <Database className="h-8 w-8 text-vibrant-purple" />,
       link: "/admin/data-management",
     },
   ];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
-      <p className="text-muted-foreground mt-2">
+      <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-orange dark:text-vibrant-pink">Admin Dashboard</h1>
+      <p className="text-muted-foreground mt-2 text-vibrant-brown dark:text-vibrant-silver">
         This is the admin dashboard. Here you can manage various aspects of the application.
       </p>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

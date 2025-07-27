@@ -93,7 +93,7 @@ export const AwardMarksAndXpDialog = ({ open, onOpenChange, task }: AwardMarksAn
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Approve Task: {task?.title}</DialogTitle>
+          <DialogTitle className="text-vibrant-green dark:text-vibrant-yellow">Approve Task: {task?.title}</DialogTitle>
           <DialogDescription>
             Award marks and XP for the completed task.
           </DialogDescription>

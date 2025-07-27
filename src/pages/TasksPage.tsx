@@ -109,13 +109,13 @@ const TasksPage = () => {
     const statusText = status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     switch (status) {
       case 'completed':
-        return <Badge variant="default">{statusText}</Badge>;
+        return <Badge className="bg-vibrant-green text-white">{statusText}</Badge>;
       case 'pending':
-        return <Badge variant="secondary">{statusText}</Badge>;
+        return <Badge className="bg-vibrant-orange text-white">{statusText}</Badge>;
       case 'waiting_for_approval':
-        return <Badge variant="outline">{statusText}</Badge>;
+        return <Badge className="bg-vibrant-blue text-white">{statusText}</Badge>;
       case 'rejected':
-        return <Badge variant="destructive">{statusText}</Badge>;
+        return <Badge className="bg-vibrant-red text-white">{statusText}</Badge>;
       default:
         return <Badge>{statusText}</Badge>;
     }
@@ -128,7 +128,7 @@ const TasksPage = () => {
 
     if (isOverdue) {
       return (
-        <div className="flex items-center text-red-600 font-semibold">
+        <div className="flex items-center text-vibrant-red font-semibold">
           <XCircle className="h-4 w-4 mr-2" /> Failed (Overdue)
         </div>
       );
@@ -166,7 +166,7 @@ const TasksPage = () => {
         );
       case 'completed':
         return (
-          <div className="flex items-center text-green-600 font-semibold">
+          <div className="flex items-center text-vibrant-green font-semibold">
             <CheckCircle className="h-4 w-4 mr-2" /> Completed
           </div>
         );
@@ -187,12 +187,12 @@ const TasksPage = () => {
   }
 
   if (error) {
-    return <div className="text-red-500">Error loading tasks: {error.message}</div>;
+    return <div className="text-vibrant-red">Error loading tasks: {error.message}</div>;
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl sm:text-3xl font-bold">Your Tasks</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-pink dark:text-vibrant-blue">Your Tasks</h1>
       {tasks && tasks.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {tasks.map((task) => (
@@ -200,7 +200,7 @@ const TasksPage = () => {
               <CardHeader>
                 <CardTitle className="text-lg">{task.title}</CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">
-                  Assigned by: {task.assigner_profile?.full_name || "N/A"}
+                  Assigned by: <span className="text-vibrant-purple dark:text-vibrant-yellow">{task.assigner_profile?.full_name || "N/A"}</span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-grow space-y-2">
@@ -212,7 +212,7 @@ const TasksPage = () => {
                 </div>
                 {getStatusBadge(task.status)}
                 {task.status === 'completed' && typeof task.marks_awarded === 'number' && (
-                  <div className="flex items-center text-sm text-yellow-600 font-semibold mt-2">
+                  <div className="flex items-center text-sm text-vibrant-gold font-semibold mt-2">
                     <Star className="h-4 w-4 mr-1" />
                     Marks Awarded: {task.marks_awarded}/10
                   </div>

@@ -88,8 +88,8 @@ const XpHistoryPage = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl sm:text-3xl font-bold">XP History</h1>
-      <Card>
+      <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-green dark:text-vibrant-orange">XP History</h1>
+      <Card className="shadow-md">
         <CardHeader>
           <CardTitle>Your XP Transactions</CardTitle>
         </CardHeader>
@@ -97,15 +97,15 @@ const XpHistoryPage = () => {
           {xpHistory && xpHistory.length > 0 ? (
             <ul className="space-y-3">
               {xpHistory.map((entry) => (
-                <li key={entry.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <li key={entry.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg shadow-sm">
                   <div className="flex items-center gap-3">
                     {entry.xp_change > 0 ? (
-                      <ArrowUpCircle className="h-5 w-5 text-green-500" />
+                      <ArrowUpCircle className="h-5 w-5 text-vibrant-green" />
                     ) : (
-                      <ArrowDownCircle className="h-5 w-5 text-red-500" />
+                      <ArrowDownCircle className="h-5 w-5 text-vibrant-red" />
                     )}
                     <div>
-                      <p className="font-medium">{entry.reason}</p>
+                      <p className="font-medium text-foreground">{entry.reason}</p>
                       <p className="text-sm text-muted-foreground">
                         {new Date(entry.created_at).toLocaleString()}
                       </p>
@@ -113,7 +113,7 @@ const XpHistoryPage = () => {
                   </div>
                   <span className={cn(
                     "font-bold",
-                    entry.xp_change > 0 ? "text-green-600" : "text-red-600"
+                    entry.xp_change > 0 ? "text-vibrant-green" : "text-vibrant-red"
                   )}>
                     {entry.xp_change > 0 ? "+" : ""}{entry.xp_change} XP
                   </span>

@@ -68,6 +68,18 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // New vibrant colors
+        'vibrant-purple': 'hsl(270 80% 60%)',
+        'vibrant-pink': 'hsl(330 80% 60%)',
+        'vibrant-green': 'hsl(140 70% 45%)',
+        'vibrant-red': 'hsl(0 80% 60%)',
+        'vibrant-yellow': 'hsl(50 90% 60%)',
+        'vibrant-blue': 'hsl(210 80% 60%)',
+        'vibrant-orange': 'hsl(30 80% 60%)',
+        'vibrant-brown': 'hsl(30 40% 40%)',
+        'vibrant-gold': 'hsl(45 90% 55%)',
+        'vibrant-silver': 'hsl(210 20% 70%)',
+        'vibrant-bronze': 'hsl(30 40% 35%)',
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -5,19 +5,19 @@
 @layer base {
   :root { /* Dark Theme Defaults */
     --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 90%; /* Slightly softer white for text */
+    --foreground: 210 40% 90%; /* Softer white for text */
     --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 90%; /* Matches new foreground */
+    --card-foreground: 210 40% 90%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 90%;
-    --primary: 210 40% 98%;
+    --primary: 210 40% 98%; /* Near white for primary elements */
     --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 90%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 90%;
+    --accent: 270 80% 60%; /* Vibrant Purple for accent */
+    --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
@@ -40,7 +40,7 @@
     --background: 0 0% 100%;
     --foreground: 222.2 84% 20%; /* Softer dark for text */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 20%; /* Matches new foreground */
+    --card-foreground: 222.2 84% 20%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 20%;
     --primary: 222.2 47.4% 11.2%;
@@ -49,7 +49,7 @@
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
+    --accent: 330 80% 60%; /* Vibrant Pink for accent in light mode */
     --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;

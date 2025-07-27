@@ -115,13 +115,13 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
   }
 
   if (error) {
-    return <div className="text-red-500">Error loading notes: {error.message}</div>;
+    return <div className="text-vibrant-red">Error loading notes: {error.message}</div>;
   }
 
   return (
     <>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Your Notes</h2>
+        <h2 className="text-2xl font-bold text-vibrant-green dark:text-vibrant-orange">Your Notes</h2>
         <Button onClick={() => onSelectNote(null)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
           <PlusCircle className="mr-2 h-4 w-4" /> New Note
         </Button>
@@ -133,7 +133,7 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
               <CardHeader>
                 <CardTitle className="text-lg">{note.title}</CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">
-                  Created by: {note.profiles?.full_name || "Unknown User"}
+                  Created by: <span className="text-vibrant-purple dark:text-vibrant-yellow">{note.profiles?.full_name || "Unknown User"}</span>
                   <br />
                   Last updated: {new Date(note.updated_at).toLocaleDateString()}
                 </CardDescription>
@@ -144,12 +144,12 @@ export const NoteList = ({ onSelectNote }: NoteListProps) => {
                     href={note.document_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center text-blue-600 hover:underline text-sm"
+                    className="flex items-center text-vibrant-blue hover:underline text-sm"
                   >
                     <LinkIcon className="h-4 w-4 mr-1" /> View Link
                   </a>
                 ) : (
-                  <p className="text-sm line-clamp-3">{note.content || "No content"}</p>
+                  <p className="text-sm line-clamp-3 text-foreground">{note.content || "No content"}</p>
                 )}
               </CardContent>
               <div className="p-4 border-t flex justify-end gap-2">

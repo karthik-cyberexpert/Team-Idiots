@@ -107,13 +107,13 @@ export const CodeDocumentList = ({ onSelectDocument }: CodeDocumentListProps) =>
   }
 
   if (error) {
-    return <div className="text-red-500">Error loading documents: {error.message}</div>;
+    return <div className="text-vibrant-red">Error loading documents: {error.message}</div>;
   }
 
   return (
     <>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Shared Code Documents</h2>
+        <h2 className="text-2xl font-bold text-vibrant-purple dark:text-vibrant-pink">Shared Code Documents</h2>
         <Button onClick={() => onSelectDocument(null)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
           <PlusCircle className="mr-2 h-4 w-4" /> New Document
         </Button>
@@ -125,14 +125,14 @@ export const CodeDocumentList = ({ onSelectDocument }: CodeDocumentListProps) =>
               <CardHeader>
                 <CardTitle className="text-lg">{doc.title}</CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">
-                  Created by: {doc.profiles?.full_name || "Unknown User"}
+                  Created by: <span className="text-vibrant-blue dark:text-vibrant-yellow">{doc.profiles?.full_name || "Unknown User"}</span>
                   <br />
                   Last updated: {new Date(doc.updated_at).toLocaleDateString()}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
                 <pre className="bg-muted p-2 rounded-md text-xs overflow-x-auto line-clamp-5">
-                  <code>{doc.content || "// No content"}</code>
+                  <code className="text-foreground">{doc.content || "// No content"}</code>
                 </pre>
               </CardContent>
               <div className="p-4 border-t flex justify-end gap-2">

@@ -75,8 +75,8 @@ const LoginPage = () => {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md animate-in fade-in-0 zoom-in-95 duration-500">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Welcome to Team-Idiots</CardTitle>
-          <CardDescription>Sign in to your account to continue</CardDescription>
+          <CardTitle className="text-2xl font-bold text-vibrant-green dark:text-vibrant-yellow">Welcome to Team-Idiots</CardTitle>
+          <CardDescription className="text-vibrant-blue dark:text-vibrant-pink">Sign in to your account to continue</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>

@@ -91,9 +91,9 @@ export const ManualXpChangeDialog = ({ open, onOpenChange, user }: ManualXpChang
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Change XP for {user?.full_name}</DialogTitle>
+          <DialogTitle className="text-vibrant-purple dark:text-vibrant-pink">Change XP for {user?.full_name}</DialogTitle>
           <DialogDescription>
-            Manually adjust the XP for this user. Current XP: {user?.xp || 0}
+            Manually adjust the XP for this user. Current XP: <span className="font-bold text-vibrant-gold">{user?.xp || 0}</span>
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

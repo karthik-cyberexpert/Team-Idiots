@@ -73,7 +73,7 @@ const DataManagementPage = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl sm:text-3xl font-bold">Data Management</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-red dark:text-vibrant-orange">Data Management</h1>
       <p className="text-muted-foreground mt-2">
         Use this section to clear application data that might consume storage space. This will not affect user accounts.
       </p>
@@ -82,7 +82,7 @@ const DataManagementPage = () => {
         <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5 shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-medium">Clear Chat Data</CardTitle>
-            <MessageSquare className="h-6 w-6 text-primary" />
+            <MessageSquare className="h-6 w-6 text-vibrant-blue" />
           </CardHeader>
           <CardContent>
             <CardDescription className="mb-4">
@@ -102,7 +102,7 @@ const DataManagementPage = () => {
         <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5 shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-medium">Clear Notes Data</CardTitle>
-            <FileText className="h-6 w-6 text-primary" />
+            <FileText className="h-6 w-6 text-vibrant-green" />
           </CardHeader>
           <CardContent>
             <CardDescription className="mb-4">

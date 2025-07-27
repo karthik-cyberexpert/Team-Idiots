@@ -17,6 +17,10 @@ export const getColumns = (onDelete: (userId: string) => void, onEdit: (user: Us
   {
     accessorKey: "full_name",
     header: "Full Name",
+    cell: ({ row }) => {
+      const fullName = row.getValue("full_name") as string;
+      return <div className="text-vibrant-blue dark:text-vibrant-pink">{fullName}</div>;
+    }
   },
   {
     accessorKey: "email",
@@ -31,13 +35,17 @@ export const getColumns = (onDelete: (userId: string) => void, onEdit: (user: Us
         </Button>
       )
     },
+    cell: ({ row }) => {
+      const email = row.getValue("email") as string;
+      return <div className="text-vibrant-green dark:text-vibrant-yellow">{email}</div>;
+    }
   },
   {
     accessorKey: "role",
     header: "Role",
     cell: ({ row }) => {
       const role = row.getValue("role") as string;
-      return <Badge variant={role === 'admin' ? 'default' : 'secondary'}>{role}</Badge>
+      return <Badge className={role === 'admin' ? 'bg-vibrant-red text-white' : 'bg-vibrant-purple text-white'}>{role}</Badge>
     }
   },
   {
@@ -45,7 +53,7 @@ export const getColumns = (onDelete: (userId: string) => void, onEdit: (user: Us
     header: "XP",
     cell: ({ row }) => {
       const xp = row.getValue("xp") as number;
-      return <div>{xp}</div>;
+      return <div className="text-vibrant-gold">{xp}</div>;
     }
   },
   {
