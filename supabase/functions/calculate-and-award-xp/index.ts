@@ -33,8 +33,11 @@ serve(async (req) => {
         newRecord.completed_at = new Date().toISOString();
       }
 
-      // Original XP calculation based on due_date
-      if (newRecord.due_date) {
+      // Determine XP amount: prioritize manual award, then due date calculation, then default
+      if (typeof newRecord.xp_awarded_manual === 'number' && newRecord.xp_awarded_manual !== null) {
+        xp_amount = newRecord.xp_awarded_manual;
+        reason_text = `Task completed (manual award): ${newRecord.title}`;
+      } else if (newRecord.due_date) {
         const time_diff_hours = (new Date(newRecord.due_date).getTime() - new Date(newRecord.completed_at).getTime()) / (1000 * 60 * 60);
 
         if (time_diff_hours >= 48) { // More than 2 days early
@@ -46,15 +49,25 @@ serve(async (req) => {
         } else { // Completed late or on time
           xp_amount = 3;
         }
-      } else { // If there's no due date, award a standard amount.
+        reason_text = `Task completed: ${newRecord.title}`;
+      } else { // If there's no due date and no manual XP, award a standard amount.
         xp_amount = 3;
+        reason_text = `Task completed: ${newRecord.title}`;
       }
-      reason_text = `Task completed: ${newRecord.title}`;
 
       // Update the user's profile with the calculated XP.
+      const { data: profile, error: fetchProfileError } = await supabaseAdmin
+        .from('profiles')
+        .select('xp')
+        .eq('id', newRecord.assigned_to)
+        .single();
+
+      if (fetchProfileError) throw fetchProfileError;
+      if (!profile) throw new Error("User profile not found.");
+
       const { error: updateProfileError } = await supabaseAdmin
         .from('profiles')
-        .update({ xp: (oldRecord.xp || 0) + xp_amount }) // Assuming oldRecord.xp is available or default to 0
+        .update({ xp: profile.xp + xp_amount })
         .eq('id', newRecord.assigned_to);
 
       if (updateProfileError) throw updateProfileError;
@@ -71,9 +84,18 @@ serve(async (req) => {
       reason_text = `Task rejected: ${newRecord.title}`;
 
       // Update the user's profile by deducting XP. Ensure XP doesn't go below 0.
+      const { data: profile, error: fetchProfileError } = await supabaseAdmin
+        .from('profiles')
+        .select('xp')
+        .eq('id', newRecord.assigned_to)
+        .single();
+
+      if (fetchProfileError) throw fetchProfileError;
+      if (!profile) throw new Error("User profile not found.");
+
       const { error: updateProfileError } = await supabaseAdmin
         .from('profiles')
-        .update({ xp: Math.max(0, (oldRecord.xp || 0) + xp_amount) })
+        .update({ xp: Math.max(0, profile.xp + xp_amount) })
         .eq('id', newRecord.assigned_to);
 
       if (updateProfileError) throw updateProfileError;

@@ -10,6 +10,8 @@ export interface Task {
   updated_at: string;
   completed_at: string | null;
   is_common_task: boolean;
+  marks_awarded?: number | null; // New: Marks awarded by admin
+  xp_awarded_manual?: number | null; // New: Manual XP awarded by admin
   profiles: {
     full_name: string;
   } | null; // For assigned_to user's name

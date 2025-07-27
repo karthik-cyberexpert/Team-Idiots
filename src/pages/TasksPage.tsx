@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, CircleDashed, CalendarDays, Send, ShieldQuestion, RefreshCw, XCircle } from "lucide-react";
+import { CheckCircle, CircleDashed, CalendarDays, Send, ShieldQuestion, RefreshCw, XCircle, Star } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Task } from "@/types/task";
@@ -209,6 +209,12 @@ const TasksPage = () => {
                   Due: {task.due_date ? new Date(task.due_date).toLocaleDateString() : "No due date"}
                 </div>
                 {getStatusBadge(task.status)}
+                {task.status === 'completed' && typeof task.marks_awarded === 'number' && (
+                  <div className="flex items-center text-sm text-yellow-600 font-semibold mt-2">
+                    <Star className="h-4 w-4 mr-1" />
+                    Marks Awarded: {task.marks_awarded}/10
+                  </div>
+                )}
               </CardContent>
               <div className="p-4 border-t flex justify-end">
                 {getTaskAction(task)}

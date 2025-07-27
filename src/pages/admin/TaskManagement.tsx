@@ -24,6 +24,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { AddTaskDialog } from "./tasks/AddTaskDialog";
 import { EditTaskDialog } from "./tasks/EditTaskDialog";
 import { AddCommonTaskDialog } from "./tasks/AddCommonTaskDialog";
+import { AwardMarksAndXpDialog } from "./tasks/AwardMarksAndXpDialog"; // Import the new dialog
 
 const fetchAllTasks = async (): Promise<Task[]> => {
   const { data, error } = await supabase
@@ -47,18 +48,13 @@ const deleteTask = async (taskId: string) => {
   }
 };
 
-const updateTaskStatusByAdmin = async ({ taskId, status }: { taskId: string; status: 'completed' | 'rejected' }) => {
-  const { error } = await supabase
-    .from("tasks")
-    .update({ status, updated_at: new Date().toISOString() })
-    .eq("id", taskId);
-  if (error) throw new Error(error.message);
-};
+// Removed updateTaskStatusByAdmin as its functionality is now in update-task-completion-details edge function
 
 const TaskManagement = () => {
   const queryClient = useQueryClient();
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null);
   const [taskToEdit, setTaskToEdit] = React.useState<Task | null>(null);
+  const [taskToAward, setTaskToAward] = React.useState<Task | null>(null); // New state for task to award marks/XP
   const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = React.useState(false);
   const [isAddCommonTaskDialogOpen, setIsAddCommonTaskDialogOpen] = React.useState(false);
   const [approvalAction, setApprovalAction] = React.useState<{ type: 'approve' | 'reject'; taskId: string } | null>(null);
@@ -99,57 +95,57 @@ const TaskManagement = () => {
     },
   });
 
-  const updateStatusMutation = useMutation({
-    mutationFn: updateTaskStatusByAdmin,
-    onMutate: async ({ taskId, status }) => {
-      // Cancel any outgoing refetches for the tasks query
+  // New mutation for rejecting tasks (since approval now uses a dialog)
+  const rejectTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ status: 'rejected', updated_at: new Date().toISOString() })
+        .eq("id", taskId);
+      if (error) throw new Error(error.message);
+    },
+    onMutate: async (taskId) => {
       await queryClient.cancelQueries({ queryKey: ["adminTasks"] });
       await queryClient.cancelQueries({ queryKey: ["userTasks"] });
-      await queryClient.cancelQueries({ queryKey: ["xpHistory"] });
-      await queryClient.cancelQueries({ queryKey: ["leaderboard"] });
-      await queryClient.cancelQueries({ queryKey: ["users"] });
-
-      // Snapshot the previous value
       const previousAdminTasks = queryClient.getQueryData<Task[]>(["adminTasks"]);
       const previousUserTasks = queryClient.getQueryData<Task[]>(["userTasks"]);
 
-      // Optimistically update to the new value
       queryClient.setQueryData<Task[]>(["adminTasks"], (old) =>
         old?.map((task) =>
-          task.id === taskId ? { ...task, status: status, updated_at: new Date().toISOString() } : task
+          task.id === taskId ? { ...task, status: 'rejected', updated_at: new Date().toISOString() } : task
         )
       );
       queryClient.setQueryData<Task[]>(["userTasks"], (old) =>
         old?.map((task) =>
-          task.id === taskId ? { ...task, status: status, updated_at: new Date().toISOString() } : task
+          task.id === taskId ? { ...task, status: 'rejected', updated_at: new Date().toISOString() } : task
         )
       );
-
       return { previousAdminTasks, previousUserTasks };
+    },
+    onSuccess: () => {
+      showSuccess("Task has been rejected.");
+      setApprovalAction(null);
     },
     onError: (err, variables, context) => {
       showError(err.message);
-      // Rollback to the previous value on error
       queryClient.setQueryData(["adminTasks"], context?.previousAdminTasks);
       queryClient.setQueryData(["userTasks"], context?.previousUserTasks);
     },
     onSettled: () => {
-      // Always refetch after error or success to ensure data is in sync
       queryClient.invalidateQueries({ queryKey: ["adminTasks"] });
       queryClient.invalidateQueries({ queryKey: ["userTasks"] });
-      queryClient.invalidateQueries({ queryKey: ["xpHistory"] }); // Invalidate XP history
-      queryClient.invalidateQueries({ queryKey: ["leaderboard"] }); // Invalidate leaderboard
-      queryClient.invalidateQueries({ queryKey: ["users"] }); // Invalidate users to update XP in admin table
-      setApprovalAction(null);
-    },
-    onSuccess: (_, variables) => {
-      showSuccess(`Task has been ${variables.status}.`);
     },
   });
 
+
   const handleDeleteRequest = React.useCallback((taskId: string) => setTaskToDelete(taskId), []);
   const handleEditRequest = React.useCallback((task: Task) => setTaskToEdit(task), []);
-  const handleApproveRequest = React.useCallback((taskId: string) => setApprovalAction({ type: 'approve', taskId }), []);
+  
+  // Modified handleApproveRequest to open the new dialog
+  const handleApproveRequest = React.useCallback((task: Task) => {
+    setTaskToAward(task); // Set the task to be awarded
+  }, []);
+
   const handleRejectRequest = React.useCallback((taskId: string) => setApprovalAction({ type: 'reject', taskId }), []);
 
   const columns = React.useMemo(
@@ -189,6 +185,7 @@ const TaskManagement = () => {
       <AddTaskDialog open={isAddTaskDialogOpen} onOpenChange={setIsAddTaskDialogOpen} />
       <AddCommonTaskDialog open={isAddCommonTaskDialogOpen} onOpenChange={setIsAddCommonTaskDialogOpen} />
       <EditTaskDialog open={!!taskToEdit} onOpenChange={() => setTaskToEdit(null)} task={taskToEdit} />
+      <AwardMarksAndXpDialog open={!!taskToAward} onOpenChange={() => setTaskToAward(null)} task={taskToAward} /> {/* New dialog */}
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">Task Management</h1>
@@ -215,21 +212,22 @@ const TaskManagement = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!approvalAction} onOpenChange={() => setApprovalAction(null)}>
+      {/* This AlertDialog is now only for 'reject' action */}
+      <AlertDialog open={approvalAction?.type === 'reject'} onOpenChange={() => setApprovalAction(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Action</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to {approvalAction?.type} this task submission?
+              Are you sure you want to reject this task submission?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => approvalAction && updateStatusMutation.mutate({ taskId: approvalAction.taskId, status: approvalAction.type === 'approve' ? 'completed' : 'rejected' })}
-              disabled={updateStatusMutation.isPending}
+              onClick={() => approvalAction && rejectTaskMutation.mutate(approvalAction.taskId)}
+              disabled={rejectTaskMutation.isPending}
             >
-              {updateStatusMutation.isPending ? "Processing..." : "Confirm"}
+              {rejectTaskMutation.isPending ? "Processing..." : "Confirm Rejection"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
