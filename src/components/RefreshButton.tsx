@@ -8,16 +8,15 @@ import { RefreshCw } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 
 const queryKeyMap: { [key: string]: string[] } = {
-  "/dashboard": ["userTasks", "notes", "channels", "codeDocuments", "leaderboard", "xpHistory"],
+  "/dashboard": ["userTasks", "notes", "channels", "leaderboard", "xpHistory"],
   "/dashboard/notes": ["notes"],
   "/dashboard/chat": ["channels", "messages"],
   "/dashboard/tasks": ["userTasks"],
-  "/dashboard/codespace": ["codeDocuments"],
   "/dashboard/leaderboard": ["leaderboard"],
   "/dashboard/xp-history": ["xpHistory"],
   "/admin/users": ["users"],
   "/admin/tasks": ["adminTasks"],
-  "/admin/data-management": ["channels", "messages", "notes", "codeDocuments"], // Invalidate if data was cleared
+  "/admin/data-management": ["channels", "messages", "notes"],
 };
 
 export const RefreshButton = () => {
@@ -41,7 +40,7 @@ export const RefreshButton = () => {
       queryKeyMap[matchingKeys[0]].forEach(key => keysToInvalidate.add(key));
     } else {
       // Fallback: if no specific route match, invalidate common dashboard keys
-      ["userTasks", "notes", "channels", "codeDocuments", "leaderboard", "xpHistory", "users", "adminTasks"].forEach(key => keysToInvalidate.add(key));
+      ["userTasks", "notes", "channels", "leaderboard", "xpHistory", "users", "adminTasks"].forEach(key => keysToInvalidate.add(key));
     }
 
     try {

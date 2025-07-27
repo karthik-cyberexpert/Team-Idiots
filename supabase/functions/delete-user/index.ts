@@ -26,7 +26,6 @@ serve(async (req) => {
     // Manually cascade delete all data related to the user
     await supabaseAdmin.from('messages').delete().eq('user_id', userId)
     await supabaseAdmin.from('notes').delete().eq('user_id', userId)
-    await supabaseAdmin.from('code_documents').delete().eq('user_id', userId)
     await supabaseAdmin.from('tasks').delete().eq('assigned_to', userId)
     await supabaseAdmin.from('tasks').delete().eq('assigned_by', userId)
     await supabaseAdmin.from('xp_history').delete().eq('user_id', userId)

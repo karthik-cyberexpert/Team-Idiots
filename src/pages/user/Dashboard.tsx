@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, MessageSquare, ListTodo, Code } from "lucide-react";
+import { FileText, MessageSquare, ListTodo } from "lucide-react";
 import { XpBar } from "@/components/dashboard/XpBar"; // Import XpBar
 
 const UserDashboard = () => {
@@ -22,12 +22,6 @@ const UserDashboard = () => {
       description: "View and manage tasks assigned to you.",
       icon: <ListTodo className="h-8 w-8 text-vibrant-orange" />,
       link: "/dashboard/tasks",
-    },
-    {
-      title: "Code Space",
-      description: "Collaborate on code snippets and documents in real-time.",
-      icon: <Code className="h-8 w-8 text-vibrant-purple" />,
-      link: "/dashboard/codespace",
     },
   ];
 
