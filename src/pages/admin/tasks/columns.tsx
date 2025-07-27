@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Task } from "@/types/task" // Removed CustomAward import
+import { Task } from "@/types/task"
 import { Badge } from "@/components/ui/badge"
 
 export const getColumns = (
@@ -66,6 +66,12 @@ export const getColumns = (
           break;
         case 'rejected':
           variantClass = 'bg-vibrant-red text-white';
+          break;
+        case 'late_completed':
+          variantClass = 'bg-vibrant-brown text-white';
+          break;
+        case 'failed':
+          variantClass = 'bg-gray-500 text-white';
           break;
         default:
           variantClass = 'bg-gray-500 text-white'; // Fallback

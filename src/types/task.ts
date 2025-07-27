@@ -4,7 +4,7 @@ export interface Task {
   description: string | null;
   assigned_to: string;
   assigned_by: string;
-  status: 'pending' | 'completed' | 'waiting_for_approval' | 'rejected';
+  status: 'pending' | 'completed' | 'waiting_for_approval' | 'rejected' | 'late_completed' | 'failed';
   due_date: string | null;
   created_at: string;
   updated_at: string;

@@ -24,13 +24,32 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
+    // Fetch the current task to get its due_date and the user's submitted completed_at
+    const { data: task, error: fetchError } = await supabaseAdmin
+      .from('tasks')
+      .select('due_date, completed_at')
+      .eq('id', taskId)
+      .single();
+
+    if (fetchError) throw fetchError;
+    if (!task) throw new Error("Task not found.");
+
+    let newStatus: 'completed' | 'late_completed' = 'completed';
+    if (task.due_date && task.completed_at) {
+      const dueDate = new Date(task.due_date);
+      const completedAt = new Date(task.completed_at);
+      if (completedAt > dueDate) {
+        newStatus = 'late_completed';
+      }
+    }
+
     const { error } = await supabaseAdmin
       .from('tasks')
       .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
+        status: newStatus,
         marks_awarded: marksAwarded,
         xp_awarded_manual: xpAwarded,
+        // Do NOT update completed_at here, it should reflect user's submission time
       })
       .eq('id', taskId);
 

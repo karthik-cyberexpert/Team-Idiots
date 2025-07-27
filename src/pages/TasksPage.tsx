@@ -27,10 +27,18 @@ const fetchUserTasks = async (userId: string): Promise<Task[]> => {
   return data as Task[];
 };
 
-const updateTaskStatus = async (taskId: string, status: 'waiting_for_approval' | 'pending') => {
+const updateTaskStatus = async (taskId: string, status: 'waiting_for_approval' | 'pending', completedAt?: string | null) => {
+  const updateData: { status: 'waiting_for_approval' | 'pending'; updated_at: string; completed_at?: string | null } = {
+    status,
+    updated_at: new Date().toISOString(),
+  };
+  if (completedAt !== undefined) {
+    updateData.completed_at = completedAt;
+  }
+
   const { error } = await supabase
     .from("tasks")
-    .update({ status, updated_at: new Date().toISOString() })
+    .update(updateData)
     .eq("id", taskId);
   if (error) throw new Error(error.message);
 };
@@ -71,9 +79,9 @@ const TasksPage = () => {
   }, [user, queryClient]);
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ taskId, status }: { taskId: string; status: 'waiting_for_approval' | 'pending' }) =>
-      updateTaskStatus(taskId, status),
-    onMutate: async ({ taskId, status }) => {
+    mutationFn: ({ taskId, status, completedAt }: { taskId: string; status: 'waiting_for_approval' | 'pending'; completedAt?: string | null }) =>
+      updateTaskStatus(taskId, status, completedAt),
+    onMutate: async ({ taskId, status, completedAt }) => {
       // Cancel any outgoing refetches for the tasks query
       await queryClient.cancelQueries({ queryKey: ["userTasks", user?.id] });
 
@@ -83,7 +91,7 @@ const TasksPage = () => {
       // Optimistically update to the new value
       queryClient.setQueryData<Task[]>(["userTasks", user?.id], (old) =>
         old?.map((task) =>
-          task.id === taskId ? { ...task, status: status, updated_at: new Date().toISOString() } : task
+          task.id === taskId ? { ...task, status: status, updated_at: new Date().toISOString(), completed_at: completedAt || task.completed_at } : task
         )
       );
 
@@ -117,6 +125,10 @@ const TasksPage = () => {
         return <Badge className="bg-vibrant-blue text-white">{statusText}</Badge>;
       case 'rejected':
         return <Badge className="bg-vibrant-red text-white">{statusText}</Badge>;
+      case 'late_completed':
+        return <Badge className="bg-vibrant-brown text-white">{statusText}</Badge>;
+      case 'failed':
+        return <Badge className="bg-gray-500 text-white">{statusText}</Badge>;
       default:
         return <Badge>{statusText}</Badge>;
     }
@@ -125,19 +137,23 @@ const TasksPage = () => {
   const getTaskAction = (task: Task) => {
     const now = new Date();
     const dueDate = task.due_date ? new Date(task.due_date) : null;
-    const isOverdue = dueDate && now > dueDate && task.status === 'pending';
+    const twelveHoursAfterDue = dueDate ? new Date(dueDate.getTime() + 12 * 60 * 60 * 1000) : null;
+    const isOverdue = dueDate && now > dueDate;
+    const isTooLateToSubmit = twelveHoursAfterDue && now > twelveHoursAfterDue;
 
-    if (isOverdue) {
+    if (task.status === 'completed' || task.status === 'late_completed') {
       return (
-        <Button
-          size="sm"
-          variant="destructive"
-          onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: 'waiting_for_approval' })}
-          disabled={updateStatusMutation.isPending}
-          className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
-        >
-          <XCircle className="h-4 w-4 mr-2" /> Submit Late
-        </Button>
+        <div className="flex items-center text-vibrant-green font-semibold">
+          <CheckCircle className="h-4 w-4 mr-2" /> {task.status === 'late_completed' ? 'Late Completed' : 'Completed'}
+        </div>
+      );
+    }
+
+    if (isTooLateToSubmit && task.status === 'pending') {
+      return (
+        <div className="flex items-center text-vibrant-red font-semibold">
+          <XCircle className="h-4 w-4 mr-2" /> Failed (Too Late)
+        </div>
       );
     }
 
@@ -146,11 +162,13 @@ const TasksPage = () => {
         return (
           <Button
             size="sm"
-            onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: 'waiting_for_approval' })}
+            onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: 'waiting_for_approval', completedAt: new Date().toISOString() })}
             disabled={updateStatusMutation.isPending}
             className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
+            variant={isOverdue ? "destructive" : "default"}
           >
-            <Send className="h-4 w-4 mr-2" /> Submit for Approval
+            {isOverdue ? <XCircle className="h-4 w-4 mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+            {isOverdue ? "Submit Late" : "Submit for Approval"}
           </Button>
         );
       case 'waiting_for_approval':
@@ -164,18 +182,12 @@ const TasksPage = () => {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: 'waiting_for_approval' })}
+            onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: 'waiting_for_approval', completedAt: new Date().toISOString() })}
             disabled={updateStatusMutation.isPending}
             className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
           >
             <RefreshCw className="h-4 w-4 mr-2" /> Resubmit
           </Button>
-        );
-      case 'completed':
-        return (
-          <div className="flex items-center text-vibrant-green font-semibold">
-            <CheckCircle className="h-4 w-4 mr-2" /> Completed
-          </div>
         );
       default:
         return null;

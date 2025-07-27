@@ -26,9 +26,10 @@ serve(async (req) => {
     let xp_amount = 0;
     let reason_text = '';
 
-    // Handle task completion
-    if (newRecord.status === 'completed' && oldRecord.status !== 'completed') {
+    // Handle task completion (either 'completed' or 'late_completed')
+    if ((newRecord.status === 'completed' || newRecord.status === 'late_completed') && oldRecord.status !== 'completed' && oldRecord.status !== 'late_completed') {
       // If completed_at is not already set, set it to the current time.
+      // This should ideally be set by the user's submission, but as a fallback.
       if (!newRecord.completed_at) {
         newRecord.completed_at = new Date().toISOString();
       }
@@ -37,7 +38,7 @@ serve(async (req) => {
       if (typeof newRecord.xp_awarded_manual === 'number' && newRecord.xp_awarded_manual !== null) {
         xp_amount = newRecord.xp_awarded_manual;
         reason_text = `Task completed (manual award): ${newRecord.title}`;
-      } else if (newRecord.due_date) {
+      } else if (newRecord.due_date && newRecord.completed_at) {
         const time_diff_hours = (new Date(newRecord.due_date).getTime() - new Date(newRecord.completed_at).getTime()) / (1000 * 60 * 60);
 
         if (time_diff_hours >= 48) { // More than 2 days early
@@ -53,6 +54,13 @@ serve(async (req) => {
       } else { // If there's no due date and no manual XP, award a standard amount.
         xp_amount = 3;
         reason_text = `Task completed: ${newRecord.title}`;
+      }
+
+      // Adjust reason text for late completion
+      if (newRecord.status === 'late_completed') {
+        reason_text = `Task late completed: ${newRecord.title}`;
+        // Optionally, you could deduct XP for late completion here if not already handled by time_diff_hours
+        // For now, the time_diff_hours logic already accounts for late submissions by giving less XP (3).
       }
 
       // Update the user's profile with the calculated XP.
