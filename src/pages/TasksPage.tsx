@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, CircleDashed, CalendarDays, Send, ShieldQuestion, RefreshCw } from "lucide-react";
+import { CheckCircle, CircleDashed, CalendarDays, Send, ShieldQuestion, RefreshCw, XCircle } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Task } from "@/types/task";
@@ -122,6 +122,18 @@ const TasksPage = () => {
   };
 
   const getTaskAction = (task: Task) => {
+    const now = new Date();
+    const dueDate = task.due_date ? new Date(task.due_date) : null;
+    const isOverdue = dueDate && now > dueDate && task.status === 'pending';
+
+    if (isOverdue) {
+      return (
+        <div className="flex items-center text-red-600 font-semibold">
+          <XCircle className="h-4 w-4 mr-2" /> Failed (Overdue)
+        </div>
+      );
+    }
+
     switch (task.status) {
       case 'pending':
         return (

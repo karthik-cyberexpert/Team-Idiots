@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Task, CustomAward } from "@/types/task"
+import { Task } from "@/types/task" // Removed CustomAward import
 import { Badge } from "@/components/ui/badge"
 
 export const getColumns = (
@@ -64,25 +64,6 @@ export const getColumns = (
     cell: ({ row }) => {
       const date = row.getValue("due_date") as string;
       return <div>{date ? new Date(date).toLocaleDateString() : 'N/A'}</div>
-    }
-  },
-  {
-    accessorKey: "custom_awards",
-    header: "Custom Awards",
-    cell: ({ row }) => {
-      const customAwards = row.getValue("custom_awards") as CustomAward[] | null;
-      if (!customAwards || customAwards.length === 0) {
-        return <div>N/A</div>;
-      }
-      return (
-        <div className="flex flex-col gap-1">
-          {customAwards.map((award, index) => (
-            <Badge key={index} variant="outline">
-              {award.xp} XP {award.due_days !== null ? `(${award.due_days} days)` : ''}
-            </Badge>
-          ))}
-        </div>
-      );
     }
   },
   {

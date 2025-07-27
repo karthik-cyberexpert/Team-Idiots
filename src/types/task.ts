@@ -1,8 +1,3 @@
-export interface CustomAward {
-  xp: number;
-  due_days: number | null;
-}
-
 export interface Task {
   id: string;
   title: string;
@@ -15,7 +10,6 @@ export interface Task {
   updated_at: string;
   completed_at: string | null;
   is_common_task: boolean;
-  custom_awards: CustomAward[] | null; // New field for multiple custom awards
   profiles: {
     full_name: string;
   } | null; // For assigned_to user's name

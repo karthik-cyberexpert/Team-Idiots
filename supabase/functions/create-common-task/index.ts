@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { title, description, dueDate, assignedBy, customAwards } = await req.json()
+    const { title, description, dueDate, assignedBy } = await req.json() // Removed customAwards
     if (!title || !assignedBy) {
       throw new Error("Title and assigner ID are required.")
     }
@@ -39,7 +39,7 @@ serve(async (req) => {
       assigned_to: user.id,
       status: 'pending',
       is_common_task: true,
-      custom_awards: customAwards || null, // Use the new custom_awards field
+      custom_awards: null, // Explicitly set to null as custom awards are removed
     }));
 
     const { error: insertError } = await supabaseAdmin

@@ -33,58 +33,23 @@ serve(async (req) => {
         newRecord.completed_at = new Date().toISOString();
       }
 
-      const customAwards = newRecord.custom_awards;
-      let awarded = false;
+      // Original XP calculation based on due_date
+      if (newRecord.due_date) {
+        const time_diff_hours = (new Date(newRecord.due_date).getTime() - new Date(newRecord.completed_at).getTime()) / (1000 * 60 * 60);
 
-      if (customAwards && customAwards.length > 0) {
-        const time_diff_hours = newRecord.due_date 
-          ? (new Date(newRecord.due_date).getTime() - new Date(newRecord.completed_at).getTime()) / (1000 * 60 * 60)
-          : null;
-
-        // Sort custom awards by dueDays in ascending order to find the best match
-        customAwards.sort((a: any, b: any) => (a.due_days || Infinity) - (b.due_days || Infinity));
-
-        for (const award of customAwards) {
-          if (award.due_days !== null) {
-            // If due_days is set, check if completed within that many days from creation
-            const created_at_date = new Date(newRecord.created_at);
-            const due_date_from_creation = new Date(created_at_date.getTime() + award.due_days * 24 * 60 * 60 * 1000);
-            
-            if (new Date(newRecord.completed_at) <= due_date_from_creation) {
-              xp_amount = award.xp;
-              reason_text = `Task completed early (within ${award.due_days} days): ${newRecord.title}`;
-              awarded = true;
-              break; // Take the first matching award (which is the earliest due_days due to sorting)
-            }
-          } else {
-            // If due_days is null, it's a general award for completion
-            xp_amount = award.xp;
-            reason_text = `Task completed: ${newRecord.title}`;
-            awarded = true;
-            break; // Take this general award if no time-based award was met
-          }
-        }
-      }
-
-      if (!awarded) {
-        // Fallback to original XP calculation if no custom awards or no match
-        if (newRecord.due_date) {
-          const time_diff_hours = (new Date(newRecord.due_date).getTime() - new Date(newRecord.completed_at).getTime()) / (1000 * 60 * 60);
-
-          if (time_diff_hours >= 48) { // More than 2 days early
-            xp_amount = 10;
-          } else if (time_diff_hours >= 24) { // 1 to 2 days early
-            xp_amount = 8;
-          } else if (time_diff_hours > 0) { // Less than 1 day early
-            xp_amount = 5;
-          } else { // Completed late or on time
-            xp_amount = 3;
-          }
-        } else { // If there's no due date and no custom XP, award a standard amount.
+        if (time_diff_hours >= 48) { // More than 2 days early
+          xp_amount = 10;
+        } else if (time_diff_hours >= 24) { // 1 to 2 days early
+          xp_amount = 8;
+        } else if (time_diff_hours > 0) { // Less than 1 day early
+          xp_amount = 5;
+        } else { // Completed late or on time
           xp_amount = 3;
         }
-        reason_text = `Task completed: ${newRecord.title}`;
+      } else { // If there's no due date, award a standard amount.
+        xp_amount = 3;
       }
+      reason_text = `Task completed: ${newRecord.title}`;
 
       // Update the user's profile with the calculated XP.
       const { error: updateProfileError } = await supabaseAdmin
