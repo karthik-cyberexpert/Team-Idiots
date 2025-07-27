@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, Rocket, ChevronsLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { RefreshButton } from "@/components/RefreshButton"; // Import RefreshButton
 
 export function DashboardLayout() {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
@@ -43,6 +44,7 @@ export function DashboardLayout() {
             </SheetContent>
           </Sheet>
           <div className="flex w-full items-center justify-end gap-4 md:ml-auto md:gap-2 lg:gap-4">
+            <RefreshButton /> {/* Add RefreshButton for mobile */}
             <UserNav />
           </div>
         </header>
@@ -81,6 +83,7 @@ export function DashboardLayout() {
       </div>
       <div className="flex flex-col">
         <header className="flex h-14 items-center justify-end gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+          <RefreshButton /> {/* Add RefreshButton for desktop */}
           <UserNav />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
