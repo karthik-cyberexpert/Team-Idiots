@@ -141,7 +141,11 @@ export const AddTaskDialog = ({ open, onOpenChange }: AddTaskDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto
+        top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+        data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-1/2
+        data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-1/2
+      ">
         <DialogHeader>
           <DialogTitle className="text-vibrant-blue dark:text-vibrant-pink">Create New Task</DialogTitle>
           <DialogDescription>
