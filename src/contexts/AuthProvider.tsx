@@ -104,22 +104,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   useEffect(() => {
+    // Handle initial session loading
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        await fetchProfile(session.user.id);
+      }
+      setLoading(false); // Set loading to false after initial check
+    };
+
+    getInitialSession();
+
+    // Listen for subsequent auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-
-        if (event === 'INITIAL_SESSION') {
-          if (session?.user) {
-            await fetchProfile(session.user.id);
-          }
-          setLoading(false);
-        } else if (event === 'SIGNED_IN') {
-          if (session?.user) {
-            await fetchProfile(session.user.id);
-            // Leaderboard check is now handled by DashboardPage to show on every visit
-          }
-        } else if (event === 'SIGNED_OUT') {
+        if (session?.user) {
+          // If there's a session, user might have signed in or their token was refreshed.
+          // Fetching profile ensures data is fresh.
+          await fetchProfile(session.user.id);
+        } else {
+          // User signed out
           setProfile(null);
           setUserLevel(1);
           setUserBadge("Bronze");
