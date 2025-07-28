@@ -96,7 +96,6 @@
   }
 
   html {
-    perspective: var(--perspective); /* Apply perspective to html */
   }
 
   body {

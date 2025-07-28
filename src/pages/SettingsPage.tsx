@@ -9,7 +9,7 @@ const SettingsPage = () => {
   const { theme, setTheme, fontSize, setFontSize, fontFamily, setFontFamily } = useTheme();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 [perspective:1000px]">
       <h1 className="text-2xl sm:text-3xl font-bold">Settings</h1>
       
       <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5 shadow-md">

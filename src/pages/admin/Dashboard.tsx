@@ -42,7 +42,7 @@ const AdminDashboard = () => {
       <p className="text-muted-foreground mt-2 text-vibrant-brown dark:text-vibrant-silver">
         This is the admin dashboard. Here you can manage various aspects of the application.
       </p>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 [perspective:1000px]">
         {adminFeatures.map((feature) => (
           <Link to={feature.link} key={feature.title} className="group">
             <Card className="h-full flex flex-col justify-between transform transition-transform-shadow duration-300 ease-in-out group-hover:scale-[1.02] group-hover:shadow-xl group-hover:rotate-x-1 group-hover:rotate-y-1 shadow-md">

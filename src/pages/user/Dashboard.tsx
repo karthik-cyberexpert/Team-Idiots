@@ -44,7 +44,7 @@ const UserDashboard = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 [perspective:1000px]">
       <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-pink dark:text-vibrant-blue">Your Dashboard</h1>
       <p className="text-muted-foreground mt-2 text-vibrant-brown dark:text-vibrant-silver">
         Welcome to your personal dashboard. Here are your quick links:

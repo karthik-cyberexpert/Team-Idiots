@@ -78,7 +78,7 @@ const DataManagementPage = () => {
         Use this section to clear application data that might consume storage space. This will not affect user accounts.
       </p>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 [perspective:1000px]">
         <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5 shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-medium">Clear Chat Data</CardTitle>
