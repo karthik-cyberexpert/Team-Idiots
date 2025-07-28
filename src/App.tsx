@@ -23,7 +23,8 @@ import { ThemeProvider } from "./contexts/ThemeProvider";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import XpHistoryPage from "./pages/XpHistoryPage";
 import TyperPage from "./pages/TyperPage";
-import TyperManagementPage from "./pages/admin/typer/TyperManagementPage"; // Import the new Typer Management Page
+import TyperManagementPage from "./pages/admin/typer/TyperManagementPage";
+import GameLeaderboardPage from "./pages/GameLeaderboardPage"; // Import the new Game Leaderboard Page
 
 const queryClient = new QueryClient();
 
@@ -50,11 +51,12 @@ const App = () => (
                   <Route path="/dashboard/settings" element={<SettingsPage />} />
                   <Route path="/dashboard/xp-history" element={<XpHistoryPage />} />
                   <Route path="/dashboard/typer" element={<TyperPage />} />
+                  <Route path="/dashboard/game-leaderboard" element={<GameLeaderboardPage />} /> {/* New Game Leaderboard Route */}
                   <Route element={<AdminRoute />}>
                     <Route path="/admin/users" element={<UserManagement />} />
                     <Route path="/admin/tasks" element={<TaskManagement />} />
                     <Route path="/admin/data-management" element={<DataManagementPage />} />
-                    <Route path="/admin/typer-management" element={<TyperManagementPage />} /> {/* New Typer Management Route */}
+                    <Route path="/admin/typer-management" element={<TyperManagementPage />} />
                   </Route>
                 </Route>
               </Route>

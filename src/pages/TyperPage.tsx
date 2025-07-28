@@ -4,14 +4,16 @@ import * as React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, CheckCircle, XCircle } from "lucide-react";
+import { RefreshCw, CheckCircle, XCircle, Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { TypingText } from "@/types/typing-text";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
+import { useAuth } from "@/contexts/AuthProvider";
+import { showSuccess, showError } from "@/utils/toast";
 
 const fetchTypingTexts = async (): Promise<TypingText[]> => {
   const { data, error } = await supabase
@@ -21,18 +23,45 @@ const fetchTypingTexts = async (): Promise<TypingText[]> => {
   return data;
 };
 
+const saveGameResult = async ({ userId, textId, wpm, accuracy }: { userId: string; textId: string; wpm: number; accuracy: number }) => {
+  const { data, error } = await supabase.rpc('log_typing_result', {
+    p_user_id: userId,
+    p_text_id: textId,
+    p_wpm: wpm,
+    p_accuracy: accuracy,
+  });
+
+  if (error) throw error;
+  return data;
+};
+
 const TyperPage = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [currentText, setCurrentText] = React.useState<TypingText | null>(null);
   const [inputText, setInputText] = React.useState("");
   const [startTime, setStartTime] = React.useState<number | null>(null);
   const [endTime, setEndTime] = React.useState<number | null>(null);
   const [accuracy, setAccuracy] = React.useState<number | null>(null);
   const [wpm, setWpm] = React.useState<number | null>(null);
+  const [pointsAwarded, setPointsAwarded] = React.useState<number | null>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
   const { data: availableTexts, isLoading, error } = useQuery<TypingText[]>({
     queryKey: ["availableTypingTexts"],
     queryFn: fetchTypingTexts,
+  });
+
+  const saveResultMutation = useMutation({
+    mutationFn: saveGameResult,
+    onSuccess: (points) => {
+      setPointsAwarded(points);
+      showSuccess(`You earned ${points} game points!`);
+      queryClient.invalidateQueries({ queryKey: ['gameLeaderboard'] });
+    },
+    onError: (err: Error) => {
+      showError(`Failed to save result: ${err.message}`);
+    },
   });
 
   const resetTest = React.useCallback(() => {
@@ -44,9 +73,10 @@ const TyperPage = () => {
       setEndTime(null);
       setAccuracy(null);
       setWpm(null);
+      setPointsAwarded(null);
       inputRef.current?.focus();
     } else {
-      setCurrentText(null); // No texts available
+      setCurrentText(null);
     }
   }, [availableTexts]);
 
@@ -56,25 +86,11 @@ const TyperPage = () => {
     }
   }, [availableTexts, currentText, resetTest]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (!currentText || endTime) return; // Prevent typing if test is over or no text
-
-    const value = e.target.value;
-    setInputText(value);
-
-    if (!startTime) {
-      setStartTime(Date.now());
-    }
-
-    if (value === currentText.content) {
-      setEndTime(Date.now());
-      calculateResults();
-    }
-  };
-
   const calculateResults = () => {
-    if (startTime && endTime && currentText) {
-      const durationInMinutes = (endTime - startTime) / 60000;
+    if (startTime && currentText && user) {
+      const finalTime = Date.now();
+      setEndTime(finalTime);
+      const durationInMinutes = (finalTime - startTime) / 60000;
       const wordsTyped = currentText.content.split(" ").length;
       const calculatedWpm = Math.round(wordsTyped / durationInMinutes);
       setWpm(calculatedWpm);
@@ -86,7 +102,30 @@ const TyperPage = () => {
         }
       }
       const calculatedAccuracy = (correctChars / currentText.content.length) * 100;
-      setAccuracy(parseFloat(calculatedAccuracy.toFixed(2)));
+      const finalAccuracy = parseFloat(calculatedAccuracy.toFixed(2));
+      setAccuracy(finalAccuracy);
+
+      saveResultMutation.mutate({
+        userId: user.id,
+        textId: currentText.id,
+        wpm: calculatedWpm,
+        accuracy: finalAccuracy,
+      });
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (!currentText || endTime) return;
+
+    const value = e.target.value;
+    setInputText(value);
+
+    if (!startTime) {
+      setStartTime(Date.now());
+    }
+
+    if (value === currentText.content) {
+      calculateResults();
     }
   };
 
@@ -132,11 +171,9 @@ const TyperPage = () => {
         <CardContent className="space-y-4">
           {currentText ? (
             <div className="relative p-4 border rounded-md bg-muted/50 text-lg font-mono leading-relaxed whitespace-pre-wrap">
-              {/* Original text layer */}
               <div className="absolute inset-0 p-4 text-muted-foreground opacity-50">
                 {currentText.content}
               </div>
-              {/* Typed text layer with coloring */}
               <div className="relative z-10">
                 {currentText.content.split("").map((char, index) => (
                   <span key={index} className={cn(getCharClass(char, index))}>
@@ -182,6 +219,15 @@ const TyperPage = () => {
                   <p className="text-2xl font-bold text-vibrant-orange">{wpm}</p>
                 </div>
               </div>
+              {pointsAwarded !== null && (
+                <div className="flex items-center gap-2">
+                  <Gamepad2 className="h-6 w-6 text-vibrant-purple" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Points</p>
+                    <p className="text-2xl font-bold text-vibrant-purple">+{pointsAwarded}</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

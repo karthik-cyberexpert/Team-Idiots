@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Settings } from "lucide-react"; // Import Type and Settings icons
+import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Settings, Gamepad2 } from "lucide-react"; // Import Gamepad2 icon
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -44,13 +44,18 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
     },
     {
       href: "/dashboard/leaderboard",
-      label: "Leaderboard",
+      label: "XP Leaderboard",
       icon: <Trophy className="h-4 w-4" />,
     },
     {
       href: "/dashboard/typer",
-      label: "Typer",
+      label: "Typer Game",
       icon: <Type className="h-4 w-4" />,
+    },
+    {
+      href: "/dashboard/game-leaderboard",
+      label: "Game Leaderboard",
+      icon: <Gamepad2 className="h-4 w-4" />,
     },
     {
       href: "/admin/users",
@@ -71,9 +76,9 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       adminOnly: true,
     },
     {
-      href: "/admin/typer-management", // New Typer Management link
+      href: "/admin/typer-management",
       label: "Typer Management",
-      icon: <Type className="h-4 w-4" />, // Using Type icon for now, can be changed
+      icon: <Type className="h-4 w-4" />,
       adminOnly: true,
     },
   ];

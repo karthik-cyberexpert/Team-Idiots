@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, MessageSquare, ListTodo, Type } from "lucide-react"; // Import Type icon
+import { FileText, MessageSquare, ListTodo, Type, Gamepad2 } from "lucide-react"; // Import Gamepad2 icon
 import { XpBar } from "@/components/dashboard/XpBar";
 
 const UserDashboard = () => {
@@ -24,10 +24,16 @@ const UserDashboard = () => {
       link: "/dashboard/tasks",
     },
     {
-      title: "Typer", // New Typer card
+      title: "Typer Game",
       description: "Improve your typing speed and accuracy.",
       icon: <Type className="h-8 w-8 text-vibrant-purple" />,
       link: "/dashboard/typer",
+    },
+    {
+      title: "Game Leaderboard",
+      description: "See who is the top typer in the game.",
+      icon: <Gamepad2 className="h-8 w-8 text-vibrant-pink" />,
+      link: "/dashboard/game-leaderboard",
     },
   ];
 
