@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,6 +20,7 @@ interface AuthContextType {
   userBadge: string;
   leaderboardPopupData: { position: number } | null;
   closeLeaderboardPopup: () => void;
+  checkLeaderboard: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -81,6 +82,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const checkLeaderboard = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data: leaderboard, error: leaderboardError } = await supabase
+        .from('profiles')
+        .select('id')
+        .order('xp', { ascending: false });
+
+      if (leaderboardError) throw leaderboardError;
+
+      const userRankIndex = leaderboard.findIndex(p => p.id === user.id);
+      
+      if (userRankIndex !== -1) {
+        const currentPosition = userRankIndex + 1;
+        setLeaderboardPopupData({ position: currentPosition });
+      }
+    } catch (error) {
+      console.error("Error checking leaderboard rank:", error);
+    }
+  }, [user]);
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -95,28 +117,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else if (event === 'SIGNED_IN') {
           if (session?.user) {
             await fetchProfile(session.user.id);
-            // Leaderboard check logic
-            try {
-              const { data: leaderboard, error: leaderboardError } = await supabase
-                .from('profiles')
-                .select('id, xp')
-                .order('xp', { ascending: false });
-
-              if (leaderboardError) throw leaderboardError;
-
-              const userRankIndex = leaderboard.findIndex(p => p.id === session.user.id);
-              
-              if (userRankIndex !== -1) {
-                const currentPosition = userRankIndex + 1;
-                const lastSeenPositionStr = localStorage.getItem(`leaderboard-seen-position-${session.user.id}`);
-                
-                if (!lastSeenPositionStr || currentPosition < parseInt(lastSeenPositionStr, 10)) {
-                  setLeaderboardPopupData({ position: currentPosition });
-                }
-              }
-            } catch (error) {
-              console.error("Error checking leaderboard rank:", error);
-            }
+            // Leaderboard check is now handled by DashboardPage to show on every visit
           }
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
@@ -136,9 +137,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const closeLeaderboardPopup = () => {
-    if (leaderboardPopupData && user) {
-      localStorage.setItem(`leaderboard-seen-position-${user.id}`, String(leaderboardPopupData.position));
-    }
     setLeaderboardPopupData(null);
   };
 
@@ -153,6 +151,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     userBadge,
     leaderboardPopupData,
     closeLeaderboardPopup,
+    checkLeaderboard,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

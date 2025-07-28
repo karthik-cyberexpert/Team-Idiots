@@ -2,9 +2,17 @@ import { useAuth } from '@/contexts/AuthProvider';
 import AdminDashboard from './admin/Dashboard';
 import UserDashboard from './user/Dashboard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useEffect } from 'react';
 
 const DashboardPage = () => {
-  const { profile, loading } = useAuth();
+  const { profile, loading, checkLeaderboard } = useAuth();
+
+  useEffect(() => {
+    // When the dashboard page loads, run the leaderboard check.
+    if (profile) {
+      checkLeaderboard();
+    }
+  }, [profile, checkLeaderboard]);
 
   if (loading) {
     return (

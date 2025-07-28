@@ -16,13 +16,13 @@ export const LeaderboardPopup: React.FC<LeaderboardPopupProps> = ({ position, on
     // Activate confetti shortly after the component mounts to ensure it's visible
     const confettiTimer = setTimeout(() => setConfettiActive(true), 100);
 
-    // Set a timer to close the popup after 5 seconds
+    // Set a timer to close the popup after 2.5 seconds
     const closeTimer = setTimeout(() => {
       setVisible(false);
       setConfettiActive(false);
       // Allow fade-out animation to complete before calling onClose
       setTimeout(onClose, 500);
-    }, 5000);
+    }, 2500);
 
     return () => {
       clearTimeout(confettiTimer);
@@ -48,7 +48,7 @@ export const LeaderboardPopup: React.FC<LeaderboardPopupProps> = ({ position, on
     startVelocity: 40,
     elementCount: 200,
     dragFriction: 0.12,
-    duration: 5000,
+    duration: 2500,
     stagger: 3,
     width: "10px",
     height: "10px",
