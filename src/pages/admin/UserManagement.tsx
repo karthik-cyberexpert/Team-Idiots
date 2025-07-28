@@ -105,18 +105,30 @@ const UserManagement = () => {
   });
 
   const handleDeleteRequest = React.useCallback((userId: string) => {
+    setUserToEdit(null);
+    setUserToChangeXp(null);
+    setUserToChangeGamePoints(null);
     setUserToDelete(userId);
   }, []);
 
   const handleEditRequest = React.useCallback((user: User) => {
+    setUserToDelete(null);
+    setUserToChangeXp(null);
+    setUserToChangeGamePoints(null);
     setUserToEdit(user);
   }, []);
 
   const handleChangeXpRequest = React.useCallback((user: User) => {
+    setUserToDelete(null);
+    setUserToEdit(null);
+    setUserToChangeGamePoints(null);
     setUserToChangeXp(user);
   }, []);
 
   const handleChangeGamePointsRequest = React.useCallback((user: User) => {
+    setUserToDelete(null);
+    setUserToEdit(null);
+    setUserToChangeXp(null);
     setUserToChangeGamePoints(user);
   }, []);
 
