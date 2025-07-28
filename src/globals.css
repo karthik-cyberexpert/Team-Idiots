@@ -135,3 +135,28 @@
     background-position: -200% 0;
   }
 }
+
+/* New animation for leaderboard highlight */
+@keyframes animated-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-leaderboard-highlight {
+  background: linear-gradient(
+    -45deg,
+    hsl(var(--accent)),
+    hsl(var(--primary)),
+    hsl(var(--vibrant-gold)),
+    hsl(var(--accent))
+  );
+  background-size: 400% 400%;
+  animation: animated-gradient 4s ease infinite;
+}

@@ -3,11 +3,13 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthProvider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Trophy, Medal, Award } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 interface Profile {
   id: string;
@@ -28,7 +30,7 @@ const fetchLeaderboard = async (): Promise<Profile[]> => {
 
 const getInitials = (name: string | null | undefined) => {
   if (!name || name.trim() === '') {
-    return '??'; // Default for null, undefined, or empty string
+    return '??';
   }
   const parts = name.trim().split(' ');
   if (parts.length === 1) {
@@ -39,6 +41,9 @@ const getInitials = (name: string | null | undefined) => {
 
 const LeaderboardPage = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const [highlightedUser, setHighlightedUser] = React.useState<string | null>(null);
+
   const { data: profiles, isLoading, error } = useQuery<Profile[]>({
     queryKey: ["leaderboard"],
     queryFn: fetchLeaderboard,
@@ -65,6 +70,36 @@ const LeaderboardPage = () => {
       supabase.removeChannel(channel);
     };
   }, [queryClient]);
+
+  // Effect to handle rank change animation
+  React.useEffect(() => {
+    if (profiles && user) {
+      const userRankIndex = profiles.findIndex(p => p.id === user.id);
+      if (userRankIndex === -1) return; // User not on leaderboard
+
+      const newRank = userRankIndex + 1;
+      const lastSeenRankStr = localStorage.getItem(`lastSeenRank-${user.id}`);
+      
+      if (lastSeenRankStr) {
+        const lastSeenRank = parseInt(lastSeenRankStr, 10);
+        if (newRank !== lastSeenRank) {
+          // Rank has changed, trigger animation
+          setHighlightedUser(user.id);
+          
+          // After animation, update localStorage and remove highlight
+          const timer = setTimeout(() => {
+            setHighlightedUser(null);
+            localStorage.setItem(`lastSeenRank-${user.id}`, String(newRank));
+          }, 4000); // Animation duration (4s)
+
+          return () => clearTimeout(timer);
+        }
+      } else {
+        // First time viewing, just set the rank without animation
+        localStorage.setItem(`lastSeenRank-${user.id}`, String(newRank));
+      }
+    }
+  }, [profiles, user]);
 
   const getRankIcon = (rank: number) => {
     if (rank === 0) return <Medal className="h-6 w-6 text-vibrant-gold" />;
@@ -97,26 +132,40 @@ const LeaderboardPage = () => {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-purple dark:text-vibrant-pink">Leaderboard</h1>
-      <Card className="shadow-md">
+      <Card className="shadow-md overflow-hidden">
         <CardHeader>
           <CardTitle>Top Performers</CardTitle>
         </CardHeader>
         <CardContent>
           <ul className="space-y-3">
-            {profiles && profiles.map((profile, index) => (
-              <li key={profile.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:rotate-x-1 hover:rotate-y-1 shadow-md">
-                <div className="flex items-center gap-4">
-                  <div className="font-bold text-lg w-8 text-center">{index + 1}</div>
-                  {getRankIcon(index)}
-                  <Avatar>
-                    <AvatarImage src="" alt={profile.full_name} />
-                    <AvatarFallback>{getInitials(profile.full_name)}</AvatarFallback>
-                  </Avatar>
-                  <span className="font-medium text-foreground">{profile.full_name}</span>
-                </div>
-                <div className="font-bold text-primary">{profile.xp} XP</div>
-              </li>
-            ))}
+            {profiles && profiles.map((profile, index) => {
+              const isCurrentUser = profile.id === highlightedUser;
+              const isOtherUserWhenHighlighting = highlightedUser !== null && !isCurrentUser;
+
+              return (
+                <li 
+                  key={profile.id} 
+                  className={cn(
+                    "flex items-center justify-between p-3 bg-muted/50 rounded-lg shadow-md",
+                    "transition-all duration-1000 ease-in-out", // Smooth transition for all properties
+                    "relative", // For z-index to work
+                    isCurrentUser && "scale-105 z-10 shadow-lg shadow-primary/50 animate-leaderboard-highlight",
+                    isOtherUserWhenHighlighting && "opacity-40 scale-95"
+                  )}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="font-bold text-lg w-8 text-center">{index + 1}</div>
+                    {getRankIcon(index)}
+                    <Avatar>
+                      <AvatarImage src="" alt={profile.full_name} />
+                      <AvatarFallback>{getInitials(profile.full_name)}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium text-foreground">{profile.full_name}</span>
+                  </div>
+                  <div className="font-bold text-primary">{profile.xp} XP</div>
+                </li>
+              );
+            })}
           </ul>
         </CardContent>
       </Card>
