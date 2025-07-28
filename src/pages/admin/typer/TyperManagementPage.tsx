@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
 import { AddTypingTextDialog } from "./AddTypingTextDialog";
 import { EditTypingTextDialog } from "./EditTypingTextDialog";
+import { PaginationState } from "@tanstack/react-table";
 
 const fetchTypingTexts = async (): Promise<TypingText[]> => {
   const { data, error } = await supabase.functions.invoke("get-typing-texts");
@@ -46,6 +47,10 @@ const TyperManagementPage = () => {
   const [textToDelete, setTextToDelete] = React.useState<string | null>(null);
   const [textToEdit, setTextToEdit] = React.useState<TypingText | null>(null);
   const [isAddTextDialogOpen, setIsAddTextDialogOpen] = React.useState(false);
+  const [pagination, setPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
   const { data: typingTexts, isLoading, error } = useQuery<TypingText[]>({
     queryKey: ["typingTexts"],
@@ -129,7 +134,14 @@ const TyperManagementPage = () => {
           <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-blue dark:text-vibrant-pink">Typer Management</h1>
           <Button onClick={() => setIsAddTextDialogOpen(true)}>Add New Text</Button>
         </div>
-        <DataTable columns={columns} data={typingTexts || []} />
+        <DataTable 
+          columns={columns} 
+          data={typingTexts || []}
+          pagination={pagination}
+          setPagination={setPagination}
+          filterColumn="title"
+          filterPlaceholder="Filter by title..."
+        />
       </div>
 
       <AlertDialog open={!!textToDelete} onOpenChange={() => setTextToDelete(null)}>
