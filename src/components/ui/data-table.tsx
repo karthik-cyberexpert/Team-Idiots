@@ -46,8 +46,8 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   pageCount,
-  pagination,
-  setPagination,
+  pagination: externalPagination,
+  setPagination: setExternalPagination,
   filterColumn,
   filterPlaceholder,
 }: DataTableProps<TData, TValue>) {
@@ -56,7 +56,13 @@ export function DataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
 
-  const isServerSidePagination = !!pageCount && !!pagination && !!setPagination;
+  // Internal state for client-side pagination
+  const [internalPagination, setInternalPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const isServerSidePagination = pageCount !== undefined && externalPagination !== undefined && setExternalPagination !== undefined;
 
   const table = useReactTable({
     data,
@@ -69,16 +75,23 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    pageCount: isServerSidePagination ? pageCount : -1,
+    ...(isServerSidePagination
+      ? {
+          manualPagination: true,
+          pageCount: pageCount,
+          onPaginationChange: setExternalPagination,
+        }
+      : {
+          manualPagination: false,
+          onPaginationChange: setInternalPagination,
+        }),
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
-      pagination: pagination,
+      pagination: isServerSidePagination ? externalPagination : internalPagination,
     },
-    onPaginationChange: setPagination,
-    manualPagination: isServerSidePagination,
   })
 
   return (
