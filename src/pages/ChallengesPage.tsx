@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Trophy, CheckCircle, Gamepad2 } from "lucide-react";
+import { Trophy, CheckCircle, Gamepad2, ListTodo, Type } from "lucide-react";
 import { Challenge, ChallengeCompletion } from "@/types/challenge";
 import { showSuccess, showError } from "@/utils/toast";
 
@@ -24,7 +24,7 @@ const fetchUserCompletions = async (userId: string): Promise<ChallengeCompletion
   return data;
 };
 
-const completeChallenge = async ({ userId, challengeId }: { userId: string; challengeId: string }) => {
+const completeManualChallenge = async ({ userId, challengeId }: { userId: string; challengeId: string }) => {
   const { error } = await supabase.from("challenge_completions").insert({ user_id: userId, challenge_id: challengeId });
   if (error) throw new Error(error.message);
 };
@@ -45,8 +45,8 @@ const ChallengesPage = () => {
   });
 
   const completeMutation = useMutation({
-    mutationFn: completeChallenge,
-    onSuccess: (_, variables) => {
+    mutationFn: completeManualChallenge,
+    onSuccess: () => {
       showSuccess("Challenge completed! Rewards granted.");
       queryClient.invalidateQueries({ queryKey: ["challengeCompletions", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["xpHistory", user?.id] });
@@ -64,6 +64,17 @@ const ChallengesPage = () => {
 
   const isLoading = challengesLoading || completionsLoading;
 
+  const getChallengeGoal = (challenge: Challenge) => {
+    switch (challenge.challenge_type) {
+      case 'task_completion':
+        return <div className="text-sm text-muted-foreground flex items-center"><ListTodo className="h-4 w-4 mr-2" />Complete the assigned task.</div>;
+      case 'typer_goal':
+        return <div className="text-sm text-muted-foreground flex items-center"><Type className="h-4 w-4 mr-2" />Achieve {challenge.typer_wpm_goal} WPM with {challenge.typer_accuracy_goal || 90}% accuracy.</div>;
+      default:
+        return <div className="text-sm text-muted-foreground">Manually complete this challenge.</div>;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl sm:text-3xl font-bold">Challenges</h1>
@@ -71,9 +82,9 @@ const ChallengesPage = () => {
       
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-48 w-full" />
+          <Skeleton className="h-52 w-full" />
+          <Skeleton className="h-52 w-full" />
+          <Skeleton className="h-52 w-full" />
         </div>
       ) : availableChallenges.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -83,7 +94,8 @@ const ChallengesPage = () => {
                 <CardTitle>{challenge.title}</CardTitle>
                 <CardDescription>{challenge.description}</CardDescription>
               </CardHeader>
-              <CardContent className="flex-grow space-y-2">
+              <CardContent className="flex-grow space-y-3">
+                <div>{getChallengeGoal(challenge)}</div>
                 <div className="font-bold text-vibrant-gold flex items-center">
                   <Trophy className="h-5 w-5 mr-2" /> {challenge.xp_reward} XP
                 </div>
@@ -91,15 +103,17 @@ const ChallengesPage = () => {
                   <Gamepad2 className="h-5 w-5 mr-2" /> {challenge.game_points_reward} GP
                 </div>
               </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  onClick={() => completeMutation.mutate({ userId: user!.id, challengeId: challenge.id })}
-                  disabled={completeMutation.isPending}
-                >
-                  Complete Challenge
-                </Button>
-              </CardFooter>
+              {challenge.challenge_type === 'manual' && (
+                <CardFooter>
+                  <Button 
+                    className="w-full" 
+                    onClick={() => completeMutation.mutate({ userId: user!.id, challengeId: challenge.id })}
+                    disabled={completeMutation.isPending}
+                  >
+                    Complete Challenge
+                  </Button>
+                </CardFooter>
+              )}
             </Card>
           ))}
         </div>

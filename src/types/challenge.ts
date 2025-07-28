@@ -8,6 +8,10 @@ export interface Challenge {
   is_active: boolean;
   created_at: string;
   expires_at: string | null;
+  challenge_type: 'manual' | 'task_completion' | 'typer_goal';
+  related_task_id: string | null;
+  typer_wpm_goal: number | null;
+  typer_accuracy_goal: number | null;
 }
 
 export interface ChallengeCompletion {

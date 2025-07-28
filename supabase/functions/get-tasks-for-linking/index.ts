@@ -12,12 +12,6 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json()
-    const { title, xp_reward, type } = body;
-    if (!title || typeof xp_reward !== 'number' || !type) {
-      throw new Error("Title, xp_reward, and type are required.")
-    }
-
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -25,10 +19,9 @@ serve(async (req) => {
     )
 
     const { data, error } = await supabaseAdmin
-      .from('challenges')
-      .insert(body)
-      .select()
-      .single();
+      .from('tasks')
+      .select('id, title')
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
