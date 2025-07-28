@@ -4,7 +4,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"; // Corrected import
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -255,7 +255,7 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
                     name="dueTime"
                     render={({ field }) => (
                       <FormItem className="flex flex-col w-1/3">
-                        <FormLabel>Time</Formabel>
+                        <FormLabel>Time</FormLabel>
                         <FormControl>
                           <Input type="time" {...field} />
                         </FormControl>
