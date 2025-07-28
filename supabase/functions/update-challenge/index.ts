@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { id, title, description, xp_reward, type, is_active } = await req.json()
+    const { id, title, description, xp_reward, game_points_reward, type, is_active } = await req.json()
     if (!id || !title || typeof xp_reward !== 'number' || !type) {
       throw new Error("ID, title, xp_reward, and type are required.")
     }
@@ -25,7 +25,7 @@ serve(async (req) => {
 
     const { data, error } = await supabaseAdmin
       .from('challenges')
-      .update({ title, description, xp_reward, type, is_active })
+      .update({ title, description, xp_reward, game_points_reward: game_points_reward || 0, type, is_active })
       .eq('id', id)
       .select()
       .single();

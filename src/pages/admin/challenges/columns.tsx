@@ -25,6 +25,11 @@ export const getColumns = (onDelete: (id: string) => void, onEdit: (challenge: C
     cell: ({ row }) => <div className="text-vibrant-gold">{row.getValue("xp_reward")} XP</div>,
   },
   {
+    accessorKey: "game_points_reward",
+    header: "Game Points",
+    cell: ({ row }) => <div className="text-vibrant-purple">{row.getValue("game_points_reward")} GP</div>,
+  },
+  {
     accessorKey: "type",
     header: "Type",
     cell: ({ row }) => <Badge variant="outline">{row.getValue("type")}</Badge>,

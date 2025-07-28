@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Trophy, CheckCircle } from "lucide-react";
+import { Trophy, CheckCircle, Gamepad2 } from "lucide-react";
 import { Challenge, ChallengeCompletion } from "@/types/challenge";
 import { showSuccess, showError } from "@/utils/toast";
 
@@ -47,10 +47,11 @@ const ChallengesPage = () => {
   const completeMutation = useMutation({
     mutationFn: completeChallenge,
     onSuccess: (_, variables) => {
-      showSuccess("Challenge completed! XP awarded.");
+      showSuccess("Challenge completed! Rewards granted.");
       queryClient.invalidateQueries({ queryKey: ["challengeCompletions", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["xpHistory", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+      queryClient.invalidateQueries({ queryKey: ["gameLeaderboard"] });
     },
     onError: (err) => showError(err.message),
   });
@@ -82,9 +83,12 @@ const ChallengesPage = () => {
                 <CardTitle>{challenge.title}</CardTitle>
                 <CardDescription>{challenge.description}</CardDescription>
               </CardHeader>
-              <CardContent className="flex-grow">
+              <CardContent className="flex-grow space-y-2">
                 <div className="font-bold text-vibrant-gold flex items-center">
                   <Trophy className="h-5 w-5 mr-2" /> {challenge.xp_reward} XP
+                </div>
+                <div className="font-bold text-vibrant-purple flex items-center">
+                  <Gamepad2 className="h-5 w-5 mr-2" /> {challenge.game_points_reward} GP
                 </div>
               </CardContent>
               <CardFooter>

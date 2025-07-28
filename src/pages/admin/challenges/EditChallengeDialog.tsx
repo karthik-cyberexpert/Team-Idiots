@@ -34,6 +34,7 @@ const formSchema = z.object({
   title: z.string().min(1, "Title is required."),
   description: z.string().optional(),
   xp_reward: z.coerce.number().int().min(0, "XP reward must be non-negative."),
+  game_points_reward: z.coerce.number().int().min(0, "Game Points reward must be non-negative."),
   type: z.enum(["one-time", "daily", "weekly"]),
   is_active: z.boolean(),
 });
@@ -61,7 +62,10 @@ export const EditChallengeDialog = ({ open, onOpenChange, challenge }: EditChall
 
   React.useEffect(() => {
     if (challenge) {
-      form.reset(challenge);
+      form.reset({
+        ...challenge,
+        game_points_reward: challenge.game_points_reward || 0,
+      });
     }
   }, [challenge, form]);
 
@@ -95,9 +99,14 @@ export const EditChallengeDialog = ({ open, onOpenChange, challenge }: EditChall
             <FormField control={form.control} name="description" render={({ field }) => (
               <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
             )} />
-            <FormField control={form.control} name="xp_reward" render={({ field }) => (
-              <FormItem><FormLabel>XP Reward</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
+            <div className="flex gap-4">
+              <FormField control={form.control} name="xp_reward" render={({ field }) => (
+                <FormItem className="flex-1"><FormLabel>XP Reward</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="game_points_reward" render={({ field }) => (
+                <FormItem className="flex-1"><FormLabel>Game Points Reward</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+            </div>
             <FormField control={form.control} name="type" render={({ field }) => (
               <FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="one-time">One-Time</SelectItem><SelectItem value="daily">Daily</SelectItem><SelectItem value="weekly">Weekly</SelectItem></SelectContent></Select><FormMessage /></FormItem>
             )} />
