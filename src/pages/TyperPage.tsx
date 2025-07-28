@@ -6,22 +6,23 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { TypingText } from "@/types/typing-text";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Terminal } from "lucide-react";
 
-const sampleTexts = [
-  "The quick brown fox jumps over the lazy dog.",
-  "Never underestimate the power of a good book.",
-  "Technology has revolutionized the way we live and work.",
-  "The early bird catches the worm, but the second mouse gets the cheese.",
-  "Creativity is intelligence having fun.",
-  "The only way to do great work is to love what you do.",
-  "Life is what happens when you're busy making other plans.",
-  "The future belongs to those who believe in the beauty of their dreams.",
-  "Success is not final, failure is not fatal: it is the courage to continue that counts.",
-  "Innovation distinguishes between a leader and a follower.",
-];
+const fetchTypingTexts = async (): Promise<TypingText[]> => {
+  const { data, error } = await supabase
+    .from("typing_texts")
+    .select("*");
+  if (error) throw new Error(error.message);
+  return data;
+};
 
 const TyperPage = () => {
-  const [currentText, setCurrentText] = React.useState("");
+  const [currentText, setCurrentText] = React.useState<TypingText | null>(null);
   const [inputText, setInputText] = React.useState("");
   const [startTime, setStartTime] = React.useState<number | null>(null);
   const [endTime, setEndTime] = React.useState<number | null>(null);
@@ -29,22 +30,35 @@ const TyperPage = () => {
   const [wpm, setWpm] = React.useState<number | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
+  const { data: availableTexts, isLoading, error } = useQuery<TypingText[]>({
+    queryKey: ["availableTypingTexts"],
+    queryFn: fetchTypingTexts,
+  });
+
   const resetTest = React.useCallback(() => {
-    const randomIndex = Math.floor(Math.random() * sampleTexts.length);
-    setCurrentText(sampleTexts[randomIndex]);
-    setInputText("");
-    setStartTime(null);
-    setEndTime(null);
-    setAccuracy(null);
-    setWpm(null);
-    inputRef.current?.focus();
-  }, []);
+    if (availableTexts && availableTexts.length > 0) {
+      const randomIndex = Math.floor(Math.random() * availableTexts.length);
+      setCurrentText(availableTexts[randomIndex]);
+      setInputText("");
+      setStartTime(null);
+      setEndTime(null);
+      setAccuracy(null);
+      setWpm(null);
+      inputRef.current?.focus();
+    } else {
+      setCurrentText(null); // No texts available
+    }
+  }, [availableTexts]);
 
   React.useEffect(() => {
-    resetTest();
-  }, [resetTest]);
+    if (availableTexts && !currentText) {
+      resetTest();
+    }
+  }, [availableTexts, currentText, resetTest]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!currentText || endTime) return; // Prevent typing if test is over or no text
+
     const value = e.target.value;
     setInputText(value);
 
@@ -52,67 +66,103 @@ const TyperPage = () => {
       setStartTime(Date.now());
     }
 
-    if (value === currentText) {
+    if (value === currentText.content) {
       setEndTime(Date.now());
       calculateResults();
     }
   };
 
   const calculateResults = () => {
-    if (startTime && endTime) {
+    if (startTime && endTime && currentText) {
       const durationInMinutes = (endTime - startTime) / 60000;
-      const wordsTyped = currentText.split(" ").length;
+      const wordsTyped = currentText.content.split(" ").length;
       const calculatedWpm = Math.round(wordsTyped / durationInMinutes);
       setWpm(calculatedWpm);
 
       let correctChars = 0;
       for (let i = 0; i < inputText.length; i++) {
-        if (inputText[i] === currentText[i]) {
+        if (inputText[i] === currentText.content[i]) {
           correctChars++;
         }
       }
-      const calculatedAccuracy = (correctChars / currentText.length) * 100;
+      const calculatedAccuracy = (correctChars / currentText.content.length) * 100;
       setAccuracy(parseFloat(calculatedAccuracy.toFixed(2)));
     }
   };
 
   const getCharClass = (char: string, index: number) => {
+    if (!currentText) return "";
     if (index < inputText.length) {
       return inputText[index] === char ? "text-vibrant-green" : "text-vibrant-red";
     }
     return "text-muted-foreground";
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Typer</h1>
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-10 w-1/4 ml-auto" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <Terminal className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error.message}</AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-blue dark:text-vibrant-pink">Typer</h1>
-      <p className="text-muted-foreground">Test and improve your typing speed and accuracy!</p>
+      <p className="text-muted-foreground">Test and improve your typing speed and accuracy by typing code snippets!</p>
 
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle>Typing Test</CardTitle>
-          <CardDescription>Type the text below as fast and accurately as you can.</CardDescription>
+          <CardTitle>{currentText ? currentText.title : "No Text Available"}</CardTitle>
+          <CardDescription>Type the code below as fast and accurately as you can.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="p-4 border rounded-md bg-muted/50 text-lg font-mono leading-relaxed">
-            {currentText.split("").map((char, index) => (
-              <span key={index} className={cn(getCharClass(char, index))}>
-                {char}
-              </span>
-            ))}
-          </div>
+          {currentText ? (
+            <div className="relative p-4 border rounded-md bg-muted/50 text-lg font-mono leading-relaxed whitespace-pre-wrap">
+              {/* Original text layer */}
+              <div className="absolute inset-0 p-4 text-muted-foreground opacity-50">
+                {currentText.content}
+              </div>
+              {/* Typed text layer with coloring */}
+              <div className="relative z-10">
+                {currentText.content.split("").map((char, index) => (
+                  <span key={index} className={cn(getCharClass(char, index))}>
+                    {char}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 border rounded-md bg-muted/50 text-lg font-mono leading-relaxed text-center text-muted-foreground">
+              No typing texts available. Please ask an admin to add some!
+            </div>
+          )}
+          
           <Input
             ref={inputRef}
             type="text"
             value={inputText}
             onChange={handleInputChange}
             placeholder="Start typing here..."
-            className="text-lg"
-            disabled={!!endTime}
+            className="text-lg font-mono"
+            disabled={!!endTime || !currentText}
           />
           <div className="flex justify-end">
-            <Button onClick={resetTest} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
-              <RefreshCw className="mr-2 h-4 w-4" /> Reset Test
+            <Button onClick={resetTest} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95" disabled={!availableTexts || availableTexts.length === 0}>
+              <RefreshCw className="mr-2 h-4 w-4" /> New Text
             </Button>
           </div>
 
