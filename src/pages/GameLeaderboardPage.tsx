@@ -21,6 +21,7 @@ const fetchGameLeaderboard = async (): Promise<GameProfile[]> => {
   const { data, error } = await supabase
     .from('profiles')
     .select('id, full_name, game_points')
+    .neq('role', 'admin') // Exclude admins
     .order('game_points', { ascending: false })
     .limit(100);
 

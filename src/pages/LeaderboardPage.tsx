@@ -21,6 +21,7 @@ const fetchLeaderboard = async (): Promise<Profile[]> => {
   const { data, error } = await supabase
     .from('profiles')
     .select('id, full_name, xp')
+    .neq('role', 'admin') // Exclude admins
     .order('xp', { ascending: false })
     .limit(100);
 
