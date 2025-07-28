@@ -4,7 +4,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"; // Corrected import
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,7 +39,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQuery } => {
+import { User } from "@/types/user";
+
+const formSchema = z.object({
+  title: z.string().min(1, { message: "Title is required." }),
+  description: z.string().optional(),
+  assignedTo: z.string().uuid({ message: "Please select a user." }),
+  dueDate: z.date().optional().nullable(),
+  dueTime: z.string().optional(), // New field for time
+});
+
+type EditTaskFormValues = z.infer<typeof formSchema>;
+
+const fetchAllUsers = async (): Promise<User[]> => {
   const { data, error } = await supabase.functions.invoke("get-users");
   if (error) {
     throw new Error(`Failed to fetch users: ${error.message}`);
@@ -243,7 +255,7 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
                     name="dueTime"
                     render={({ field }) => (
                       <FormItem className="flex flex-col w-1/3">
-                        <FormLabel>Time</FormLabel>
+                        <FormLabel>Time</Formabel>
                         <FormControl>
                           <Input type="time" {...field} />
                         </FormControl>
