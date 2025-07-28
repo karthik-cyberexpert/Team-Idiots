@@ -3,6 +3,7 @@ export interface User {
   full_name: string;
   email: string;
   role: 'admin' | 'user';
-  xp: number; // Added XP field
+  xp: number;
+  game_points: number;
   created_at: string;
 }

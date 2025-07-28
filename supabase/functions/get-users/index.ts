@@ -38,7 +38,7 @@ serve(async (req) => {
     // Get all profiles (or consider paginating profiles if there are many)
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('profiles')
-      .select('id, role, full_name, xp'); // Fetch XP here
+      .select('id, role, full_name, xp, game_points'); // Fetch game_points here
     if (profilesError) throw profilesError;
 
     // Create a map of profiles for efficient lookup
@@ -52,7 +52,8 @@ serve(async (req) => {
         email: user.email,
         full_name: profile?.full_name || user.user_metadata?.full_name || 'N/A',
         role: profile?.role || 'user',
-        xp: profile?.xp || 0, // Assign XP from profile
+        xp: profile?.xp || 0,
+        game_points: profile?.game_points || 0, // Assign game_points from profile
         created_at: user.created_at,
       };
     });

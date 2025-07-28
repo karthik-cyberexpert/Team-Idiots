@@ -13,7 +13,12 @@ import {
 import { User } from "@/types/user"
 import { Badge } from "@/components/ui/badge"
 
-export const getColumns = (onDelete: (userId: string) => void, onEdit: (user: User) => void, onChangeXp: (user: User) => void): ColumnDef<User>[] => [
+export const getColumns = (
+  onDelete: (userId: string) => void, 
+  onEdit: (user: User) => void, 
+  onChangeXp: (user: User) => void,
+  onChangeGamePoints: (user: User) => void
+): ColumnDef<User>[] => [
   {
     accessorKey: "full_name",
     header: "Full Name",
@@ -57,6 +62,14 @@ export const getColumns = (onDelete: (userId: string) => void, onEdit: (user: Us
     }
   },
   {
+    accessorKey: "game_points",
+    header: "Game Points",
+    cell: ({ row }) => {
+      const gamePoints = row.getValue("game_points") as number;
+      return <div className="text-vibrant-purple">{gamePoints}</div>;
+    }
+  },
+  {
     accessorKey: "created_at",
     header: "Created At",
     cell: ({ row }) => {
@@ -89,6 +102,9 @@ export const getColumns = (onDelete: (userId: string) => void, onEdit: (user: Us
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onChangeXp(user)}>
               Change XP
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onChangeGamePoints(user)}>
+              Change Game Points
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive"

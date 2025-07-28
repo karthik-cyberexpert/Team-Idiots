@@ -24,6 +24,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { AddUserDialog } from "./users/AddUserDialog";
 import { EditUserDialog } from "./users/EditUserDialog";
 import { ManualXpChangeDialog } from "./users/ManualXpChangeDialog";
+import { ManualGamePointsChangeDialog } from "./users/ManualGamePointsChangeDialog";
 import { PaginationState } from "@tanstack/react-table";
 
 interface PaginatedUsersResponse {
@@ -55,6 +56,7 @@ const UserManagement = () => {
   const [userToDelete, setUserToDelete] = React.useState<string | null>(null);
   const [userToEdit, setUserToEdit] = React.useState<User | null>(null);
   const [userToChangeXp, setUserToChangeXp] = React.useState<User | null>(null);
+  const [userToChangeGamePoints, setUserToChangeGamePoints] = React.useState<User | null>(null);
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = React.useState(false);
 
   const [pagination, setPagination] = React.useState<PaginationState>({
@@ -78,6 +80,7 @@ const UserManagement = () => {
           // Invalidate queries to refetch data when profiles table changes
           queryClient.invalidateQueries({ queryKey: ['users'] });
           queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
+          queryClient.invalidateQueries({ queryKey: ['gameLeaderboard'] });
         }
       )
       .subscribe();
@@ -113,7 +116,11 @@ const UserManagement = () => {
     setUserToChangeXp(user);
   }, []);
 
-  const columns = React.useMemo(() => getColumns(handleDeleteRequest, handleEditRequest, handleChangeXpRequest), [handleDeleteRequest, handleEditRequest, handleChangeXpRequest]);
+  const handleChangeGamePointsRequest = React.useCallback((user: User) => {
+    setUserToChangeGamePoints(user);
+  }, []);
+
+  const columns = React.useMemo(() => getColumns(handleDeleteRequest, handleEditRequest, handleChangeXpRequest, handleChangeGamePointsRequest), [handleDeleteRequest, handleEditRequest, handleChangeXpRequest, handleChangeGamePointsRequest]);
 
   if (isLoading) {
     return (
@@ -147,6 +154,7 @@ const UserManagement = () => {
       <AddUserDialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen} />
       <EditUserDialog open={!!userToEdit} onOpenChange={() => setUserToEdit(null)} user={userToEdit} />
       <ManualXpChangeDialog open={!!userToChangeXp} onOpenChange={() => setUserToChangeXp(null)} user={userToChangeXp} />
+      <ManualGamePointsChangeDialog open={!!userToChangeGamePoints} onOpenChange={() => setUserToChangeGamePoints(null)} user={userToChangeGamePoints} />
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-purple dark:text-vibrant-pink">User Management</h1>
