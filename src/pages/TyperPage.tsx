@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,7 +28,7 @@ const TyperPage = () => {
   const [endTime, setEndTime] = React.useState<number | null>(null);
   const [accuracy, setAccuracy] = React.useState<number | null>(null);
   const [wpm, setWpm] = React.useState<number | null>(null);
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
   const { data: availableTexts, isLoading, error } = useQuery<TypingText[]>({
     queryKey: ["availableTypingTexts"],
@@ -56,7 +56,7 @@ const TyperPage = () => {
     }
   }, [availableTexts, currentText, resetTest]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (!currentText || endTime) return; // Prevent typing if test is over or no text
 
     const value = e.target.value;
@@ -151,13 +151,13 @@ const TyperPage = () => {
             </div>
           )}
           
-          <Input
+          <Textarea
             ref={inputRef}
-            type="text"
             value={inputText}
             onChange={handleInputChange}
             placeholder="Start typing here..."
             className="text-lg font-mono"
+            rows={8}
             disabled={!!endTime || !currentText}
           />
           <div className="flex justify-end">

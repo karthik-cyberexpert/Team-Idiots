@@ -22,6 +22,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -93,7 +94,7 @@ export const EditTypingTextDialog = ({ open, onOpenChange, typingText }: EditTyp
         </DialogHeader>
         {typingText && (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form className="space-y-4">
               <FormField
                 control={form.control}
                 name="title"
@@ -130,7 +131,7 @@ export const EditTypingTextDialog = ({ open, onOpenChange, typingText }: EditTyp
               />
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button type="submit" disabled={mutation.isPending}>
+                <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={mutation.isPending}>
                   {mutation.isPending ? "Saving..." : "Save Changes"}
                 </Button>
               </DialogFooter>

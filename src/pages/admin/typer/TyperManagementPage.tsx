@@ -197,7 +197,7 @@ const TyperManagementPage = () => {
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <form className="space-y-4">
                   <FormField
                     control={form.control}
                     name="title"
@@ -234,7 +234,7 @@ const TyperManagementPage = () => {
                   />
                   <div className="flex justify-end gap-2">
                     <Button type="button" variant="ghost" onClick={() => setShowAddForm(false)}>Cancel</Button>
-                    <Button type="submit" disabled={createMutation.isPending}>
+                    <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={createMutation.isPending}>
                       {createMutation.isPending ? "Adding..." : "Add Text"}
                     </Button>
                   </div>
