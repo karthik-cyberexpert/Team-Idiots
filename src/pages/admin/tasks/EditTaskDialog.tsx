@@ -39,20 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQuery } from "@tanstack/react-query";
-import { User } from "@/types/user";
-
-const formSchema = z.object({
-  title: z.string().min(1, { message: "Title is required." }),
-  description: z.string().optional(),
-  assignedTo: z.string().uuid({ message: "Please select a user." }),
-  dueDate: z.date().optional().nullable(),
-  dueTime: z.string().optional(), // New field for time
-});
-
-type EditTaskFormValues = z.infer<typeof formSchema>;
-
-const fetchAllUsers = async (): Promise<User[]> => {
+import { useQuery } => {
   const { data, error } = await supabase.functions.invoke("get-users");
   if (error) {
     throw new Error(`Failed to fetch users: ${error.message}`);
@@ -146,9 +133,9 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto
-        top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-        data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-1/2
-        data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-1/2
+        top-[10%] left-1/2 -translate-x-1/2 -translate-y-0
+        data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[10%]
+        data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[10%]
       ">
         <DialogHeader>
           <DialogTitle className="text-vibrant-blue dark:text-vibrant-pink">Edit Task</DialogTitle>
