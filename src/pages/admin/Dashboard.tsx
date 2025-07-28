@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, ListTodo, Database, Type } from "lucide-react"; // Import Type icon
+import { Users, ListTodo, Database, Type, Star } from "lucide-react";
 
 const AdminDashboard = () => {
   const adminFeatures = [
@@ -17,13 +17,19 @@ const AdminDashboard = () => {
       link: "/admin/tasks",
     },
     {
+      title: "Challenge Management",
+      description: "Create and manage challenges for users.",
+      icon: <Star className="h-8 w-8 text-vibrant-yellow" />,
+      link: "/admin/challenges",
+    },
+    {
       title: "Data Management",
       description: "Clear chat history, notes, and other non-user data.",
       icon: <Database className="h-8 w-8 text-vibrant-purple" />,
       link: "/admin/data-management",
     },
     {
-      title: "Typer Management", // New Typer Management card
+      title: "Typer Management",
       description: "Manage sample texts and view statistics for the Typer app.",
       icon: <Type className="h-8 w-8 text-vibrant-orange" />,
       link: "/admin/typer-management",
