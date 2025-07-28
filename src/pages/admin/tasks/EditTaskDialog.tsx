@@ -145,7 +145,7 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-vibrant-blue dark:text-vibrant-pink">Edit Task</DialogTitle>
           <DialogDescription>
