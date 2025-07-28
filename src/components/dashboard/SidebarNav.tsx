@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type } from "lucide-react"; // Import Type icon
+import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Settings } from "lucide-react"; // Import Type and Settings icons
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -48,7 +48,7 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       icon: <Trophy className="h-4 w-4" />,
     },
     {
-      href: "/dashboard/typer", // New Typer link
+      href: "/dashboard/typer",
       label: "Typer",
       icon: <Type className="h-4 w-4" />,
     },
@@ -68,6 +68,12 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       href: "/admin/data-management",
       label: "Data Management",
       icon: <Database className="h-4 w-4" />,
+      adminOnly: true,
+    },
+    {
+      href: "/admin/typer-management", // New Typer Management link
+      label: "Typer Management",
+      icon: <Type className="h-4 w-4" />, // Using Type icon for now, can be changed
       adminOnly: true,
     },
   ];
