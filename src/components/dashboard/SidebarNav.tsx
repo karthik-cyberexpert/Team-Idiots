@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy } from "lucide-react";
+import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type } from "lucide-react"; // Import Type icon
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -46,6 +46,11 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       href: "/dashboard/leaderboard",
       label: "Leaderboard",
       icon: <Trophy className="h-4 w-4" />,
+    },
+    {
+      href: "/dashboard/typer", // New Typer link
+      label: "Typer",
+      icon: <Type className="h-4 w-4" />,
     },
     {
       href: "/admin/users",

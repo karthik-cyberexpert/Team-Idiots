@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, MessageSquare, ListTodo } from "lucide-react";
-import { XpBar } from "@/components/dashboard/XpBar"; // Import XpBar
+import { FileText, MessageSquare, ListTodo, Type } from "lucide-react"; // Import Type icon
+import { XpBar } from "@/components/dashboard/XpBar";
 
 const UserDashboard = () => {
   const userFeatures = [
@@ -23,6 +23,12 @@ const UserDashboard = () => {
       icon: <ListTodo className="h-8 w-8 text-vibrant-orange" />,
       link: "/dashboard/tasks",
     },
+    {
+      title: "Typer", // New Typer card
+      description: "Improve your typing speed and accuracy.",
+      icon: <Type className="h-8 w-8 text-vibrant-purple" />,
+      link: "/dashboard/typer",
+    },
   ];
 
   return (
@@ -31,7 +37,7 @@ const UserDashboard = () => {
       <p className="text-muted-foreground mt-2 text-vibrant-brown dark:text-vibrant-silver">
         Welcome to your personal dashboard. Here are your quick links:
       </p>
-      <XpBar /> {/* Add the XpBar component here */}
+      <XpBar />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {userFeatures.map((feature) => (
           <Link to={feature.link} key={feature.title} className="group">
