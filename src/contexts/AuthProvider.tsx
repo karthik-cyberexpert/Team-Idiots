@@ -50,13 +50,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // True initially
   const [profileLoading, setProfileLoading] = useState(false);
   const [userLevel, setUserLevel] = useState(1);
   const [userBadge, setUserBadge] = useState("Bronze");
   const [leaderboardPopupData, setLeaderboardPopupData] = useState<{ position: number } | null>(null);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
     setProfileLoading(true);
     try {
       const { data: profileData, error: profileError } = await supabase
@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setProfileLoading(false);
     }
-  };
+  }, []);
 
   const checkLeaderboard = useCallback(async () => {
     if (!user) return;
@@ -104,29 +104,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   useEffect(() => {
-    // Handle initial session loading
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-      }
-      setLoading(false); // Set loading to false after initial check
-    };
-
-    getInitialSession();
-
-    // Listen for subsequent auth changes
+    // This listener is crucial for initial session and subsequent changes.
+    // The 'INITIAL_SESSION' event fires when the client first determines the session state.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        if (session?.user) {
-          // If there's a session, user might have signed in or their token was refreshed.
-          // Fetching profile ensures data is fresh.
-          await fetchProfile(session.user.id);
-        } else {
+
+        if (event === 'INITIAL_SESSION') {
+          // For the initial session, set loading to false immediately.
+          // Profile fetching can happen in the background.
+          setLoading(false);
+          if (session?.user) {
+            fetchProfile(session.user.id);
+          }
+        } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+          // For sign-in or user updates, fetch profile.
+          if (session?.user) {
+            fetchProfile(session.user.id);
+          }
+        } else if (event === 'SIGNED_OUT') {
           // User signed out
           setProfile(null);
           setUserLevel(1);
@@ -138,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchProfile]); // fetchProfile is a dependency because it's called inside useEffect
 
   const signOut = async () => {
     await supabase.auth.signOut();
