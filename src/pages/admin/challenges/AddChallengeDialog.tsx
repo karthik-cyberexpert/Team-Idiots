@@ -37,7 +37,7 @@ const formSchema = z.object({
   game_points_reward: z.coerce.number().int().min(0, "Game points reward must be non-negative."),
   type: z.enum(["one-time", "daily", "weekly"]),
   is_active: z.boolean().default(true),
-  challenge_type: z.enum(["manual", "task_completion", "typer_goal"]),
+  challenge_type: z.enum(["manual", "task_completion", "typer_goal"]), // Removed 'typer_multi_text_timed'
   related_task_id: z.string().uuid().nullable().optional(), // For task_completion
   typer_wpm_goal: z.coerce.number().int().min(1, "WPM goal must be at least 1.").optional().nullable(), // For typer_goal
   typer_accuracy_goal: z.coerce.number().min(0).max(100, "Accuracy goal must be between 0 and 100.").optional().nullable(), // For typer_goal

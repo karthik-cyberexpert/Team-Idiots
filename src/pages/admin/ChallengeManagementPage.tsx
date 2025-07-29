@@ -18,11 +18,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Terminal, PlusCircle } from "lucide-react"; // Changed FileUp to PlusCircle
+import { Terminal, PlusCircle, FileUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
 import { EditChallengeDialog } from "./challenges/EditChallengeDialog";
-import { AddChallengeDialog } from "./challenges/AddChallengeDialog"; // Import the new dialog
+import { AddChallengeDialog } from "./challenges/AddChallengeDialog";
 
 const fetchChallenges = async (): Promise<Challenge[]> => {
   const { data, error } = await supabase.functions.invoke("get-challenges");
@@ -45,7 +45,8 @@ const ChallengeManagementPage = () => {
   const queryClient = useQueryClient();
   const [challengeToDelete, setChallengeToDelete] = React.useState<string | null>(null);
   const [challengeToEdit, setChallengeToEdit] = React.useState<Challenge | null>(null);
-  const [isAddChallengeDialogOpen, setIsAddChallengeDialogOpen] = React.useState(false); // New state for add dialog
+  const [isAddChallengeDialogOpen, setIsAddChallengeDialogOpen] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const { data: challenges, isLoading, error } = useQuery<Challenge[]>({
     queryKey: ["challenges"],
@@ -83,6 +84,75 @@ const ChallengeManagementPage = () => {
     },
   });
 
+  const bulkCreateMultiTyperChallengeMutation = useMutation({
+    mutationFn: async (challengeData: { challenge_title: string; challenge_description?: string; xp_reward: number; game_points_reward: number; max_time_seconds: number; texts: { header: string; code: string }[] }) => {
+      const { error, data } = await supabase.functions.invoke("bulk-create-multi-typer-challenge", {
+        body: challengeData,
+      });
+      if (error) throw new Error(error.message);
+      if (data && data.error) {
+        throw new Error(`Failed to create multi-typer challenge: ${data.error}`);
+      }
+      return data;
+    },
+    onSuccess: (data) => {
+      showSuccess(data.message || "Multi-text typer challenge uploaded successfully!");
+      queryClient.invalidateQueries({ queryKey: ["challenges"] });
+    },
+    onError: (err: Error) => {
+      showError(err.message);
+    },
+  });
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const content = e.target?.result;
+        if (typeof content !== 'string') {
+          showError("Could not read file content.");
+          return;
+        }
+        const jsonData = JSON.parse(content);
+
+        // Validate the structure of the uploaded JSON
+        const schema = z.object({
+          challenge_title: z.string().min(1),
+          challenge_description: z.string().optional(),
+          xp_reward: z.number().int().min(0),
+          game_points_reward: z.number().int().min(0),
+          max_time_seconds: z.number().int().min(1),
+          texts: z.array(z.object({
+            header: z.string().min(1),
+            code: z.string().min(10),
+          })).min(25).max(100),
+        });
+
+        const validatedData = schema.parse(jsonData);
+        
+        bulkCreateMultiTyperChallengeMutation.mutate(validatedData);
+
+      } catch (error: any) {
+        showError(`Failed to parse or validate JSON file: ${error.message || error}`);
+      } finally {
+        if (event.target) {
+          event.target.value = ""; // Clear the file input
+        }
+      }
+    };
+    reader.onerror = () => {
+      showError("Error reading file.");
+    };
+    reader.readAsText(file);
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
   const columns = React.useMemo(() => getColumns(setChallengeToDelete, setChallengeToEdit), []);
 
   if (isLoading) {
@@ -107,15 +177,22 @@ const ChallengeManagementPage = () => {
 
   return (
     <>
-      <AddChallengeDialog open={isAddChallengeDialogOpen} onOpenChange={setIsAddChallengeDialogOpen} /> {/* New Add Dialog */}
+      <AddChallengeDialog open={isAddChallengeDialogOpen} onOpenChange={setIsAddChallengeDialogOpen} />
       <EditChallengeDialog open={!!challengeToEdit} onOpenChange={() => setChallengeToEdit(null)} challenge={challengeToEdit} />
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">Challenge Management</h1>
-          <Button onClick={() => setIsAddChallengeDialogOpen(true)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Challenge
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleUploadClick} disabled={bulkCreateMultiTyperChallengeMutation.isPending} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
+              <FileUp className="mr-2 h-4 w-4" />
+              {bulkCreateMultiTyperChallengeMutation.isPending ? "Uploading..." : "Upload Multi-Text Typer Challenge"}
+            </Button>
+            <input type="file" accept=".json" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+            <Button onClick={() => setIsAddChallengeDialogOpen(true)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create Single Challenge
+            </Button>
+          </div>
         </div>
         <DataTable columns={columns} data={challenges || []} />
       </div>

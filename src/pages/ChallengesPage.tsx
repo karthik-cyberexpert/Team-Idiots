@@ -8,9 +8,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Trophy, CheckCircle, Gamepad2, ListTodo, Type } from "lucide-react";
+import { Trophy, CheckCircle, Gamepad2, ListTodo, Type, Timer } from "lucide-react";
 import { Challenge, ChallengeCompletion } from "@/types/challenge";
 import { showSuccess, showError } from "@/utils/toast";
+import { Link } from "react-router-dom";
 
 const fetchActiveChallenges = async (): Promise<Challenge[]> => {
   const { data, error } = await supabase.from("challenges").select("*").eq("is_active", true);
@@ -70,6 +71,14 @@ const ChallengesPage = () => {
         return <div className="text-sm text-muted-foreground flex items-center"><ListTodo className="h-4 w-4 mr-2" />Complete the assigned task.</div>;
       case 'typer_goal':
         return <div className="text-sm text-muted-foreground flex items-center"><Type className="h-4 w-4 mr-2" />Achieve {challenge.typer_wpm_goal} WPM with {challenge.typer_accuracy_goal || 90}% accuracy.</div>;
+      case 'typer_multi_text_timed':
+        return (
+          <div className="text-sm text-muted-foreground flex items-center">
+            <Type className="h-4 w-4 mr-2" />
+            <Timer className="h-4 w-4 mr-1" />
+            Complete {challenge.typing_text_ids?.length || 0} typing texts within {challenge.time_limit_seconds ? `${Math.floor(challenge.time_limit_seconds / 60)}:${(challenge.time_limit_seconds % 60).toString().padStart(2, '0')}` : 'N/A'} minutes.
+          </div>
+        );
       default:
         return <div className="text-sm text-muted-foreground">Manually complete this challenge.</div>;
     }
@@ -112,6 +121,13 @@ const ChallengesPage = () => {
                   >
                     Complete Challenge
                   </Button>
+                </CardFooter>
+              )}
+              {(challenge.challenge_type === 'typer_goal' || challenge.challenge_type === 'typer_multi_text_timed') && (
+                <CardFooter>
+                  <Link to="/dashboard/typer" className="w-full">
+                    <Button className="w-full">Go to Typer Game</Button>
+                  </Link>
                 </CardFooter>
               )}
             </Card>

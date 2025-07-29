@@ -8,10 +8,13 @@ export interface Challenge {
   is_active: boolean;
   created_at: string;
   expires_at: string | null;
-  challenge_type: 'manual' | 'task_completion' | 'typer_goal';
+  challenge_type: 'manual' | 'task_completion' | 'typer_goal' | 'typer_multi_text_timed'; // Added new type
   related_task_id: string | null;
   typer_wpm_goal: number | null;
   typer_accuracy_goal: number | null;
+  typing_text_id: string | null;
+  typing_text_ids: string[] | null; // New: Array of typing text IDs for multi-text challenges
+  time_limit_seconds: number | null; // New: Overall time limit for multi-text challenges
 }
 
 export interface ChallengeCompletion {

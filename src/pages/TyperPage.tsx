@@ -4,7 +4,7 @@ import * as React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, CheckCircle, XCircle, Gamepad2, PartyPopper } from "lucide-react";
+import { RefreshCw, CheckCircle, XCircle, Gamepad2, PartyPopper, Timer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,28 +14,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import { useAuth } from "@/contexts/AuthProvider";
 import { showSuccess, showError } from "@/utils/toast";
+import { Challenge } from "@/types/challenge";
 
 const fetchAllTypingTexts = async (): Promise<TypingText[]> => {
-  // Fetch all typing texts
-  const { data: allTexts, error: textsError } = await supabase
+  const { data, error } = await supabase
     .from("typing_texts")
     .select("*");
-  if (textsError) throw new Error(textsError.message);
-
-  // Fetch IDs of typing texts that are linked to 'typer_goal' challenges
-  const { data: challengedTextLinks, error: challengesError } = await supabase
-    .from("challenges")
-    .select("typing_text_id")
-    .eq("challenge_type", "typer_goal")
-    .not("typing_text_id", "is", null); // Ensure typing_text_id is not null
-  if (challengesError) throw new Error(challengesError.message);
-
-  const linkedTextIds = new Set(challengedTextLinks.map(c => c.typing_text_id));
-
-  // Filter out texts that are linked to challenges
-  const filteredTexts = allTexts.filter(text => !linkedTextIds.has(text.id));
-
-  return filteredTexts;
+  if (error) throw new Error(error.message);
+  return data;
 };
 
 const fetchUserGameResults = async (userId: string): Promise<{ text_id: string }[]> => {
@@ -47,12 +33,23 @@ const fetchUserGameResults = async (userId: string): Promise<{ text_id: string }
   return data;
 };
 
-const saveGameResult = async ({ userId, textId, wpm, accuracy }: { userId: string; textId: string; wpm: number; accuracy: number }) => {
+const fetchActiveTyperChallenges = async (): Promise<Challenge[]> => {
+  const { data, error } = await supabase
+    .from("challenges")
+    .select("*")
+    .in("challenge_type", ["typer_goal", "typer_multi_text_timed"])
+    .eq("is_active", true);
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+const saveGameResult = async ({ userId, textId, wpm, accuracy, challengeId }: { userId: string; textId: string; wpm: number; accuracy: number; challengeId?: string }) => {
   const { data, error } = await supabase.rpc('log_typing_result', {
     p_user_id: userId,
     p_text_id: textId,
     p_wpm: wpm,
     p_accuracy: accuracy,
+    p_challenge_id: challengeId || null,
   });
 
   if (error) throw error;
@@ -62,6 +59,7 @@ const saveGameResult = async ({ userId, textId, wpm, accuracy }: { userId: strin
 const TyperPage = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [currentTextIndex, setCurrentTextIndex] = React.useState(0);
   const [currentText, setCurrentText] = React.useState<TypingText | null>(null);
   const [playableTexts, setPlayableTexts] = React.useState<TypingText[]>([]);
   const [inputText, setInputText] = React.useState("");
@@ -70,6 +68,9 @@ const TyperPage = () => {
   const [accuracy, setAccuracy] = React.useState<number | null>(null);
   const [wpm, setWpm] = React.useState<number | null>(null);
   const [pointsAwarded, setPointsAwarded] = React.useState<number | null>(null);
+  const [activeChallenge, setActiveChallenge] = React.useState<Challenge | null>(null);
+  const [timeLeft, setTimeLeft] = React.useState<number | null>(null); // For multi-text timed challenges
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
   const { data: allTexts, isLoading: textsLoading, error: textsError } = useQuery<TypingText[]>({
@@ -83,13 +84,10 @@ const TyperPage = () => {
     enabled: !!user,
   });
 
-  React.useEffect(() => {
-    if (allTexts && completedResults) {
-      const completedIds = new Set(completedResults.map(r => r.text_id));
-      const filteredTexts = allTexts.filter(text => !completedIds.has(text.id));
-      setPlayableTexts(filteredTexts);
-    }
-  }, [allTexts, completedResults]);
+  const { data: activeChallenges, isLoading: challengesLoading } = useQuery<Challenge[]>({
+    queryKey: ["activeTyperChallenges"],
+    queryFn: fetchActiveTyperChallenges,
+  });
 
   const saveResultMutation = useMutation({
     mutationFn: saveGameResult,
@@ -98,36 +96,114 @@ const TyperPage = () => {
       showSuccess(`You earned ${points} game points!`);
       queryClient.invalidateQueries({ queryKey: ['gameLeaderboard'] });
       queryClient.invalidateQueries({ queryKey: ['userGameResults', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['challengeCompletions', user?.id] }); // Invalidate completions for challenges
     },
     onError: (err: Error) => {
       showError(`Failed to save result: ${err.message}`);
     },
   });
 
-  const resetTest = React.useCallback(() => {
-    if (playableTexts.length > 0) {
-      const randomIndex = Math.floor(Math.random() * playableTexts.length);
-      setCurrentText(playableTexts[randomIndex]);
+  const startTimer = React.useCallback((duration: number) => {
+    setTimeLeft(duration);
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prevTime) => {
+        if (prevTime === null || prevTime <= 1) {
+          clearInterval(timerRef.current!);
+          handleChallengeEnd(true); // Time's up
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+  }, []);
+
+  const handleChallengeEnd = React.useCallback((timedOut: boolean = false) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setEndTime(Date.now()); // Mark end time for results calculation
+
+    if (activeChallenge?.challenge_type === 'typer_multi_text_timed') {
+      // For multi-text timed, calculate overall WPM/Accuracy based on all completed texts
+      // For simplicity, we'll just mark the challenge as failed if timed out,
+      // or calculate based on current progress if all texts were completed before timeout.
+      // A more robust solution would track WPM/Accuracy per text and average them.
+      if (timedOut) {
+        showError("Time's up! Challenge failed.");
+        // Optionally log a failed attempt or just reset
+      } else {
+        // All texts completed before timer ran out
+        calculateResults();
+      }
     } else {
-      setCurrentText(null);
+      calculateResults();
     }
-    setInputText("");
+  }, [activeChallenge, calculateResults]); // Add calculateResults to dependencies
+
+  const resetTest = React.useCallback((challenge?: Challenge) => {
+    if (timerRef.current) clearInterval(timerRef.current);
     setStartTime(null);
     setEndTime(null);
     setAccuracy(null);
     setWpm(null);
     setPointsAwarded(null);
+    setInputText("");
+    setCurrentTextIndex(0);
+    setTimeLeft(null);
+
+    if (challenge && challenge.challenge_type === 'typer_multi_text_timed' && challenge.typing_text_ids) {
+      // Fetch the actual text content for the IDs
+      const textsForChallenge = allTexts?.filter(text => challenge.typing_text_ids?.includes(text.id)) || [];
+      setPlayableTexts(textsForChallenge);
+      setCurrentText(textsForChallenge[0] || null);
+      if (challenge.time_limit_seconds) {
+        startTimer(challenge.time_limit_seconds);
+      }
+    } else if (challenge && challenge.challenge_type === 'typer_goal' && challenge.typing_text_id) {
+      const textForChallenge = allTexts?.find(text => text.id === challenge.typing_text_id) || null;
+      setPlayableTexts(textForChallenge ? [textForChallenge] : []);
+      setCurrentText(textForChallenge);
+    } else {
+      // Standard random text selection, excluding texts linked to typer_goal challenges
+      const textsNotLinkedToTyperGoals = allTexts?.filter(text => 
+        !activeChallenges?.some(c => c.challenge_type === 'typer_goal' && c.typing_text_id === text.id)
+      ) || [];
+      
+      const completedIds = new Set(completedResults?.map(r => r.text_id));
+      const filteredTexts = textsNotLinkedToTyperGoals.filter(text => !completedIds.has(text.id));
+      setPlayableTexts(filteredTexts);
+      setCurrentText(filteredTexts[0] || null); // Start with the first available text
+    }
     inputRef.current?.focus();
-  }, [playableTexts]);
+  }, [allTexts, activeChallenges, completedResults, startTimer]);
 
   React.useEffect(() => {
-    resetTest();
-  }, [playableTexts, resetTest]);
+    if (allTexts && completedResults && activeChallenges) {
+      // Prioritize multi-text timed challenges if available and not completed
+      const multiTextChallenge = activeChallenges.find(c => c.challenge_type === 'typer_multi_text_timed' && !completedResults.some(cr => cr.text_id === c.id)); // Assuming challenge ID is used for completion
+      if (multiTextChallenge) {
+        setActiveChallenge(multiTextChallenge);
+        resetTest(multiTextChallenge);
+        return;
+      }
 
-  const calculateResults = () => {
+      // Then prioritize single typer goal challenges
+      const singleTyperChallenge = activeChallenges.find(c => c.challenge_type === 'typer_goal' && !completedResults.some(cr => cr.text_id === c.id));
+      if (singleTyperChallenge) {
+        setActiveChallenge(singleTyperChallenge);
+        resetTest(singleTyperChallenge);
+        return;
+      }
+
+      // Fallback to random texts if no active challenges
+      setActiveChallenge(null);
+      resetTest();
+    }
+  }, [allTexts, completedResults, activeChallenges, resetTest]);
+
+  const calculateResults = React.useCallback(() => {
     if (startTime && currentText && user) {
-      const finalTime = Date.now();
-      setEndTime(finalTime);
+      const finalTime = endTime || Date.now();
       const durationInMinutes = (finalTime - startTime) / 60000;
       const wordsTyped = currentText.content.split(" ").length;
       const calculatedWpm = Math.round(wordsTyped / durationInMinutes);
@@ -148,9 +224,10 @@ const TyperPage = () => {
         textId: currentText.id,
         wpm: calculatedWpm,
         accuracy: finalAccuracy,
+        challengeId: activeChallenge?.id, // Pass challenge ID if applicable
       });
     }
-  };
+  }, [startTime, currentText, user, inputText, endTime, activeChallenge, saveResultMutation]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (!currentText || endTime) return;
@@ -163,7 +240,19 @@ const TyperPage = () => {
     }
 
     if (value === currentText.content) {
-      calculateResults();
+      if (activeChallenge?.challenge_type === 'typer_multi_text_timed') {
+        // Move to next text or end challenge
+        if (currentTextIndex < playableTexts.length - 1) {
+          setCurrentTextIndex(prevIndex => prevIndex + 1);
+          setCurrentText(playableTexts[currentTextIndex + 1]);
+          setInputText(""); // Clear input for next text
+        } else {
+          // All texts completed
+          handleChallengeEnd(false); // Not timed out
+        }
+      } else {
+        calculateResults();
+      }
     }
   };
 
@@ -175,10 +264,17 @@ const TyperPage = () => {
     return "text-muted-foreground";
   };
 
-  const isLoading = textsLoading || (!!user && resultsLoading);
-  const error = textsError || resultsError;
+  const isLoadingData = textsLoading || resultsLoading || challengesLoading;
+  const errorData = textsError || resultsError;
 
-  if (isLoading) {
+  const formatTime = (seconds: number | null) => {
+    if (seconds === null) return "--:--";
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  if (isLoadingData) {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl sm:text-3xl font-bold">Typer</h1>
@@ -189,12 +285,12 @@ const TyperPage = () => {
     );
   }
 
-  if (error) {
+  if (errorData) {
     return (
       <Alert variant="destructive">
         <Terminal className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{error.message}</AlertDescription>
+        <AlertDescription>{errorData.message}</AlertDescription>
       </Alert>
     );
   }
@@ -206,12 +302,19 @@ const TyperPage = () => {
 
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle>{currentText ? currentText.title : "All Texts Completed!"}</CardTitle>
+          <CardTitle>{activeChallenge ? activeChallenge.title : (currentText ? currentText.title : "All Texts Completed!")}</CardTitle>
           <CardDescription>
-            {currentText ? "Type the code below as fast and accurately as you can." : "Great job! Check back later for new challenges."}
+            {activeChallenge?.challenge_type === 'typer_multi_text_timed' ? (
+              `Complete ${playableTexts.length} texts within ${formatTime(activeChallenge.time_limit_seconds)}.`
+            ) : currentText ? "Type the code below as fast and accurately as you can." : "Great job! Check back later for new challenges."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {activeChallenge?.challenge_type === 'typer_multi_text_timed' && timeLeft !== null && (
+            <div className="flex items-center justify-center text-2xl font-bold text-vibrant-red">
+              <Timer className="h-6 w-6 mr-2" /> Time Left: {formatTime(timeLeft)}
+            </div>
+          )}
           {currentText ? (
             <>
               <div className="relative p-4 border rounded-md bg-muted/50 text-lg font-mono leading-relaxed whitespace-pre-wrap">
@@ -233,7 +336,7 @@ const TyperPage = () => {
                 placeholder="Start typing here..."
                 className="text-lg font-mono"
                 rows={8}
-                disabled={!!endTime}
+                disabled={!!endTime || (activeChallenge?.challenge_type === 'typer_multi_text_timed' && timeLeft === 0)}
               />
             </>
           ) : (
@@ -245,7 +348,7 @@ const TyperPage = () => {
           )}
           
           <div className="flex justify-end">
-            <Button onClick={resetTest} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95" disabled={playableTexts.length <= 1 && !!endTime}>
+            <Button onClick={() => resetTest(activeChallenge || undefined)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95" disabled={playableTexts.length <= 1 && !!endTime}>
               <RefreshCw className="mr-2 h-4 w-4" /> New Text
             </Button>
           </div>
