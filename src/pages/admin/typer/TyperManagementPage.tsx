@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Terminal, FileUp } from "lucide-react";
+import { Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
 import { EditTypingTextDialog } from "./EditTypingTextDialog";
@@ -43,12 +43,6 @@ const addFormSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }).max(100, { message: "Title must be 100 characters or less." }),
   content: z.string().min(10, { message: "Content must be at least 10 characters." }),
 });
-
-const typingTextSchema = z.object({
-  header: z.string().min(1, "Header is required."),
-  code: z.string().min(10, "Code must be at least 10 characters."),
-});
-const jsonUploadSchema = z.array(typingTextSchema);
 
 type AddTypingTextFormValues = z.infer<typeof addFormSchema>;
 
@@ -87,7 +81,6 @@ const TyperManagementPage = () => {
     pageIndex: 0,
     pageSize: 10,
   });
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const { data: typingTexts, isLoading, error } = useQuery<TypingText[]>({
     queryKey: ["typingTexts"],
@@ -145,64 +138,6 @@ const TyperManagementPage = () => {
     },
   });
 
-  const bulkCreateMutation = useMutation({
-    mutationFn: async (texts: { header: string; code: string }[]) => {
-      const { error, data } = await supabase.functions.invoke("bulk-create-typing-texts", {
-        body: texts,
-      });
-      if (error) throw new Error(error.message);
-      return data;
-    },
-    onSuccess: (data) => {
-      showSuccess(data.message || "Texts uploaded successfully!");
-      queryClient.invalidateQueries({ queryKey: ["typingTexts"] });
-    },
-    onError: (err: Error) => {
-      showError(err.message);
-    },
-  });
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result;
-        if (typeof content !== 'string') {
-          showError("Could not read file content.");
-          return;
-        }
-        const jsonData = JSON.parse(content);
-        const validationResult = jsonUploadSchema.safeParse(jsonData);
-
-        if (!validationResult.success) {
-          console.error(validationResult.error.flatten());
-          showError("Invalid JSON format. Expected an array of objects with 'header' and 'code' keys.");
-          return;
-        }
-
-        bulkCreateMutation.mutate(validationResult.data);
-
-      } catch (error) {
-        showError("Failed to parse JSON file. Please ensure it's a valid JSON.");
-      } finally {
-        if (event.target) {
-          event.target.value = "";
-        }
-      }
-    };
-    reader.onerror = () => {
-      showError("Error reading file.");
-    };
-    reader.readAsText(file);
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
   const onSubmit = (values: AddTypingTextFormValues) => {
     createMutation.mutate(values);
   };
@@ -251,11 +186,6 @@ const TyperManagementPage = () => {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-blue dark:text-vibrant-pink">Typer Management</h1>
           <div className="flex gap-2">
-            <Button onClick={handleUploadClick} variant="outline" disabled={bulkCreateMutation.isPending}>
-              <FileUp className="mr-2 h-4 w-4" />
-              {bulkCreateMutation.isPending ? "Uploading..." : "Upload JSON"}
-            </Button>
-            <input type="file" accept=".json" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
             {!showAddForm && (
               <Button onClick={() => setShowAddForm(true)}>Add New Text</Button>
             )}
