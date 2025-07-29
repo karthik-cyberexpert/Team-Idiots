@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, ArrowUpDown, CheckCircle, XCircle } from "lucide-react"
+import { MoreHorizontal, CheckCircle, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -18,16 +18,6 @@ export const getColumns = (onDelete: (id: string) => void, onEdit: (challenge: C
     accessorKey: "title",
     header: "Title",
     cell: ({ row }) => <div className="font-medium">{row.getValue("title")}</div>,
-  },
-  {
-    accessorKey: "xp_reward",
-    header: "XP Reward",
-    cell: ({ row }) => <div className="text-vibrant-gold">{row.getValue("xp_reward")} XP</div>,
-  },
-  {
-    accessorKey: "game_points_reward",
-    header: "Game Points",
-    cell: ({ row }) => <div className="text-vibrant-purple">{row.getValue("game_points_reward")} GP</div>,
   },
   {
     accessorKey: "type",
