@@ -16,11 +16,26 @@ import { useAuth } from "@/contexts/AuthProvider";
 import { showSuccess, showError } from "@/utils/toast";
 
 const fetchAllTypingTexts = async (): Promise<TypingText[]> => {
-  const { data, error } = await supabase
+  // Fetch all typing texts
+  const { data: allTexts, error: textsError } = await supabase
     .from("typing_texts")
     .select("*");
-  if (error) throw new Error(error.message);
-  return data;
+  if (textsError) throw new Error(textsError.message);
+
+  // Fetch IDs of typing texts that are linked to 'typer_goal' challenges
+  const { data: challengedTextLinks, error: challengesError } = await supabase
+    .from("challenges")
+    .select("typing_text_id")
+    .eq("challenge_type", "typer_goal")
+    .not("typing_text_id", "is", null); // Ensure typing_text_id is not null
+  if (challengesError) throw new Error(challengesError.message);
+
+  const linkedTextIds = new Set(challengedTextLinks.map(c => c.typing_text_id));
+
+  // Filter out texts that are linked to challenges
+  const filteredTexts = allTexts.filter(text => !linkedTextIds.has(text.id));
+
+  return filteredTexts;
 };
 
 const fetchUserGameResults = async (userId: string): Promise<{ text_id: string }[]> => {

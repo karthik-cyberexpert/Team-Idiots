@@ -29,6 +29,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { showSuccess, showError } from "@/utils/toast";
 import { Challenge } from "@/types/challenge";
+import { TypingText } from "@/types/typing-text"; // Import TypingText type
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required."),
@@ -41,14 +42,18 @@ const formSchema = z.object({
   related_task_id: z.string().uuid().optional().nullable(),
   typer_wpm_goal: z.coerce.number().int().min(0).optional().nullable(),
   typer_accuracy_goal: z.coerce.number().int().min(0).max(100).optional().nullable(),
+  typing_text_id: z.string().uuid().optional().nullable(), // New field for linking typing text
+  time_limit_seconds: z.coerce.number().int().min(1).optional().nullable(), // New field for time limit
 }).refine(data => {
     if (data.challenge_type === 'task_completion') return !!data.related_task_id;
     return true;
 }, { message: "A task must be selected.", path: ["related_task_id"] })
 .refine(data => {
-    if (data.challenge_type === 'typer_goal') return data.typer_wpm_goal != null;
+    if (data.challenge_type === 'typer_goal') {
+      return data.typer_wpm_goal != null && data.typer_accuracy_goal != null && data.typing_text_id != null;
+    }
     return true;
-}, { message: "A WPM goal is required.", path: ["typer_wpm_goal"] });
+}, { message: "WPM goal, Accuracy goal, and Typing Text are required for Typer challenges.", path: ["typer_wpm_goal", "typer_accuracy_goal", "typing_text_id"] });
 
 type EditChallengeFormValues = z.infer<typeof formSchema>;
 
@@ -59,6 +64,12 @@ const updateChallenge = async (values: EditChallengeFormValues & { id: string })
 
 const fetchTasksForLinking = async (): Promise<{ id: string; title: string }[]> => {
   const { data, error } = await supabase.functions.invoke("get-tasks-for-linking");
+  if (error) throw new Error(error.message);
+  return data.data || [];
+};
+
+const fetchAllTypingTextsForSelection = async (): Promise<TypingText[]> => {
+  const { data, error } = await supabase.functions.invoke("get-typing-texts");
   if (error) throw new Error(error.message);
   return data.data || [];
 };
@@ -83,9 +94,23 @@ export const EditChallengeDialog = ({ open, onOpenChange, challenge }: EditChall
     enabled: challengeType === 'task_completion',
   });
 
+  const { data: typingTexts, isLoading: typingTextsLoading } = useQuery<TypingText[]>({
+    queryKey: ["typingTextsForChallengesSelection"], // New query key for selection
+    queryFn: fetchAllTypingTextsForSelection, // Fetch all texts for selection
+    enabled: challengeType === 'typer_goal',
+  });
+
   React.useEffect(() => {
     if (challenge) {
-      form.reset(challenge);
+      form.reset({
+        ...challenge,
+        description: challenge.description ?? "",
+        related_task_id: challenge.related_task_id ?? undefined,
+        typer_wpm_goal: challenge.typer_wpm_goal ?? undefined,
+        typer_accuracy_goal: challenge.typer_accuracy_goal ?? undefined,
+        typing_text_id: challenge.typing_text_id ?? undefined,
+        time_limit_seconds: challenge.time_limit_seconds ?? undefined,
+      });
     }
   }, [challenge, form]);
 
@@ -101,7 +126,17 @@ export const EditChallengeDialog = ({ open, onOpenChange, challenge }: EditChall
 
   const onSubmit = (values: EditChallengeFormValues) => {
     if (!challenge) return;
-    mutation.mutate({ ...values, id: challenge.id });
+    // Ensure null for optional fields if they are empty strings or undefined
+    const submissionValues = {
+      ...values,
+      description: values.description || null,
+      related_task_id: values.related_task_id || null,
+      typer_wpm_goal: values.typer_wpm_goal || null,
+      typer_accuracy_goal: values.typer_accuracy_goal || null,
+      typing_text_id: values.typing_text_id || null,
+      time_limit_seconds: values.time_limit_seconds || null,
+    };
+    mutation.mutate({ ...submissionValues, id: challenge.id });
   };
 
   return (
@@ -138,14 +173,22 @@ export const EditChallengeDialog = ({ open, onOpenChange, challenge }: EditChall
             )}
 
             {challengeType === 'typer_goal' && (
-              <div className="flex gap-4">
-                <FormField control={form.control} name="typer_wpm_goal" render={({ field }) => (
-                  <FormItem className="flex-1"><FormLabel>WPM Goal</FormLabel><FormControl><Input type="number" placeholder="e.g., 80" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+              <>
+                <FormField control={form.control} name="typing_text_id" render={({ field }) => (
+                  <FormItem><FormLabel>Typing Text</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger>{typingTextsLoading ? "Loading texts..." : <SelectValue />}</SelectTrigger></FormControl><SelectContent>{typingTexts?.map(text => <SelectItem key={text.id} value={text.id}>{text.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="typer_accuracy_goal" render={({ field }) => (
-                  <FormItem className="flex-1"><FormLabel>Accuracy Goal (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 95" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+                <div className="flex gap-4">
+                  <FormField control={form.control} name="typer_wpm_goal" render={({ field }) => (
+                    <FormItem className="flex-1"><FormLabel>WPM Goal</FormLabel><FormControl><Input type="number" placeholder="e.g., 80" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={form.control} name="typer_accuracy_goal" render={({ field }) => (
+                    <FormItem className="flex-1"><FormLabel>Accuracy Goal (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 95" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                </div>
+                <FormField control={form.control} name="time_limit_seconds" render={({ field }) => (
+                  <FormItem><FormLabel>Time Limit (seconds, optional)</FormLabel><FormControl><Input type="number" placeholder="e.g., 60" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
                 )} />
-              </div>
+              </>
             )}
 
             <FormField control={form.control} name="type" render={({ field }) => (
