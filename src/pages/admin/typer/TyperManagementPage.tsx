@@ -55,20 +55,28 @@ const fetchTypingTexts = async (): Promise<TypingText[]> => {
 };
 
 const deleteTypingText = async (id: string) => {
-  const { error } = await supabase.functions.invoke("delete-typing-text", {
+  const { data, error } = await supabase.functions.invoke("delete-typing-text", {
     body: { id },
   });
   if (error) {
     throw new Error(`Failed to delete typing text: ${error.message}`);
   }
+  // Defensive check: if the edge function returns 2xx but with an error in the body
+  if (data && data.error) {
+    throw new Error(`Failed to delete typing text: ${data.error}`);
+  }
 };
 
 const createTypingText = async (values: AddTypingTextFormValues) => {
-  const { error } = await supabase.functions.invoke("create-typing-text", {
+  const { data, error } = await supabase.functions.invoke("create-typing-text", {
     body: values,
   });
   if (error) {
     throw new Error(`Failed to create typing text: ${error.message}`);
+  }
+  // Defensive check: if the edge function returns 2xx but with an error in the body
+  if (data && data.error) {
+    throw new Error(`Failed to create typing text: ${data.error}`);
   }
 };
 

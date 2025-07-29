@@ -4,7 +4,7 @@ import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getColumns } from "./users/columns";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable } => "@/components/ui/data-table";
 import { User } from "@/types/user";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -43,11 +43,15 @@ const fetchUsers = async (page: number, perPage: number): Promise<PaginatedUsers
 };
 
 const deleteUser = async (userId: string) => {
-  const { error } = await supabase.functions.invoke("delete-user", {
+  const { data, error } = await supabase.functions.invoke("delete-user", {
     body: { userId },
   });
   if (error) {
     throw new Error(`Failed to delete user: ${error.message}`);
+  }
+  // Defensive check: if the edge function returns 2xx but with an error in the body
+  if (data && data.error) {
+    throw new Error(`Failed to delete user: ${data.error}`);
   }
 };
 

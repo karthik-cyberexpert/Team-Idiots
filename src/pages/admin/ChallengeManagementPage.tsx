@@ -31,8 +31,14 @@ const fetchChallenges = async (): Promise<Challenge[]> => {
 };
 
 const deleteChallenge = async (id: string) => {
-  const { error } = await supabase.functions.invoke("delete-challenge", { body: { id } });
-  if (error) throw new Error(error.message);
+  const { data, error } = await supabase.functions.invoke("delete-challenge", { body: { id } });
+  if (error) {
+    throw new Error(`Failed to delete challenge: ${error.message}`);
+  }
+  // Defensive check: if the edge function returns 2xx but with an error in the body
+  if (data && data.error) {
+    throw new Error(`Failed to delete challenge: ${data.error}`);
+  }
 };
 
 const typingTextSchema = z.object({
@@ -71,6 +77,10 @@ const ChallengeManagementPage = () => {
         body: texts,
       });
       if (error) throw new Error(error.message);
+      // Defensive check: if the edge function returns 2xx but with an error in the body
+      if (data && data.error) {
+        throw new Error(`Failed to bulk create typing texts: ${data.error}`);
+      }
       return data;
     },
     onSuccess: (data) => {
