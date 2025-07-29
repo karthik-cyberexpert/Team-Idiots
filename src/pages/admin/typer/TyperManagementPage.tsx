@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Terminal } from "lucide-react";
+import { Terminal, FileUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
 import { EditTypingTextDialog } from "./EditTypingTextDialog";
@@ -84,7 +84,8 @@ const TyperManagementPage = () => {
   const queryClient = useQueryClient();
   const [textToDelete, setTextToDelete] = React.useState<string | null>(null);
   const [textToEdit, setTextToEdit] = React.useState<TypingText | null>(null);
-  const [showAddForm, setShowAddForm] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null); // Keep this ref
+
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -95,13 +96,7 @@ const TyperManagementPage = () => {
     queryFn: fetchTypingTexts,
   });
 
-  const form = useForm<AddTypingTextFormValues>({
-    resolver: zodResolver(addFormSchema),
-    defaultValues: {
-      title: "",
-      content: "",
-    },
-  });
+  // Removed the `form` and `createMutation` related to manual text addition
 
   React.useEffect(() => {
     const channel = supabase
@@ -133,21 +128,65 @@ const TyperManagementPage = () => {
     },
   });
 
-  const createMutation = useMutation({
-    mutationFn: createTypingText,
-    onSuccess: () => {
-      showSuccess("Typing text added successfully.");
-      queryClient.invalidateQueries({ queryKey: ["typingTexts"] });
-      setShowAddForm(false);
-      form.reset();
+  const bulkCreateMutation = useMutation({
+    mutationFn: async (texts: { header: string; code: string }[]) => {
+      const { error, data } = await supabase.functions.invoke("bulk-create-typing-texts", {
+        body: texts,
+      });
+      if (error) throw new Error(error.message);
+      // Defensive check: if the edge function returns 2xx but with an error in the body
+      if (data && data.error) {
+        throw new Error(`Failed to bulk create typing texts: ${data.error}`);
+      }
+      return data;
     },
-    onError: (err) => {
+    onSuccess: (data) => {
+      showSuccess(data.message || "Texts uploaded successfully!");
+      queryClient.invalidateQueries({ queryKey: ["typingTexts"] });
+    },
+    onError: (err: Error) => {
       showError(err.message);
     },
   });
 
-  const onSubmit = (values: AddTypingTextFormValues) => {
-    createMutation.mutate(values);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result;
+        if (typeof content !== 'string') {
+          showError("Could not read file content.");
+          return;
+        }
+        const jsonData = JSON.parse(content);
+        // Assuming the JSON structure for typing texts is an array of { title: string, content: string }
+        // Adjust schema if needed, but for now, let's use a simple check
+        if (!Array.isArray(jsonData) || !jsonData.every(item => typeof item.title === 'string' && typeof item.content === 'string')) {
+          showError("Invalid JSON format. Expected an array of objects with 'title' and 'content' keys.");
+          return;
+        }
+
+        bulkCreateMutation.mutate(jsonData.map(item => ({ header: item.title, code: item.content })));
+
+      } catch (error) {
+        showError("Failed to parse JSON file. Please ensure it's a valid JSON.");
+      } finally {
+        if (event.target) {
+          event.target.value = "";
+        }
+      }
+    };
+    reader.onerror = () => {
+      showError("Error reading file.");
+    };
+    reader.readAsText(file);
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
   };
 
   const handleDeleteRequest = React.useCallback((id: string) => {
@@ -165,7 +204,7 @@ const TyperManagementPage = () => {
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">Typer Management</h1>
-          <Button disabled>Add New Text</Button>
+          <Button disabled>Upload File</Button>
         </div>
         <div className="space-y-2">
           <Skeleton className="h-12 w-full" />
@@ -194,69 +233,20 @@ const TyperManagementPage = () => {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-blue dark:text-vibrant-pink">Typer Management</h1>
           <div className="flex gap-2">
-            {!showAddForm && (
-              <Button onClick={() => setShowAddForm(true)}>Add New Text</Button>
-            )}
+            <Button onClick={handleUploadClick} disabled={bulkCreateMutation.isPending}>
+              <FileUp className="mr-2 h-4 w-4" />
+              {bulkCreateMutation.isPending ? "Uploading..." : "Upload File"}
+            </Button>
+            <input type="file" accept=".json" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
           </div>
         </div>
 
-        {showAddForm && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Add New Typing Text</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Title</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., React Component Example" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="content"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Code Content</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder={`function MyComponent() {\n  return (\n    <div>Hello World</div>\n  );\n}`}
-                            rows={10}
-                            className="font-mono"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Enter the code snippet here. Users will type this exact content.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="ghost" onClick={() => setShowAddForm(false)}>Cancel</Button>
-                    <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={createMutation.isPending}>
-                      {createMutation.isPending ? "Adding..." : "Add Text"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        )}
+        {/* Removed the Add New Typing Text Card and its form */}
 
         <DataTable 
           columns={columns} 
           data={typingTexts || []}
+          pageCount={Math.ceil((typingTexts?.length || 0) / pagination.pageSize)} // Adjusted pageCount for client-side pagination
           pagination={pagination}
           setPagination={setPagination}
           filterColumn="title"
