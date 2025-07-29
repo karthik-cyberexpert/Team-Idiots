@@ -23,6 +23,17 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
+    // First, delete any challenges that are linked to this typing text.
+    const { error: challengeDeleteError } = await supabaseAdmin
+      .from('challenges')
+      .delete()
+      .eq('typing_text_id', id);
+
+    if (challengeDeleteError) {
+      throw new Error(`Failed to delete linked challenges: ${challengeDeleteError.message}`);
+    }
+
+    // Then, delete the typing text itself.
     const { error } = await supabaseAdmin
       .from('typing_texts')
       .delete()
@@ -31,7 +42,7 @@ serve(async (req) => {
     if (error) throw error;
 
     return new Response(
-      JSON.stringify({ message: "Typing text deleted successfully" }),
+      JSON.stringify({ message: "Typing text and any linked challenges deleted successfully" }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
