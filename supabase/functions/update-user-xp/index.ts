@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, xpChange, reason } = await req.json() // relatedTaskId is no longer passed from frontend
+    const { userId, xpChange, reason } = await req.json()
 
     if (!userId || typeof xpChange !== 'number' || !reason) {
       throw new Error("User ID, XP change amount, and reason are required.")
@@ -24,21 +24,21 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Fetch current XP to ensure we don't go below 0
+    // Fetch current staged_xp
     const { data: profile, error: fetchProfileError } = await supabaseAdmin
       .from('profiles')
-      .select('xp')
+      .select('staged_xp')
       .eq('id', userId)
       .single();
 
     if (fetchProfileError) throw fetchProfileError;
     if (!profile) throw new Error("User profile not found.");
 
-    const newXp = Math.max(0, profile.xp + xpChange); // Ensure XP doesn't go below 0
+    const newStagedXp = profile.staged_xp + xpChange;
 
     const { error: updateError } = await supabaseAdmin
       .from('profiles')
-      .update({ xp: newXp })
+      .update({ staged_xp: newStagedXp })
       .eq('id', userId);
 
     if (updateError) throw updateError;
@@ -50,13 +50,13 @@ serve(async (req) => {
         user_id: userId,
         xp_change: xpChange,
         reason: reason,
-        related_task_id: null, // No related task ID for manual changes
+        related_task_id: null,
       });
 
     if (logError) throw logError;
 
     return new Response(
-      JSON.stringify({ message: "User XP updated successfully" }),
+      JSON.stringify({ message: "User staged XP updated successfully" }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
