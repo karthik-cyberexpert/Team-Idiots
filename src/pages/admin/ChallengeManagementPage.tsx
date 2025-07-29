@@ -41,11 +41,17 @@ const deleteChallenge = async (id: string) => {
   }
 };
 
-const typingTextSchema = z.object({
-  header: z.string().min(1, "Header is required."),
-  code: z.string().min(10, "Code must be at least 10 characters."),
+// Updated schema for challenge JSON upload
+const challengeUploadSchema = z.object({
+  title: z.string().min(1, "Title is required."),
+  description: z.string().optional(),
+  content: z.string().min(10, "Code content is required for typer challenges."),
+  xp_reward: z.number().int().min(0, "XP reward must be non-negative."),
+  game_points_reward: z.number().int().min(0, "Game points reward must be non-negative."),
+  wpm_goal: z.number().int().min(1, "WPM goal must be at least 1."),
+  accuracy_goal: z.number().min(0).max(100, "Accuracy goal must be between 0 and 100."),
 });
-const jsonUploadSchema = z.array(typingTextSchema);
+const jsonUploadSchema = z.array(challengeUploadSchema);
 
 const ChallengeManagementPage = () => {
   const queryClient = useQueryClient();
@@ -71,22 +77,22 @@ const ChallengeManagementPage = () => {
     },
   });
 
-  const bulkCreateMutation = useMutation({
-    mutationFn: async (texts: { header: string; code: string }[]) => {
-      const { error, data } = await supabase.functions.invoke("bulk-create-typing-texts", {
-        body: texts,
+  // New mutation for bulk creating typer challenges
+  const bulkCreateTyperChallengesMutation = useMutation({
+    mutationFn: async (challengesData: z.infer<typeof jsonUploadSchema>) => {
+      const { error, data } = await supabase.functions.invoke("bulk-create-typer-challenges", {
+        body: challengesData,
       });
       if (error) throw new Error(error.message);
-      // Defensive check: if the edge function returns 2xx but with an error in the body
       if (data && data.error) {
-        throw new Error(`Failed to bulk create typing texts: ${data.error}`);
+        throw new Error(`Failed to bulk create typer challenges: ${data.error}`);
       }
       return data;
     },
     onSuccess: (data) => {
-      showSuccess(data.message || "Texts for challenges uploaded successfully!");
-      queryClient.invalidateQueries({ queryKey: ["typingTexts"] });
-      showSuccess("Next step is to convert these texts into a challenge.");
+      showSuccess(data.message || "Typer challenges uploaded and created successfully!");
+      queryClient.invalidateQueries({ queryKey: ["challenges"] });
+      queryClient.invalidateQueries({ queryKey: ["typingTexts"] }); // Invalidate typing texts as well
     },
     onError: (err: Error) => {
       showError(err.message);
@@ -110,11 +116,11 @@ const ChallengeManagementPage = () => {
 
         if (!validationResult.success) {
           console.error(validationResult.error.flatten());
-          showError("Invalid JSON format. Expected an array of objects with 'header' and 'code' keys.");
+          showError("Invalid JSON format. Expected an array of objects with 'title', 'content', 'xp_reward', 'game_points_reward', 'wpm_goal', and 'accuracy_goal' keys.");
           return;
         }
 
-        bulkCreateMutation.mutate(validationResult.data);
+        bulkCreateTyperChallengesMutation.mutate(validationResult.data);
 
       } catch (error) {
         showError("Failed to parse JSON file. Please ensure it's a valid JSON.");
@@ -162,9 +168,9 @@ const ChallengeManagementPage = () => {
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">Challenge Management</h1>
-          <Button onClick={handleUploadClick} variant="outline" disabled={bulkCreateMutation.isPending}>
+          <Button onClick={handleUploadClick} variant="outline" disabled={bulkCreateTyperChallengesMutation.isPending}>
             <FileUp className="mr-2 h-4 w-4" />
-            {bulkCreateMutation.isPending ? "Uploading..." : "Upload For Challenge"}
+            {bulkCreateTyperChallengesMutation.isPending ? "Uploading..." : "Upload For Challenge"}
           </Button>
           <input type="file" accept=".json" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
         </div>
