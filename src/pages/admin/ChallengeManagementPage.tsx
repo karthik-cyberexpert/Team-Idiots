@@ -18,11 +18,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Terminal, FileUp } from "lucide-react";
+import { Terminal, PlusCircle } from "lucide-react"; // Changed FileUp to PlusCircle
 import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
 import { EditChallengeDialog } from "./challenges/EditChallengeDialog";
-import * as z from "zod";
+import { AddChallengeDialog } from "./challenges/AddChallengeDialog"; // Import the new dialog
 
 const fetchChallenges = async (): Promise<Challenge[]> => {
   const { data, error } = await supabase.functions.invoke("get-challenges");
@@ -41,28 +41,34 @@ const deleteChallenge = async (id: string) => {
   }
 };
 
-// Updated schema for challenge JSON upload
-const challengeUploadSchema = z.object({
-  title: z.string().min(1, "Title is required."),
-  description: z.string().optional(),
-  content: z.string().min(10, "Code content is required for typer challenges."),
-  xp_reward: z.number().int().min(0, "XP reward must be non-negative."),
-  game_points_reward: z.number().int().min(0, "Game points reward must be non-negative."),
-  wpm_goal: z.number().int().min(1, "WPM goal must be at least 1."),
-  accuracy_goal: z.number().min(0).max(100, "Accuracy goal must be between 0 and 100."),
-});
-const jsonUploadSchema = z.array(challengeUploadSchema);
-
 const ChallengeManagementPage = () => {
   const queryClient = useQueryClient();
   const [challengeToDelete, setChallengeToDelete] = React.useState<string | null>(null);
   const [challengeToEdit, setChallengeToEdit] = React.useState<Challenge | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isAddChallengeDialogOpen, setIsAddChallengeDialogOpen] = React.useState(false); // New state for add dialog
 
   const { data: challenges, isLoading, error } = useQuery<Challenge[]>({
     queryKey: ["challenges"],
     queryFn: fetchChallenges,
   });
+
+  // Real-time subscription for challenge changes
+  React.useEffect(() => {
+    const channel = supabase
+      .channel('challenge-management-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'challenges' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['challenges'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const deleteMutation = useMutation({
     mutationFn: deleteChallenge,
@@ -76,69 +82,6 @@ const ChallengeManagementPage = () => {
       setChallengeToDelete(null);
     },
   });
-
-  // New mutation for bulk creating typer challenges
-  const bulkCreateTyperChallengesMutation = useMutation({
-    mutationFn: async (challengesData: z.infer<typeof jsonUploadSchema>) => {
-      const { error, data } = await supabase.functions.invoke("bulk-create-typer-challenges", {
-        body: challengesData,
-      });
-      if (error) throw new Error(error.message);
-      if (data && data.error) {
-        throw new Error(`Failed to bulk create typer challenges: ${data.error}`);
-      }
-      return data;
-    },
-    onSuccess: (data) => {
-      showSuccess(data.message || "Typer challenges uploaded and created successfully!");
-      queryClient.invalidateQueries({ queryKey: ["challenges"] });
-      queryClient.invalidateQueries({ queryKey: ["typingTexts"] }); // Invalidate typing texts as well
-    },
-    onError: (err: Error) => {
-      showError(err.message);
-    },
-  });
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result;
-        if (typeof content !== 'string') {
-          showError("Could not read file content.");
-          return;
-        }
-        const jsonData = JSON.parse(content);
-        const validationResult = jsonUploadSchema.safeParse(jsonData);
-
-        if (!validationResult.success) {
-          console.error(validationResult.error.flatten());
-          showError("Invalid JSON format. Expected an array of objects with 'title', 'content', 'xp_reward', 'game_points_reward', 'wpm_goal', and 'accuracy_goal' keys.");
-          return;
-        }
-
-        bulkCreateTyperChallengesMutation.mutate(validationResult.data);
-
-      } catch (error) {
-        showError("Failed to parse JSON file. Please ensure it's a valid JSON.");
-      } finally {
-        if (event.target) {
-          event.target.value = "";
-        }
-      }
-    };
-    reader.onerror = () => {
-      showError("Error reading file.");
-    };
-    reader.readAsText(file);
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
 
   const columns = React.useMemo(() => getColumns(setChallengeToDelete, setChallengeToEdit), []);
 
@@ -164,15 +107,15 @@ const ChallengeManagementPage = () => {
 
   return (
     <>
+      <AddChallengeDialog open={isAddChallengeDialogOpen} onOpenChange={setIsAddChallengeDialogOpen} /> {/* New Add Dialog */}
       <EditChallengeDialog open={!!challengeToEdit} onOpenChange={() => setChallengeToEdit(null)} challenge={challengeToEdit} />
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">Challenge Management</h1>
-          <Button onClick={handleUploadClick} variant="outline" disabled={bulkCreateTyperChallengesMutation.isPending}>
-            <FileUp className="mr-2 h-4 w-4" />
-            {bulkCreateTyperChallengesMutation.isPending ? "Uploading..." : "Upload For Challenge"}
+          <Button onClick={() => setIsAddChallengeDialogOpen(true)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create Challenge
           </Button>
-          <input type="file" accept=".json" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
         </div>
         <DataTable columns={columns} data={challenges || []} />
       </div>
