@@ -4,7 +4,7 @@ import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getColumns } from "./users/columns";
-import { DataTable } => "@/components/ui/data-table";
+import { DataTable } from "@/components/ui/data-table";
 import { User } from "@/types/user";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
