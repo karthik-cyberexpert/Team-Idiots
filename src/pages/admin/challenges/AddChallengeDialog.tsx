@@ -37,11 +37,13 @@ const formSchema = z.object({
   game_points_reward: z.coerce.number().int().min(0, "Game points reward must be non-negative."),
   type: z.enum(["one-time", "daily", "weekly"]),
   is_active: z.boolean().default(true),
-  challenge_type: z.enum(["manual", "task_completion", "typer_goal"]), // Removed 'typer_multi_text_timed'
+  challenge_type: z.enum(["manual", "task_completion", "typer_goal", "typer_multi_text_timed"]),
   related_task_id: z.string().uuid().nullable().optional(), // For task_completion
   typer_wpm_goal: z.coerce.number().int().min(1, "WPM goal must be at least 1.").optional().nullable(), // For typer_goal
   typer_accuracy_goal: z.coerce.number().min(0).max(100, "Accuracy goal must be between 0 and 100.").optional().nullable(), // For typer_goal
-  typing_text_id: z.string().uuid().nullable().optional(), // For typer_goal
+  typing_text_id: z.string().uuid().nullable().optional(), // For typer_goal (single text)
+  typing_text_ids_input: z.string().optional(), // For typer_multi_text_timed (comma-separated IDs)
+  time_limit_seconds: z.coerce.number().int().min(1, "Time limit must be at least 1 second.").optional().nullable(), // For typer_multi_text_timed
 });
 
 type AddChallengeFormValues = z.infer<typeof formSchema>;
@@ -52,7 +54,7 @@ const fetchTypingTexts = async (): Promise<TypingText[]> => {
   return data;
 };
 
-const createChallenge = async (values: AddChallengeFormValues) => {
+const createChallenge = async (values: any) => { // Use 'any' for now due to dynamic fields
   const { error } = await supabase.functions.invoke("create-challenge", { body: values });
   if (error) throw new Error(error.message);
 };
@@ -78,6 +80,8 @@ export const AddChallengeDialog = ({ open, onOpenChange }: AddChallengeDialogPro
       typer_wpm_goal: null,
       typer_accuracy_goal: null,
       typing_text_id: null,
+      typing_text_ids_input: "",
+      time_limit_seconds: null,
     },
   });
 
@@ -105,7 +109,8 @@ export const AddChallengeDialog = ({ open, onOpenChange }: AddChallengeDialogPro
 
   const onSubmit = (values: AddChallengeFormValues) => {
     // Clean up fields not relevant to the selected challenge_type
-    const submissionValues = { ...values };
+    const submissionValues: any = { ...values };
+
     if (submissionValues.challenge_type !== 'task_completion') {
       submissionValues.related_task_id = null;
     }
@@ -114,6 +119,16 @@ export const AddChallengeDialog = ({ open, onOpenChange }: AddChallengeDialogPro
       submissionValues.typer_accuracy_goal = null;
       submissionValues.typing_text_id = null;
     }
+    if (submissionValues.challenge_type !== 'typer_multi_text_timed') {
+      submissionValues.typing_text_ids = null;
+      submissionValues.time_limit_seconds = null;
+    } else {
+      // Parse comma-separated IDs for multi-text challenge
+      submissionValues.typing_text_ids = submissionValues.typing_text_ids_input
+        ? submissionValues.typing_text_ids_input.split(',').map((id: string) => id.trim()).filter(Boolean)
+        : null;
+    }
+    delete submissionValues.typing_text_ids_input; // Remove the temporary input field
 
     mutation.mutate(submissionValues);
   };
@@ -148,7 +163,7 @@ export const AddChallengeDialog = ({ open, onOpenChange }: AddChallengeDialogPro
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3"><FormLabel>Active</FormLabel><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>
             )} />
             <FormField control={form.control} name="challenge_type" render={({ field }) => (
-              <FormItem><FormLabel>Challenge Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="manual">Manual Completion</SelectItem><SelectItem value="task_completion">Task Completion</SelectItem><SelectItem value="typer_goal">Typer Goal</SelectItem></SelectContent></Select><FormMessage /></FormItem>
+              <FormItem><FormLabel>Challenge Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="manual">Manual Completion</SelectItem><SelectItem value="task_completion">Task Completion</SelectItem><SelectItem value="typer_goal">Typer Goal (Single Text)</SelectItem><SelectItem value="typer_multi_text_timed">Typer Goal (Multi-Text Timed)</SelectItem></SelectContent></Select><FormMessage /></FormItem>
             )} />
 
             {selectedChallengeType === 'typer_goal' && (
@@ -180,6 +195,31 @@ export const AddChallengeDialog = ({ open, onOpenChange }: AddChallengeDialogPro
                 )} />
                 <FormField control={form.control} name="typer_accuracy_goal" render={({ field }) => (
                   <FormItem><FormLabel>Accuracy Goal (%)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+              </>
+            )}
+
+            {selectedChallengeType === 'typer_multi_text_timed' && (
+              <>
+                <FormField control={form.control} name="typing_text_ids_input" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Typing Text IDs (Comma-separated)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="e.g., uuid1, uuid2, uuid3"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    <DialogDescription>
+                      Enter the UUIDs of the typing texts for this challenge, separated by commas.
+                      You can find text IDs in Typer Management.
+                    </DialogDescription>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="time_limit_seconds" render={({ field }) => (
+                  <FormItem><FormLabel>Time Limit (Seconds)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </>
             )}

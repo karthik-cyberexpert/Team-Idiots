@@ -4,7 +4,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +29,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { showSuccess, showError } from "@/utils/toast";
 import { Challenge } from "@/types/challenge";
+import { TypingText } from "@/types/typing-text";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required."),
@@ -37,16 +38,24 @@ const formSchema = z.object({
   game_points_reward: z.coerce.number().int().min(0, "Game points reward must be non-negative."),
   type: z.enum(["one-time", "daily", "weekly"]),
   is_active: z.boolean(),
-  challenge_type: z.enum(["manual", "task_completion", "typer_goal"]), // Removed 'typer_multi_text_timed'
+  challenge_type: z.enum(["manual", "task_completion", "typer_goal", "typer_multi_text_timed"]),
   related_task_id: z.string().uuid().nullable().optional(),
   typer_wpm_goal: z.coerce.number().int().min(1, "WPM goal must be at least 1.").optional().nullable(),
   typer_accuracy_goal: z.coerce.number().min(0).max(100, "Accuracy goal must be between 0 and 100.").optional().nullable(),
   typing_text_id: z.string().uuid().nullable().optional(),
+  typing_text_ids_input: z.string().optional(), // For typer_multi_text_timed (comma-separated IDs)
+  time_limit_seconds: z.coerce.number().int().min(1, "Time limit must be at least 1 second.").optional().nullable(),
 });
 
 type EditChallengeFormValues = z.infer<typeof formSchema>;
 
-const updateChallenge = async (values: Challenge) => {
+const fetchTypingTexts = async (): Promise<TypingText[]> => {
+  const { data, error } = await supabase.from("typing_texts").select("id, title");
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+const updateChallenge = async (values: any) => { // Use 'any' for now due to dynamic fields
   const { error } = await supabase.functions.invoke("update-challenge", { body: values });
   if (error) throw new Error(error.message);
 };
@@ -63,6 +72,12 @@ export const EditChallengeDialog = ({ open, onOpenChange, challenge }: EditChall
     resolver: zodResolver(formSchema),
   });
 
+  const { data: typingTexts, isLoading: typingTextsLoading } = useQuery<TypingText[]>({
+    queryKey: ["typingTextsForChallenges"],
+    queryFn: fetchTypingTexts,
+    enabled: open, // Only fetch when dialog is open
+  });
+
   React.useEffect(() => {
     if (challenge) {
       form.reset({
@@ -72,11 +87,13 @@ export const EditChallengeDialog = ({ open, onOpenChange, challenge }: EditChall
         game_points_reward: challenge.game_points_reward,
         type: challenge.type,
         is_active: challenge.is_active,
-        challenge_type: challenge.challenge_type === 'typer_multi_text_timed' ? 'manual' : challenge.challenge_type, // Default to manual if it was multi-text
+        challenge_type: challenge.challenge_type,
         related_task_id: challenge.related_task_id,
         typer_wpm_goal: challenge.typer_wpm_goal,
         typer_accuracy_goal: challenge.typer_accuracy_goal,
         typing_text_id: challenge.typing_text_id,
+        typing_text_ids_input: challenge.typing_text_ids?.join(', ') || "", // Convert array to string for input
+        time_limit_seconds: challenge.time_limit_seconds,
       });
     }
   }, [challenge, form]);
@@ -93,13 +110,10 @@ export const EditChallengeDialog = ({ open, onOpenChange, challenge }: EditChall
 
   const onSubmit = (values: EditChallengeFormValues) => {
     if (!challenge) return;
-    const submissionValues = {
-      ...challenge,
-      ...values,
+    const submissionValues: any = {
+      ...challenge, // Keep existing challenge properties
+      ...values, // Override with form values
       description: values.description || null,
-      // Ensure multi-text specific fields are nullified if not typer_multi_text_timed
-      typing_text_ids: null,
-      time_limit_seconds: null,
     };
 
     // Clean up fields not relevant to the selected challenge_type
@@ -111,6 +125,16 @@ export const EditChallengeDialog = ({ open, onOpenChange, challenge }: EditChall
       submissionValues.typer_accuracy_goal = null;
       submissionValues.typing_text_id = null;
     }
+    if (submissionValues.challenge_type !== 'typer_multi_text_timed') {
+      submissionValues.typing_text_ids = null;
+      submissionValues.time_limit_seconds = null;
+    } else {
+      // Parse comma-separated IDs for multi-text challenge
+      submissionValues.typing_text_ids = submissionValues.typing_text_ids_input
+        ? submissionValues.typing_text_ids_input.split(',').map((id: string) => id.trim()).filter(Boolean)
+        : null;
+    }
+    delete submissionValues.typing_text_ids_input; // Remove the temporary input field
 
     mutation.mutate(submissionValues);
   };
@@ -145,7 +169,7 @@ export const EditChallengeDialog = ({ open, onOpenChange, challenge }: EditChall
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3"><FormLabel>Active</FormLabel><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>
             )} />
             <FormField control={form.control} name="challenge_type" render={({ field }) => (
-              <FormItem><FormLabel>Challenge Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="manual">Manual Completion</SelectItem><SelectItem value="task_completion">Task Completion</SelectItem><SelectItem value="typer_goal">Typer Goal</SelectItem></SelectContent></Select><FormMessage /></FormItem>
+              <FormItem><FormLabel>Challenge Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="manual">Manual Completion</SelectItem><SelectItem value="task_completion">Task Completion</SelectItem><SelectItem value="typer_goal">Typer Goal (Single Text)</SelectItem><SelectItem value="typer_multi_text_timed">Typer Goal (Multi-Text Timed)</SelectItem></SelectContent></Select><FormMessage /></FormItem>
             )} />
 
             {selectedChallengeType === 'typer_goal' && (
@@ -160,8 +184,13 @@ export const EditChallengeDialog = ({ open, onOpenChange, challenge }: EditChall
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {/* You might need to fetch typing texts here if not already available */}
-                        {/* For now, assuming they are not needed for editing this type */}
+                        {typingTextsLoading ? (
+                          <SelectItem value="loading" disabled>Loading texts...</SelectItem>
+                        ) : (
+                          typingTexts?.map((text) => (
+                            <SelectItem key={text.id} value={text.id}>{text.title}</SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -172,6 +201,31 @@ export const EditChallengeDialog = ({ open, onOpenChange, challenge }: EditChall
                 )} />
                 <FormField control={form.control} name="typer_accuracy_goal" render={({ field }) => (
                   <FormItem><FormLabel>Accuracy Goal (%)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+              </>
+            )}
+
+            {selectedChallengeType === 'typer_multi_text_timed' && (
+              <>
+                <FormField control={form.control} name="typing_text_ids_input" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Typing Text IDs (Comma-separated)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="e.g., uuid1, uuid2, uuid3"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    <DialogDescription>
+                      Enter the UUIDs of the typing texts for this challenge, separated by commas.
+                      You can find text IDs in Typer Management.
+                    </DialogDescription>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="time_limit_seconds" render={({ field }) => (
+                  <FormItem><FormLabel>Time Limit (Seconds)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </>
             )}
