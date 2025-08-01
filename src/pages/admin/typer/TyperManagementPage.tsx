@@ -18,26 +18,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Terminal, FileUp, Download } from "lucide-react"; // Import Download icon
+import { Terminal, FileUp, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
 import { EditTypingTextDialog } from "./EditTypingTextDialog";
 import { PaginationState } from "@tanstack/react-table";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const addFormSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }).max(100, { message: "Title must be 100 characters or less." }),
@@ -61,7 +57,6 @@ const deleteTypingText = async (id: string) => {
   if (error) {
     throw new Error(`Failed to delete typing text: ${error.message}`);
   }
-  // Defensive check: if the edge function returns 2xx but with an error in the body
   if (data && data.error) {
     throw new Error(`Failed to delete typing text: ${data.error}`);
   }
@@ -74,7 +69,6 @@ const createTypingText = async (values: AddTypingTextFormValues) => {
   if (error) {
     throw new Error(`Failed to create typing text: ${error.message}`);
   }
-  // Defensive check: if the edge function returns 2xx but with an error in the body
   if (data && data.error) {
     throw new Error(`Failed to create typing text: ${data.error}`);
   }
@@ -84,7 +78,7 @@ const TyperManagementPage = () => {
   const queryClient = useQueryClient();
   const [textToDelete, setTextToDelete] = React.useState<string | null>(null);
   const [textToEdit, setTextToEdit] = React.useState<TypingText | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null); // Keep this ref
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
@@ -95,8 +89,6 @@ const TyperManagementPage = () => {
     queryKey: ["typingTexts"],
     queryFn: fetchTypingTexts,
   });
-
-  // Removed the `form` and `createMutation` related to manual text addition
 
   React.useEffect(() => {
     const channel = supabase
@@ -134,7 +126,6 @@ const TyperManagementPage = () => {
         body: texts,
       });
       if (error) throw new Error(error.message);
-      // Defensive check: if the edge function returns 2xx but with an error in the body
       if (data && data.error) {
         throw new Error(`Failed to bulk create typing texts: ${data.error}`);
       }
@@ -162,8 +153,6 @@ const TyperManagementPage = () => {
           return;
         }
         const jsonData = JSON.parse(content);
-        // Assuming the JSON structure for typing texts is an array of { title: string, content: string }
-        // Adjust schema if needed, but for now, let's use a simple check
         if (!Array.isArray(jsonData) || !jsonData.every(item => typeof item.title === 'string' && typeof item.content === 'string')) {
           showError("Invalid JSON format. Expected an array of objects with 'title' and 'content' keys.");
           return;
@@ -189,28 +178,29 @@ const TyperManagementPage = () => {
     fileInputRef.current?.click();
   };
 
-  const handleDownloadAllTexts = () => {
-    if (!typingTexts || typingTexts.length === 0) {
-      showError("No typing texts to download.");
-      return;
+  const handleDownloadTemplate = (format: 'json' | 'csv' | 'xlsx') => {
+    const templateData = [
+      { header: "Example Title 1", code: "console.log('Hello, World!');" },
+      { header: "Example Title 2", code: "function sum(a, b) { return a + b; }" },
+    ];
+
+    if (format === 'json') {
+      const jsonString = JSON.stringify(templateData, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      saveAs(blob, "typing_texts_template.json");
+    } else if (format === 'csv') {
+      const csvContent = "header,code\n" + templateData.map(e => `"${e.header.replace(/"/g, '""')}","${e.code.replace(/"/g, '""')}"`).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      saveAs(blob, "typing_texts_template.csv");
+    } else if (format === 'xlsx') {
+      const ws = XLSX.utils.json_to_sheet(templateData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Typing Texts");
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/octet-stream' });
+      saveAs(blob, "typing_texts_template.xlsx");
     }
-
-    const formattedTexts = typingTexts.map(text => ({
-      header: text.title,
-      code: text.content,
-    }));
-
-    const jsonString = JSON.stringify(formattedTexts, null, 2);
-    const blob = new Blob([jsonString], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "all_typing_texts.json";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showSuccess("Typing texts downloaded successfully!");
+    showSuccess(`Typing texts template downloaded as ${format.toUpperCase()}!`);
   };
 
   const handleDeleteRequest = React.useCallback((id: string) => {
@@ -257,10 +247,21 @@ const TyperManagementPage = () => {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-blue dark:text-vibrant-pink">Typer Management</h1>
           <div className="flex gap-2">
-            <Button onClick={handleDownloadAllTexts} disabled={!typingTexts || typingTexts.length === 0} variant="outline" className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
-              <Download className="mr-2 h-4 w-4" />
-              Download All Texts
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Template
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Download as</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleDownloadTemplate('json')}>JSON</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownloadTemplate('csv')}>CSV</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownloadTemplate('xlsx')}>XLSX</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={handleUploadClick} disabled={bulkCreateMutation.isPending} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
               <FileUp className="mr-2 h-4 w-4" />
               {bulkCreateMutation.isPending ? "Uploading..." : "Upload File"}
@@ -269,12 +270,10 @@ const TyperManagementPage = () => {
           </div>
         </div>
 
-        {/* Removed the Add New Typing Text Card and its form */}
-
         <DataTable 
           columns={columns} 
           data={typingTexts || []}
-          pageCount={Math.ceil((typingTexts?.length || 0) / pagination.pageSize)} // Adjusted pageCount for client-side pagination
+          pageCount={Math.ceil((typingTexts?.length || 0) / pagination.pageSize)}
           pagination={pagination}
           setPagination={setPagination}
           filterColumn="title"
