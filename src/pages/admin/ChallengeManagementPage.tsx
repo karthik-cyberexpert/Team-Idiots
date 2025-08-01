@@ -18,11 +18,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Terminal, PlusCircle, FileUp } from "lucide-react";
+import { Terminal, PlusCircle, FileUp, Download } from "lucide-react"; // Import Download icon
 import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
 import { EditChallengeDialog } from "./challenges/EditChallengeDialog";
 import { AddChallengeDialog } from "./challenges/AddChallengeDialog";
+import { DownloadMultiTyperChallengeDialog } from "@/components/challenges/DownloadMultiTyperChallengeDialog"; // Import new dialog
 
 const fetchChallenges = async (): Promise<Challenge[]> => {
   const { data, error } = await supabase.functions.invoke("get-challenges");
@@ -46,6 +47,7 @@ const ChallengeManagementPage = () => {
   const [challengeToDelete, setChallengeToDelete] = React.useState<string | null>(null);
   const [challengeToEdit, setChallengeToEdit] = React.useState<Challenge | null>(null);
   const [isAddChallengeDialogOpen, setIsAddChallengeDialogOpen] = React.useState(false);
+  const [isDownloadChallengeDialogOpen, setIsDownloadChallengeDialogOpen] = React.useState(false); // New state for download dialog
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const { data: challenges, isLoading, error } = useQuery<Challenge[]>({
@@ -179,10 +181,15 @@ const ChallengeManagementPage = () => {
     <>
       <AddChallengeDialog open={isAddChallengeDialogOpen} onOpenChange={setIsAddChallengeDialogOpen} />
       <EditChallengeDialog open={!!challengeToEdit} onOpenChange={() => setChallengeToEdit(null)} challenge={challengeToEdit} />
+      <DownloadMultiTyperChallengeDialog open={isDownloadChallengeDialogOpen} onOpenChange={setIsDownloadChallengeDialogOpen} /> {/* New dialog */}
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">Challenge Management</h1>
           <div className="flex gap-2">
+            <Button onClick={() => setIsDownloadChallengeDialogOpen(true)} variant="outline" className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
+              <Download className="mr-2 h-4 w-4" />
+              Download Multi-Text Challenge
+            </Button>
             <Button onClick={handleUploadClick} disabled={bulkCreateMultiTyperChallengeMutation.isPending} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
               <FileUp className="mr-2 h-4 w-4" />
               {bulkCreateMultiTyperChallengeMutation.isPending ? "Uploading..." : "Upload Multi-Text Typer Challenge"}

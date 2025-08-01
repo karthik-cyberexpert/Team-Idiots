@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Terminal, FileUp } from "lucide-react";
+import { Terminal, FileUp, Download } from "lucide-react"; // Import Download icon
 import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
 import { EditTypingTextDialog } from "./EditTypingTextDialog";
@@ -189,6 +189,30 @@ const TyperManagementPage = () => {
     fileInputRef.current?.click();
   };
 
+  const handleDownloadAllTexts = () => {
+    if (!typingTexts || typingTexts.length === 0) {
+      showError("No typing texts to download.");
+      return;
+    }
+
+    const formattedTexts = typingTexts.map(text => ({
+      header: text.title,
+      code: text.content,
+    }));
+
+    const jsonString = JSON.stringify(formattedTexts, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "all_typing_texts.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showSuccess("Typing texts downloaded successfully!");
+  };
+
   const handleDeleteRequest = React.useCallback((id: string) => {
     setTextToDelete(id);
   }, []);
@@ -233,7 +257,11 @@ const TyperManagementPage = () => {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-blue dark:text-vibrant-pink">Typer Management</h1>
           <div className="flex gap-2">
-            <Button onClick={handleUploadClick} disabled={bulkCreateMutation.isPending}>
+            <Button onClick={handleDownloadAllTexts} disabled={!typingTexts || typingTexts.length === 0} variant="outline" className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
+              <Download className="mr-2 h-4 w-4" />
+              Download All Texts
+            </Button>
+            <Button onClick={handleUploadClick} disabled={bulkCreateMutation.isPending} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
               <FileUp className="mr-2 h-4 w-4" />
               {bulkCreateMutation.isPending ? "Uploading..." : "Upload File"}
             </Button>
