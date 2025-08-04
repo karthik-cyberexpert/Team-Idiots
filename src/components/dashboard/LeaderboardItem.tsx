@@ -9,7 +9,7 @@ interface Profile {
   id: string;
   full_name: string;
   xp: number;
-  staged_xp: number; // This is no longer used for display but kept for type safety
+  staged_xp: number;
 }
 
 interface LeaderboardItemProps {
@@ -38,7 +38,7 @@ const getRankIcon = (rank: number) => {
 };
 
 export const LeaderboardItem = ({ profile, rank, isCurrentUser, isAdmin, animationState }: LeaderboardItemProps) => {
-  const totalXp = profile.xp; // Display only the permanent XP
+  const totalXp = profile.xp + profile.staged_xp;
   const isAnimatingForThisUser = isCurrentUser && animationState?.isAnimating;
 
   return (
@@ -63,7 +63,9 @@ export const LeaderboardItem = ({ profile, rank, isCurrentUser, isAdmin, animati
       </div>
       <div className="font-bold text-primary">
         {totalXp} XP
-        {/* Staged XP display is removed */}
+        {isAdmin && profile.staged_xp > 0 && (
+          <span className="text-xs font-normal text-vibrant-green ml-1">(+{profile.staged_xp})</span>
+        )}
       </div>
     </li>
   );
