@@ -25,7 +25,7 @@ const bulkTextSchema = z.object({
   code: z.string().min(1, "Code is required."),
 });
 
-const bulkUploadSchema = z.array(bulkTextSchema).length(7, "You must provide exactly 7 texts.");
+const bulkUploadSchema = z.array(bulkTextSchema).length(35, "You must provide exactly 35 texts.");
 
 interface BulkUploadTyperSetDialogProps {
   open: boolean;
@@ -94,7 +94,7 @@ export const BulkUploadTyperSetDialog = ({ open, onOpenChange, suggestedTitle }:
     reader.readAsBinaryString(file);
   };
 
-  const templateData = Array.from({ length: 7 }, (_, i) => ({
+  const templateData = Array.from({ length: 35 }, (_, i) => ({
     header: `Example Title ${i + 1}`,
     code: `// Code for text ${i + 1}\nfunction example() {\n  return "Hello, World!";\n}`,
   }));
@@ -124,7 +124,7 @@ export const BulkUploadTyperSetDialog = ({ open, onOpenChange, suggestedTitle }:
         <DialogHeader>
           <DialogTitle>Upload Weekly Typer Set</DialogTitle>
           <DialogDescription>
-            Upload a JSON, CSV, or XLSX file containing exactly 7 typing texts.
+            Upload a JSON, CSV, or XLSX file containing exactly 35 typing texts.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

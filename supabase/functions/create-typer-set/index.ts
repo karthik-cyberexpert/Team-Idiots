@@ -16,8 +16,8 @@ serve(async (req) => {
     if (!title || !Array.isArray(texts) || texts.length === 0) {
       throw new Error("Title and a non-empty array of texts are required.")
     }
-    if (texts.length !== 7) {
-      throw new Error("Exactly 7 typing texts must be provided for a weekly set.");
+    if (texts.length !== 35) {
+      throw new Error("Exactly 35 typing texts must be provided for a weekly set.");
     }
 
     const supabaseAdmin = createClient(
