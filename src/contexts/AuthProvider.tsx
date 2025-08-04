@@ -83,7 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const checkLeaderboard = useCallback(async () => {
-    if (!user) return;
+    if (!user || profile?.role === 'admin') return; // Don't show for admins
     try {
       const { data: leaderboard, error: leaderboardError } = await supabase
         .from('profiles')
@@ -101,7 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error checking leaderboard rank:", error);
     }
-  }, [user]);
+  }, [user, profile]);
 
   useEffect(() => {
     // This listener is crucial for initial session and subsequent changes.
