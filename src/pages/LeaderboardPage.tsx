@@ -15,7 +15,7 @@ interface Profile {
   id: string;
   full_name: string;
   xp: number;
-  staged_xp: number;
+  staged_xp: number; // This will be 0 now but kept for type safety until fully removed
 }
 
 const fetchLeaderboard = async (): Promise<Profile[]> => {
@@ -50,12 +50,9 @@ const LeaderboardPage = () => {
 
   const sortedProfiles = React.useMemo(() => {
     if (!profiles) return [];
-    return [...profiles].sort((a, b) => {
-      const totalXpA = a.xp + (isAdmin ? a.staged_xp : 0);
-      const totalXpB = b.xp + (isAdmin ? b.staged_xp : 0);
-      return totalXpB - totalXpA;
-    });
-  }, [profiles, isAdmin]);
+    // Sorting is now simpler, just by the permanent XP value.
+    return [...profiles].sort((a, b) => b.xp - a.xp);
+  }, [profiles]);
 
   React.useEffect(() => {
     if (!sortedProfiles.length || !user || isAdmin) return;
@@ -130,7 +127,7 @@ const LeaderboardPage = () => {
         <Card className="shadow-md overflow-hidden">
           <CardHeader>
             <CardTitle>Top Performers</CardTitle>
-            {isAdmin && <CardDescription>You are viewing the leaderboard with staged changes.</CardDescription>}
+            {isAdmin && <CardDescription>Admin view: Staged XP is no longer shown as it is not used.</CardDescription>}
           </CardHeader>
           <CardContent>
             <ul className="space-y-3 relative z-10">
