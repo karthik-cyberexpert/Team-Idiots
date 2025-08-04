@@ -1,16 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Trophy, Check, Undo } from "lucide-react";
+import { Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { showSuccess, showError } from "@/utils/toast";
 import { LeaderboardItem } from "@/components/dashboard/LeaderboardItem";
 
 interface Profile {
@@ -29,16 +27,6 @@ const fetchLeaderboard = async (): Promise<Profile[]> => {
 
   if (error) throw new Error(error.message);
   return data;
-};
-
-const publishChanges = async () => {
-  const { error } = await supabase.functions.invoke("publish-xp-changes");
-  if (error) throw new Error(error.message);
-};
-
-const revertChanges = async () => {
-  const { error } = await supabase.functions.invoke("revert-xp-changes");
-  if (error) throw new Error(error.message);
 };
 
 // Placeholder for sound effects - you can replace these with your own audio files
@@ -105,28 +93,6 @@ const LeaderboardPage = () => {
     }
   }, [sortedProfiles, user, isAdmin, queryClient]);
 
-  const publishMutation = useMutation({
-    mutationFn: publishChanges,
-    onSuccess: () => {
-      showSuccess("XP changes have been published!");
-      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
-    },
-    onError: (err: Error) => showError(err.message),
-  });
-
-  const revertMutation = useMutation({
-    mutationFn: revertChanges,
-    onSuccess: () => {
-      showSuccess("Staged XP changes have been reverted.");
-      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
-    },
-    onError: (err: Error) => showError(err.message),
-  });
-
-  const hasStagedChanges = React.useMemo(() => {
-    return profiles?.some(p => p.staged_xp !== 0);
-  }, [profiles]);
-
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -160,17 +126,6 @@ const LeaderboardPage = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
           <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-purple dark:text-vibrant-pink">XP Leaderboard</h1>
-          {isAdmin && hasStagedChanges && (
-            <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-              <p className="text-sm font-medium text-muted-foreground">You have unpublished changes.</p>
-              <Button size="sm" onClick={() => revertMutation.mutate()} disabled={revertMutation.isPending} variant="outline">
-                <Undo className="h-4 w-4 mr-2" /> Revert
-              </Button>
-              <Button size="sm" onClick={() => publishMutation.mutate()} disabled={publishMutation.isPending}>
-                <Check className="h-4 w-4 mr-2" /> Publish
-              </Button>
-            </div>
-          )}
         </div>
         <Card className="shadow-md overflow-hidden">
           <CardHeader>
