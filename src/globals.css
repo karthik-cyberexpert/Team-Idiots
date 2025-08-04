@@ -159,3 +159,48 @@
   background-size: 400% 400%;
   animation: animated-gradient 4s ease infinite;
 }
+
+/* New animations for leaderboard rank changes */
+@layer utilities {
+  .bg-glow-green {
+    background: radial-gradient(circle, rgba(45, 255, 196, 0.2) 0%, rgba(45, 255, 196, 0) 70%);
+  }
+  .bg-glow-red {
+    background: radial-gradient(circle, rgba(255, 72, 72, 0.2) 0%, rgba(255, 72, 72, 0) 70%);
+  }
+
+  @keyframes fade-in-out {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+  }
+  .animate-fade-in-out {
+    animation: fade-in-out 4s ease-in-out forwards;
+  }
+
+  @keyframes lift {
+    from { transform: scale(1) translateZ(0); }
+    to { transform: scale(1.05) translateZ(50px); }
+  }
+  .animate-lift {
+    animation: lift 0.5s ease-out forwards;
+    z-index: 20;
+  }
+
+  @keyframes rank-up {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-16px); }
+    100% { transform: translateY(0); }
+  }
+  .animate-rank-up {
+    animation: rank-up 2s ease-in-out;
+  }
+
+  @keyframes rank-down {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(16px); }
+    100% { transform: translateY(0); }
+  }
+  .animate-rank-down {
+    animation: rank-down 2s ease-in-out;
+  }
+}
