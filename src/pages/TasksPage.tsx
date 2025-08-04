@@ -6,12 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, CircleDashed, CalendarDays, Send, ShieldQuestion, RefreshCw, XCircle, Star, Clock } from "lucide-react"; // Import Clock icon
+import { CheckCircle, CircleDashed, CalendarDays, Send, ShieldQuestion, RefreshCw, XCircle, Star, Clock, Type } from "lucide-react"; // Import Type icon
 import { showSuccess, showError } from "@/utils/toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Task } from "@/types/task";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns"; // Import format for time display
+import { format } from "date-fns";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 
 const fetchUserTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
@@ -46,6 +47,7 @@ const updateTaskStatus = async (taskId: string, status: 'waiting_for_approval' |
 const TasksPage = () => {
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate(); // Initialize navigate
 
   const { data: tasks, isLoading, error } = useQuery<Task[]>({
     queryKey: ["userTasks", user?.id],
@@ -82,28 +84,20 @@ const TasksPage = () => {
     mutationFn: ({ taskId, status, completedAt }: { taskId: string; status: 'waiting_for_approval' | 'pending'; completedAt?: string | null }) =>
       updateTaskStatus(taskId, status, completedAt),
     onMutate: async ({ taskId, status, completedAt }) => {
-      // Cancel any outgoing refetches for the tasks query
       await queryClient.cancelQueries({ queryKey: ["userTasks", user?.id] });
-
-      // Snapshot the previous value
       const previousTasks = queryClient.getQueryData<Task[]>(["userTasks", user?.id]);
-
-      // Optimistically update to the new value
       queryClient.setQueryData<Task[]>(["userTasks", user?.id], (old) =>
         old?.map((task) =>
           task.id === taskId ? { ...task, status: status, updated_at: new Date().toISOString(), completed_at: completedAt || task.completed_at } : task
         )
       );
-
       return { previousTasks };
     },
     onError: (err, variables, context) => {
       showError(err.message);
-      // Rollback to the previous value on error
       queryClient.setQueryData(["userTasks", user?.id], context?.previousTasks);
     },
     onSettled: () => {
-      // Always refetch after error or success to ensure data is in sync
       queryClient.invalidateQueries({ queryKey: ["userTasks", user?.id] });
     },
     onSuccess: (data, variables) => {
@@ -154,6 +148,19 @@ const TasksPage = () => {
         <div className="flex items-center text-vibrant-red font-semibold">
           <XCircle className="h-4 w-4 mr-2" /> Failed (Too Late)
         </div>
+      );
+    }
+
+    if (task.task_type === 'typer' && task.status === 'pending') {
+      return (
+        <Button
+          size="sm"
+          onClick={() => navigate(`/dashboard/typer?taskId=${task.id}&textId=${task.related_typing_text_id}`)}
+          className="bg-vibrant-purple hover:bg-vibrant-purple/90 transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
+        >
+          <Type className="h-4 w-4 mr-2" />
+          Start Challenge
+        </Button>
       );
     }
 
@@ -219,7 +226,7 @@ const TasksPage = () => {
               <CardHeader>
                 <CardTitle className="text-lg">{task.title}</CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">
-                  Assigned by: <span className="text-vibrant-purple dark:text-vibrant-yellow">{task.assigner_profile?.full_name || "N/A"}</span>
+                  Assigned by: <span className="text-vibrant-purple dark:text-vibrant-yellow">{task.assigner_profile?.full_name || "System"}</span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-grow space-y-2">

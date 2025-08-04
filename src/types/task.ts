@@ -10,12 +10,14 @@ export interface Task {
   updated_at: string;
   completed_at: string | null;
   is_common_task: boolean;
-  marks_awarded?: number | null; // New: Marks awarded by admin
-  xp_awarded_manual?: number | null; // New: Manual XP awarded by admin
+  marks_awarded?: number | null;
+  xp_awarded_manual?: number | null;
+  task_type?: 'standard' | 'typer'; // New field for task type
+  related_typing_text_id?: string | null; // New field to link to a typing text
   profiles: {
     full_name: string;
-  } | null; // For assigned_to user's name
+  } | null;
   assigner_profile: {
     full_name: string;
-  } | null; // For assigned_by user's name
+  } | null;
 }
