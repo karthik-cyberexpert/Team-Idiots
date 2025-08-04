@@ -28,7 +28,7 @@ export const ShowContentDialog = ({ open, onOpenChange, typerSet }: ShowContentD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Content for: {typerSet.title}</DialogTitle>
         </DialogHeader>
@@ -38,12 +38,12 @@ export const ShowContentDialog = ({ open, onOpenChange, typerSet }: ShowContentD
               {typerSet.typing_texts.map((text, index) => (
                 <CarouselItem key={text.id}>
                   <div className="p-1">
-                    <Card>
+                    <Card className="w-[700px] h-[400px] flex flex-col">
                       <CardHeader>
                         <CardTitle>{text.title} (Text {index + 1} of 35)</CardTitle>
                       </CardHeader>
-                      <CardContent className="p-0">
-                        <ScrollArea className="max-h-72 w-full rounded-md border bg-muted p-4 font-mono text-sm whitespace-pre-wrap">
+                      <CardContent className="p-0 flex-grow">
+                        <ScrollArea className="w-full h-full rounded-md border bg-muted p-4 font-mono text-sm whitespace-pre-wrap overflow-x-auto">
                           {text.content}
                         </ScrollArea>
                       </CardContent>
