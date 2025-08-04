@@ -4,34 +4,33 @@ import * as React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, CheckCircle, XCircle, Gamepad2, PartyPopper, ArrowLeft } from "lucide-react";
+import { RefreshCw, CheckCircle, XCircle, Gamepad2, PartyPopper, ArrowLeft, Timer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { TypingText } from "@/types/typing-text";
+import { TypingTextWithSet } from "@/types/typer";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
 import { useAuth } from "@/contexts/AuthProvider";
 import { showSuccess, showError } from "@/utils/toast";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
 
-const fetchTypingTextById = async (textId: string): Promise<TypingText> => {
+const fetchTypingTextWithSet = async (textId: string): Promise<TypingTextWithSet> => {
   const { data, error } = await supabase
     .from("typing_texts")
-    .select("*")
+    .select("*, typer_sets(*)")
     .eq("id", textId)
     .single();
   if (error) throw new Error(error.message);
-  return data;
+  return data as TypingTextWithSet;
 };
 
-const fetchAllTypingTexts = async (): Promise<TypingText[]> => {
+const fetchAllTypingTexts = async (): Promise<TypingTextWithSet[]> => {
   const { data, error } = await supabase
     .from("typing_texts")
-    .select("*");
+    .select("*, typer_sets(*)");
   if (error) throw new Error(error.message);
-  return data;
+  return data as TypingTextWithSet[];
 };
 
 const fetchUserGameResults = async (userId: string): Promise<{ text_id: string }[]> => {
@@ -63,6 +62,31 @@ const updateTaskStatus = async (taskId: string) => {
   if (error) throw new Error(error.message);
 };
 
+const Countdown = ({ targetDate, onEnd }: { targetDate: Date, onEnd: () => void }) => {
+  const [remaining, setRemaining] = React.useState("");
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date();
+      if (now >= targetDate) {
+        clearInterval(interval);
+        onEnd();
+      } else {
+        setRemaining(formatDistanceToNow(targetDate, { includeSeconds: true }));
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [targetDate, onEnd]);
+
+  return (
+    <div className="text-center py-10 text-muted-foreground">
+      <Timer className="mx-auto h-12 w-12 mb-4 text-vibrant-blue" />
+      <p className="text-lg font-semibold">Next challenge starts in:</p>
+      <p className="text-2xl font-bold text-primary">{remaining}</p>
+    </div>
+  );
+};
+
 const TyperPage = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -71,32 +95,33 @@ const TyperPage = () => {
   const textId = searchParams.get("textId");
 
   const { user } = useAuth();
-  const [currentText, setCurrentText] = React.useState<TypingText | null>(null);
+  const [currentText, setCurrentText] = React.useState<TypingTextWithSet | null>(null);
   const [inputText, setInputText] = React.useState("");
   const [startTime, setStartTime] = React.useState<number | null>(null);
   const [endTime, setEndTime] = React.useState<number | null>(null);
   const [accuracy, setAccuracy] = React.useState<number | null>(null);
   const [wpm, setWpm] = React.useState<number | null>(null);
   const [pointsAwarded, setPointsAwarded] = React.useState<number | null>(null);
+  const [timeState, setTimeState] = React.useState<'PENDING' | 'ACTIVE' | 'EXPIRED'>('PENDING');
+  const [nextStartTime, setNextStartTime] = React.useState<Date | null>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
-  // Fetch specific text if textId is in URL, otherwise fetch all
-  const { data: specificText, isLoading: specificTextLoading } = useQuery<TypingText>({
+  const { data: challengeText, isLoading: challengeTextLoading } = useQuery<TypingTextWithSet>({
     queryKey: ["typingText", textId],
-    queryFn: () => fetchTypingTextById(textId!),
+    queryFn: () => fetchTypingTextWithSet(textId!),
     enabled: !!textId,
   });
 
-  const { data: allTexts, isLoading: textsLoading } = useQuery<TypingText[]>({
+  const { data: allTexts, isLoading: textsLoading } = useQuery<TypingTextWithSet[]>({
     queryKey: ["allTypingTexts"],
     queryFn: fetchAllTypingTexts,
-    enabled: !textId, // Only fetch all if not doing a specific challenge
+    enabled: !textId,
   });
 
   const { data: completedResults, isLoading: resultsLoading } = useQuery({
     queryKey: ["userGameResults", user?.id],
     queryFn: () => fetchUserGameResults(user!.id),
-    enabled: !!user && !textId, // Only fetch results for free play mode
+    enabled: !!user && !textId,
   });
 
   const updateTaskMutation = useMutation({
@@ -122,52 +147,27 @@ const TyperPage = () => {
     onError: (err: Error) => showError(`Failed to save result: ${err.message}`),
   });
 
-  const resetTest = React.useCallback(() => {
-    setStartTime(null);
-    setEndTime(null);
-    setAccuracy(null);
-    setWpm(null);
-    setPointsAwarded(null);
-    setInputText("");
-
-    if (textId) { // If it's a challenge, stick to the specific text
-      if (specificText) setCurrentText(specificText);
-    } else if (allTexts) { // Free play mode
-      const completedIds = new Set(completedResults?.map(r => r.text_id));
-      const playableTexts = allTexts.filter(text => !completedIds.has(text.id));
-      
-      if (playableTexts.length > 0) {
-        const randomIndex = Math.floor(Math.random() * playableTexts.length);
-        setCurrentText(playableTexts[randomIndex]);
-      } else {
-        setCurrentText(null); // All texts completed
-      }
-    }
-    inputRef.current?.focus();
-  }, [textId, specificText, allTexts, completedResults]);
-
-  React.useEffect(() => {
-    resetTest();
-  }, [specificText, allTexts, completedResults, resetTest]);
-
-  const calculateResults = React.useCallback(() => {
+  const calculateResults = React.useCallback((finalInputText: string) => {
     if (startTime && currentText && user) {
       const finalTime = Date.now();
       setEndTime(finalTime);
       const durationInMinutes = (finalTime - startTime) / 60000;
-      const wordsTyped = currentText.content.split(" ").length;
-      const calculatedWpm = Math.round(wordsTyped / durationInMinutes);
-      setWpm(calculatedWpm);
-
+      
+      const originalTextPortion = currentText.content.substring(0, finalInputText.length);
       let correctChars = 0;
-      for (let i = 0; i < inputText.length; i++) {
-        if (inputText[i] === currentText.content[i]) {
+      for (let i = 0; i < finalInputText.length; i++) {
+        if (finalInputText[i] === originalTextPortion[i]) {
           correctChars++;
         }
       }
-      const calculatedAccuracy = (correctChars / currentText.content.length) * 100;
+      
+      const calculatedAccuracy = finalInputText.length > 0 ? (correctChars / finalInputText.length) * 100 : 0;
       const finalAccuracy = parseFloat(calculatedAccuracy.toFixed(2));
       setAccuracy(finalAccuracy);
+
+      const wordsTyped = finalInputText.trim().split(/\s+/).filter(Boolean).length;
+      const calculatedWpm = durationInMinutes > 0 ? Math.round(wordsTyped / durationInMinutes) : 0;
+      setWpm(calculatedWpm);
 
       saveResultMutation.mutate({
         userId: user.id,
@@ -176,14 +176,85 @@ const TyperPage = () => {
         accuracy: finalAccuracy,
       });
     }
-  }, [startTime, currentText, user, inputText, saveResultMutation]);
+  }, [startTime, currentText, user, saveResultMutation]);
+
+  const resetTest = React.useCallback(() => {
+    setStartTime(null);
+    setEndTime(null);
+    setAccuracy(null);
+    setWpm(null);
+    setPointsAwarded(null);
+    setInputText("");
+
+    if (textId) {
+      if (challengeText) setCurrentText(challengeText);
+    } else if (allTexts) {
+      const completedIds = new Set(completedResults?.map(r => r.text_id));
+      const playableTexts = allTexts.filter(text => !completedIds.has(text.id));
+      
+      if (playableTexts.length > 0) {
+        const randomIndex = Math.floor(Math.random() * playableTexts.length);
+        setCurrentText(playableTexts[randomIndex]);
+      } else {
+        setCurrentText(null);
+      }
+    }
+    inputRef.current?.focus();
+  }, [textId, challengeText, allTexts, completedResults]);
+
+  React.useEffect(() => {
+    resetTest();
+  }, [challengeText, allTexts, completedResults, resetTest]);
+
+  React.useEffect(() => {
+    if (!currentText) return;
+    const set = currentText.typer_sets;
+    if (!set || !set.start_time || !set.end_time) {
+      setTimeState('ACTIVE');
+      return;
+    }
+
+    const checkTime = () => {
+      const now = new Date();
+      const [startH, startM] = set.start_time!.split(':').map(Number);
+      const [endH, endM] = set.end_time!.split(':').map(Number);
+
+      const startTimeToday = new Date();
+      startTimeToday.setHours(startH, startM, 0, 0);
+      const endTimeToday = new Date();
+      endTimeToday.setHours(endH, endM, 0, 0);
+
+      if (now < startTimeToday) {
+        setTimeState('PENDING');
+        setNextStartTime(startTimeToday);
+      } else if (now > endTimeToday) {
+        setTimeState('EXPIRED');
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(startH, startM, 0, 0);
+        setNextStartTime(tomorrow);
+      } else {
+        setTimeState('ACTIVE');
+        const remaining = endTimeToday.getTime() - now.getTime();
+        setTimeout(() => {
+          if (inputRef.current && !endTime) {
+            calculateResults(inputRef.current.value);
+          }
+        }, remaining);
+      }
+    };
+
+    checkTime();
+    const interval = setInterval(checkTime, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [currentText, calculateResults, endTime]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (!currentText || endTime) return;
+    if (!currentText || endTime || timeState !== 'ACTIVE') return;
     const value = e.target.value;
     setInputText(value);
     if (!startTime) setStartTime(Date.now());
-    if (value === currentText.content) calculateResults();
+    if (value === currentText.content) calculateResults(value);
   };
 
   const getCharClass = (char: string, index: number) => {
@@ -194,16 +265,10 @@ const TyperPage = () => {
     return "text-muted-foreground";
   };
 
-  const isLoadingData = textsLoading || resultsLoading || specificTextLoading;
+  const isLoadingData = textsLoading || resultsLoading || challengeTextLoading;
 
   if (isLoadingData) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-1/4" />
-        <Skeleton className="h-48 w-full" />
-        <Skeleton className="h-12 w-full" />
-      </div>
-    );
+    return <Skeleton className="h-64 w-full" />;
   }
 
   return (
@@ -226,7 +291,9 @@ const TyperPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {currentText ? (
+          {timeState !== 'ACTIVE' && nextStartTime ? (
+            <Countdown targetDate={nextStartTime} onEnd={resetTest} />
+          ) : currentText ? (
             <>
               <div className="relative p-4 border rounded-md bg-muted/50 text-lg font-mono leading-relaxed whitespace-pre-wrap">
                 <div className="absolute inset-0 p-4 text-muted-foreground opacity-50">{currentText.content}</div>

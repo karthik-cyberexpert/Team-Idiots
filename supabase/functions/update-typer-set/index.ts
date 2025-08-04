@@ -12,17 +12,20 @@ serve(async (req) => {
   }
 
   try {
-    const { id, status, assign_date } = await req.json()
+    const { id, status, assign_date, start_time, end_time } = await req.json()
     if (!id) {
       throw new Error("ID is required.")
     }
 
-    const updatePayload: { status?: string; assign_date?: string } = {};
+    const updatePayload: { status?: string; assign_date?: string; start_time?: string; end_time?: string; } = {};
     if (status) updatePayload.status = status;
     if (assign_date) updatePayload.assign_date = assign_date;
+    if (start_time) updatePayload.start_time = start_time;
+    if (end_time) updatePayload.end_time = end_time;
+
 
     if (Object.keys(updatePayload).length === 0) {
-      throw new Error("At least one field (status or assign_date) must be provided for update.")
+      throw new Error("At least one field must be provided for update.")
     }
 
     const supabaseAdmin = createClient(

@@ -26,6 +26,8 @@ serve(async (_req) => {
         status,
         assign_date,
         created_at,
+        start_time,
+        end_time,
         typing_texts (
           id,
           title,

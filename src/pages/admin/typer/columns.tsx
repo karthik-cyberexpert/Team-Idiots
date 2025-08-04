@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, ArrowUpDown, Check, X, Play, Calendar as CalendarIcon, Trash2 } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, Check, X, Play, Calendar as CalendarIcon, Trash2, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -14,12 +14,14 @@ import { TyperSet } from "@/types/typer"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
+import { Input } from "@/components/ui/input"
 import { format } from "date-fns"
 
 type TyperSetActions = {
   onShowContent: (set: TyperSet) => void;
   onUpdateStatus: (id: string, status: 'published' | 'inactive') => void;
   onUpdateDate: (id: string, date: Date) => void;
+  onUpdateTime: (id: string, type: 'start_time' | 'end_time', time: string) => void;
   onDelete: (id:string) => void;
 }
 
@@ -36,15 +38,6 @@ export const getColumns = (actions: TyperSetActions): ColumnDef<TyperSet>[] => [
         Show Content
       </Button>
     )
-  },
-  {
-    accessorKey: "created_at",
-    header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-        Created At <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => new Date(row.getValue("created_at")).toLocaleString()
   },
   {
     accessorKey: "assign_date",
@@ -70,6 +63,38 @@ export const getColumns = (actions: TyperSetActions): ColumnDef<TyperSet>[] => [
             />
           </PopoverContent>
         </Popover>
+      );
+    }
+  },
+  {
+    accessorKey: "start_time",
+    header: "Start Time",
+    cell: ({ row }) => {
+      const set = row.original;
+      return (
+        <Input
+          type="time"
+          defaultValue={set.start_time || ""}
+          onBlur={(e) => actions.onUpdateTime(set.id, 'start_time', e.target.value)}
+          className="w-32"
+          disabled={set.status !== 'published'}
+        />
+      );
+    }
+  },
+  {
+    accessorKey: "end_time",
+    header: "End Time",
+    cell: ({ row }) => {
+      const set = row.original;
+      return (
+        <Input
+          type="time"
+          defaultValue={set.end_time || ""}
+          onBlur={(e) => actions.onUpdateTime(set.id, 'end_time', e.target.value)}
+          className="w-32"
+          disabled={set.status !== 'published'}
+        />
       );
     }
   },

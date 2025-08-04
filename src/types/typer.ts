@@ -11,4 +11,10 @@ export interface TyperSet {
   assign_date: string | null;
   created_at: string;
   typing_texts: TypingText[];
+  start_time: string | null;
+  end_time: string | null;
+}
+
+export interface TypingTextWithSet extends TypingText {
+  typer_sets: TyperSet | null;
 }

@@ -42,7 +42,7 @@ const TyperSetManagementPage = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (variables: { id: string; status?: 'published' | 'inactive'; assign_date?: string }) => {
+    mutationFn: async (variables: { id: string; status?: 'published' | 'inactive'; assign_date?: string; start_time?: string; end_time?: string; }) => {
       const { error } = await supabase.functions.invoke("update-typer-set", { body: variables });
       if (error) throw new Error(error.message);
     },
@@ -73,6 +73,7 @@ const TyperSetManagementPage = () => {
     onShowContent: (set) => setSetToShow(set),
     onUpdateStatus: (id, status) => updateMutation.mutate({ id, status }),
     onUpdateDate: (id, date) => updateMutation.mutate({ id, assign_date: date.toISOString() }),
+    onUpdateTime: (id, type, time) => updateMutation.mutate({ id, [type]: time }),
     onDelete: (id) => setSetToDelete(id),
   }), [updateMutation]);
 
@@ -120,7 +121,7 @@ const TyperSetManagementPage = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete the set and its 7 typing texts.</AlertDialogDescription>
+            <AlertDialogDescription>This will permanently delete the set and its 35 typing texts.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
