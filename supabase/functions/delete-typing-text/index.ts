@@ -23,17 +23,7 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // First, unlink any challenges that are linked to this typing text by setting their foreign key to NULL.
-    const { error: challengeUpdateError } = await supabaseAdmin
-      .from('challenges')
-      .update({ typing_text_id: null })
-      .eq('typing_text_id', id);
-
-    if (challengeUpdateError) {
-      throw new Error(`Failed to unlink challenges: ${challengeUpdateError.message}`);
-    }
-
-    // Then, delete the typing text itself.
+    // Delete the typing text itself.
     const { error } = await supabaseAdmin
       .from('typing_texts')
       .delete()
@@ -42,7 +32,7 @@ serve(async (req) => {
     if (error) throw error;
 
     return new Response(
-      JSON.stringify({ message: "Typing text deleted and unlinked from any challenges successfully" }),
+      JSON.stringify({ message: "Typing text deleted successfully" }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {

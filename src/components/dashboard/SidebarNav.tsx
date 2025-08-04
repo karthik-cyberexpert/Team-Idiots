@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Settings, Gamepad2, Star } from "lucide-react";
+import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Settings, Gamepad2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -43,11 +43,6 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       icon: <ListTodo className="h-4 w-4" />,
     },
     {
-      href: "/dashboard/challenges",
-      label: "Challenges",
-      icon: <Star className="h-4 w-4" />,
-    },
-    {
       href: "/dashboard/leaderboard",
       label: "XP Leaderboard",
       icon: <Trophy className="h-4 w-4" />,
@@ -72,12 +67,6 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       href: "/admin/tasks",
       label: "Task Management",
       icon: <ListTodo className="h-4 w-4" />,
-      adminOnly: true,
-    },
-    {
-      href: "/admin/challenges",
-      label: "Challenge Mgt",
-      icon: <Star className="h-4 w-4" />,
       adminOnly: true,
     },
     {

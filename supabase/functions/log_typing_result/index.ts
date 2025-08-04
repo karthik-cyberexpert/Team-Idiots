@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { p_user_id, p_text_id, p_wpm, p_accuracy, p_challenge_id } = await req.json()
+    const { p_user_id, p_text_id, p_wpm, p_accuracy } = await req.json()
 
     if (!p_user_id || !p_text_id || typeof p_wpm !== 'number' || typeof p_accuracy !== 'number') {
       throw new Error("User ID, text ID, WPM, and accuracy are required.")
@@ -56,70 +56,6 @@ serve(async (req) => {
       .eq('id', p_user_id);
 
     if (updateProfileError) throw updateProfileError;
-
-    // Check for and complete any relevant typer challenges
-    const { data: challenges, error: fetchChallengesError } = await supabaseAdmin
-      .from('challenges')
-      .select('*')
-      .eq('is_active', true)
-      .in('challenge_type', ['typer_goal', 'typer_multi_text_timed']);
-
-    if (fetchChallengesError) throw fetchChallengesError;
-
-    for (const challenge of challenges) {
-      // Check if the user has already completed this challenge
-      const { data: existingCompletion, error: completionError } = await supabaseAdmin
-        .from('challenge_completions')
-        .select('id')
-        .eq('user_id', p_user_id)
-        .eq('challenge_id', challenge.id)
-        .single();
-
-      if (completionError && completionError.code !== 'PGRST116') throw completionError; // PGRST116 means no rows found
-
-      if (!existingCompletion) { // If not already completed
-        if (challenge.challenge_type === 'typer_goal') {
-          // For single typer goal challenges
-          if (p_wpm >= (challenge.typer_wpm_goal || 0) && p_accuracy >= (challenge.typer_accuracy_goal || 0) && (challenge.typing_text_id === null || challenge.typing_text_id === p_text_id)) {
-            const { error: insertCompletionError } = await supabaseAdmin
-              .from('challenge_completions')
-              .insert({ user_id: p_user_id, challenge_id: challenge.id });
-            if (insertCompletionError) throw insertCompletionError;
-          }
-        } else if (challenge.challenge_type === 'typer_multi_text_timed') {
-          // For multi-text timed challenges, check if all texts are completed within the time limit
-          // This logic assumes the frontend sends a signal when the challenge is truly "completed"
-          // (i.e., all texts typed within the time limit).
-          // For now, we'll just check if the current text is part of the challenge and if it's the last one.
-          // A more robust solution would involve tracking progress for multi-text challenges.
-          if (challenge.typing_text_ids && challenge.typing_text_ids.includes(p_text_id)) {
-            // Check if all texts in the challenge have been completed by the user
-            const { count: completedTextsCount, error: countError } = await supabaseAdmin
-              .from('typing_game_results')
-              .select('id', { count: 'exact' })
-              .eq('user_id', p_user_id)
-              .in('text_id', challenge.typing_text_ids);
-
-            if (countError) throw countError;
-
-            if (completedTextsCount === challenge.typing_text_ids.length) {
-              // All texts for this multi-text challenge have been typed by the user
-              // Now, we need to verify if it was done within the time limit.
-              // This check is difficult to do purely in a database function triggered by a single text completion.
-              // The frontend should ideally manage the overall challenge completion state and then
-              // call a separate function to mark the multi-text challenge as completed.
-              // For simplicity, we'll assume if all texts are completed, the challenge is met.
-              // A more advanced solution would involve a separate 'challenge_progress' table.
-
-              const { error: insertCompletionError } = await supabaseAdmin
-                .from('challenge_completions')
-                .insert({ user_id: p_user_id, challenge_id: challenge.id });
-              if (insertCompletionError) throw insertCompletionError;
-            }
-          }
-        }
-      }
-    }
 
     return new Response(
       JSON.stringify(calculated_points),

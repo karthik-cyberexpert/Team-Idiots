@@ -25,8 +25,6 @@ import XpHistoryPage from "./pages/XpHistoryPage";
 import TyperPage from "./pages/TyperPage";
 import TyperManagementPage from "./pages/admin/typer/TyperManagementPage";
 import GameLeaderboardPage from "./pages/GameLeaderboardPage";
-import ChallengesPage from "./pages/ChallengesPage";
-import ChallengeManagementPage from "./pages/admin/ChallengeManagementPage";
 
 const queryClient = new QueryClient();
 
@@ -54,13 +52,11 @@ const App = () => (
                   <Route path="/dashboard/xp-history" element={<XpHistoryPage />} />
                   <Route path="/dashboard/typer" element={<TyperPage />} />
                   <Route path="/dashboard/game-leaderboard" element={<GameLeaderboardPage />} />
-                  <Route path="/dashboard/challenges" element={<ChallengesPage />} />
                   <Route element={<AdminRoute />}>
                     <Route path="/admin/users" element={<UserManagement />} />
                     <Route path="/admin/tasks" element={<TaskManagement />} />
                     <Route path="/admin/data-management" element={<DataManagementPage />} />
                     <Route path="/admin/typer-management" element={<TyperManagementPage />} />
-                    <Route path="/admin/challenges" element={<ChallengeManagementPage />} />
                   </Route>
                 </Route>
               </Route>

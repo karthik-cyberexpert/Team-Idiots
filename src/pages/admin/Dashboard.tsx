@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, ListTodo, Database, Type, Star } from "lucide-react";
+import { Users, ListTodo, Database, Type } from "lucide-react";
 
 const AdminDashboard = () => {
   const adminFeatures = [
@@ -15,12 +15,6 @@ const AdminDashboard = () => {
       description: "Oversee and assign tasks to team members.",
       icon: <ListTodo className="h-8 w-8 text-vibrant-green" />,
       link: "/admin/tasks",
-    },
-    {
-      title: "Challenge Management",
-      description: "Create and manage challenges for users.",
-      icon: <Star className="h-8 w-8 text-vibrant-yellow" />,
-      link: "/admin/challenges",
     },
     {
       title: "Data Management",
