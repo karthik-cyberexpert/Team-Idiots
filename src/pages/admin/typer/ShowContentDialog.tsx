@@ -14,7 +14,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TyperSet, TypingText } from "@/types/typer";
+import { TyperSet } from "@/types/typer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ShowContentDialogProps {
@@ -40,10 +40,10 @@ export const ShowContentDialog = ({ open, onOpenChange, typerSet }: ShowContentD
                   <div className="p-1">
                     <Card>
                       <CardHeader>
-                        <CardTitle>{text.title} (Text {index + 1} of 7)</CardTitle>
+                        <CardTitle>{text.title} (Text {index + 1} of 35)</CardTitle>
                       </CardHeader>
                       <CardContent className="p-0">
-                        <ScrollArea className="h-72 w-full rounded-md border bg-muted p-4 font-mono text-sm whitespace-pre-wrap">
+                        <ScrollArea className="max-h-72 w-full rounded-md border bg-muted p-4 font-mono text-sm whitespace-pre-wrap">
                           {text.content}
                         </ScrollArea>
                       </CardContent>
