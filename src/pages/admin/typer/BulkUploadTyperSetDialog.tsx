@@ -94,15 +94,28 @@ export const BulkUploadTyperSetDialog = ({ open, onOpenChange, suggestedTitle }:
     reader.readAsBinaryString(file);
   };
 
-  const handleDownloadTemplate = () => {
-    const templateData = Array.from({ length: 7 }, (_, i) => ({
-      header: `Example Title ${i + 1}`,
-      code: `// Code for text ${i + 1}\nfunction example() {\n  return "Hello, World!";\n}`,
-    }));
+  const templateData = Array.from({ length: 7 }, (_, i) => ({
+    header: `Example Title ${i + 1}`,
+    code: `// Code for text ${i + 1}\nfunction example() {\n  return "Hello, World!";\n}`,
+  }));
+
+  const handleDownloadJsonTemplate = () => {
     const jsonString = JSON.stringify(templateData, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
     saveAs(blob, "weekly_typer_set_template.json");
-    showSuccess("Template downloaded!");
+    showSuccess("JSON template downloaded!");
+  };
+
+  const handleDownloadXlsxTemplate = () => {
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Weekly Set");
+    // Adjust column widths
+    worksheet['!cols'] = [{ wch: 30 }, { wch: 80 }];
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+    saveAs(data, "weekly_typer_set_template.xlsx");
+    showSuccess("XLSX template downloaded!");
   };
 
   return (
@@ -119,12 +132,20 @@ export const BulkUploadTyperSetDialog = ({ open, onOpenChange, suggestedTitle }:
             <Label htmlFor="set-title">Set Title</Label>
             <Input id="set-title" value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
-          <Button variant="outline" onClick={handleDownloadTemplate}>
-            <Download className="mr-2 h-4 w-4" /> Download JSON Template
-          </Button>
+          <div className="space-y-2">
+            <Label>Download Template</Label>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleDownloadJsonTemplate} className="flex-1">
+                <Download className="mr-2 h-4 w-4" /> JSON
+              </Button>
+              <Button variant="outline" onClick={handleDownloadXlsxTemplate} className="flex-1">
+                <Download className="mr-2 h-4 w-4" /> XLSX
+              </Button>
+            </div>
+          </div>
           <Button onClick={() => fileInputRef.current?.click()} disabled={bulkCreateMutation.isPending}>
             <FileUp className="mr-2 h-4 w-4" />
-            {bulkCreateMutation.isPending ? "Uploading..." : "Select File"}
+            {bulkCreateMutation.isPending ? "Uploading..." : "Select File to Upload"}
           </Button>
           <input type="file" accept=".json,.csv,.xlsx" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
         </div>
