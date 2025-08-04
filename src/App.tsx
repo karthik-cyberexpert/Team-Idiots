@@ -23,7 +23,7 @@ import { ThemeProvider } from "./contexts/ThemeProvider";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import XpHistoryPage from "./pages/XpHistoryPage";
 import TyperPage from "./pages/TyperPage";
-import TyperManagementPage from "./pages/admin/typer/TyperManagementPage";
+import TyperSetManagementPage from "./pages/admin/typer/TyperSetManagementPage";
 import GameLeaderboardPage from "./pages/GameLeaderboardPage";
 
 const queryClient = new QueryClient();
@@ -56,7 +56,7 @@ const App = () => (
                     <Route path="/admin/users" element={<UserManagement />} />
                     <Route path="/admin/tasks" element={<TaskManagement />} />
                     <Route path="/admin/data-management" element={<DataManagementPage />} />
-                    <Route path="/admin/typer-management" element={<TyperManagementPage />} />
+                    <Route path="/admin/typer-management" element={<TyperSetManagementPage />} />
                   </Route>
                 </Route>
               </Route>

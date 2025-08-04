@@ -6,33 +6,38 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+serve(async (_req) => {
+  if (_req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { id } = await req.json()
-    if (!id) {
-      throw new Error("ID is required.")
-    }
-
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Delete the typing text itself.
-    const { error } = await supabaseAdmin
-      .from('typing_texts')
-      .delete()
-      .eq('id', id);
+    const { data, error } = await supabaseAdmin
+      .from('typer_sets')
+      .select(`
+        id,
+        title,
+        status,
+        assign_date,
+        created_at,
+        typing_texts (
+          id,
+          title,
+          content
+        )
+      `)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
     return new Response(
-      JSON.stringify({ message: "Typing text deleted successfully" }),
+      JSON.stringify(data),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {

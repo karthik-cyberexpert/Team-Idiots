@@ -12,6 +12,19 @@ serve(async (req) => {
   }
 
   try {
+    const { id, status, assign_date } = await req.json()
+    if (!id) {
+      throw new Error("ID is required.")
+    }
+
+    const updatePayload: { status?: string; assign_date?: string } = {};
+    if (status) updatePayload.status = status;
+    if (assign_date) updatePayload.assign_date = assign_date;
+
+    if (Object.keys(updatePayload).length === 0) {
+      throw new Error("At least one field (status or assign_date) must be provided for update.")
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -19,14 +32,16 @@ serve(async (req) => {
     )
 
     const { data, error } = await supabaseAdmin
-      .from('typing_texts')
-      .select('*')
-      .order('created_at', { ascending: false });
-
+      .from('typer_sets')
+      .update(updatePayload)
+      .eq('id', id)
+      .select()
+      .single()
+    
     if (error) throw error;
 
     return new Response(
-      JSON.stringify({ data }),
+      JSON.stringify(data),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {

@@ -12,9 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    const { id, title, content } = await req.json()
-    if (!id || !title || !content) {
-      throw new Error("ID, title, and content are required.")
+    const { id } = await req.json()
+    if (!id) {
+      throw new Error("ID is required.")
     }
 
     const supabaseAdmin = createClient(
@@ -22,18 +22,17 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
-
-    const { data, error } = await supabaseAdmin
-      .from('typing_texts')
-      .update({ title, content, updated_at: new Date().toISOString() })
+    
+    // Deleting from typer_sets will cascade delete related typing_texts due to schema setup
+    const { error } = await supabaseAdmin
+      .from('typer_sets')
+      .delete()
       .eq('id', id)
-      .select()
-      .single();
-
+    
     if (error) throw error;
 
     return new Response(
-      JSON.stringify({ data }),
+      JSON.stringify({ message: "Typer set deleted successfully." }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {

@@ -12,9 +12,12 @@ serve(async (req) => {
   }
 
   try {
-    const textsToUpload = await req.json()
-    if (!Array.isArray(textsToUpload)) {
-      throw new Error("Request body must be an array of texts.");
+    const { title, texts } = await req.json()
+    if (!title || !Array.isArray(texts) || texts.length === 0) {
+      throw new Error("Title and a non-empty array of texts are required.")
+    }
+    if (texts.length !== 7) {
+      throw new Error("Exactly 7 typing texts must be provided for a weekly set.");
     }
 
     const supabaseAdmin = createClient(
@@ -23,32 +26,38 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const textsToInsert = textsToUpload.map(text => {
+    // 1. Create the typer set
+    const { data: set, error: setError } = await supabaseAdmin
+      .from('typer_sets')
+      .insert({ title: title, status: 'draft' })
+      .select()
+      .single()
+    if (setError) throw setError
+
+    // 2. Prepare texts with the new set_id
+    const textsToInsert = texts.map(text => {
       if (!text.header || !text.code) {
         throw new Error("Each text object must have 'header' and 'code' properties.");
       }
       return {
         title: text.header,
         content: text.code,
-      };
-    });
+        set_id: set.id,
+      }
+    })
 
-    if (textsToInsert.length === 0) {
-      return new Response(
-        JSON.stringify({ message: "No texts to upload." }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    // 3. Insert the texts
+    const { error: textsError } = await supabaseAdmin
+      .from('typing_texts')
+      .insert(textsToInsert)
+    if (textsError) {
+      // Rollback: delete the set if texts fail to insert
+      await supabaseAdmin.from('typer_sets').delete().eq('id', set.id)
+      throw textsError
     }
 
-    // Insert typing texts only
-    const { error: insertTextsError } = await supabaseAdmin
-      .from('typing_texts')
-      .insert(textsToInsert);
-
-    if (insertTextsError) throw insertTextsError;
-
     return new Response(
-      JSON.stringify({ message: `${textsToInsert.length} typing texts uploaded successfully.` }),
+      JSON.stringify({ message: "Typer set created successfully." }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
