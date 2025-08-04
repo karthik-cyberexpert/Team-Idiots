@@ -10,6 +10,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Trophy, Medal, Award } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { GameCountdown } from "@/components/game/GameCountdown";
+import { TyperSet } from "@/types/typer";
 
 interface GameProfile {
   id: string;
@@ -29,6 +31,23 @@ const fetchGameLeaderboard = async (): Promise<GameProfile[]> => {
   return data;
 };
 
+const fetchActiveTyperSet = async (): Promise<TyperSet | null> => {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const { data, error } = await supabase
+    .from('typer_sets')
+    .select('*')
+    .eq('status', 'published')
+    .lte('assign_date', todayStr)
+    .order('assign_date', { ascending: false })
+    .limit(1)
+    .single();
+  
+  if (error && error.code !== 'PGRST116') { // Ignore 'No rows found' error
+    throw new Error(error.message);
+  }
+  return data;
+};
+
 const getInitials = (name: string | null | undefined) => {
   if (!name || name.trim() === '') {
     return '??';
@@ -43,33 +62,49 @@ const getInitials = (name: string | null | undefined) => {
 const GameLeaderboardPage = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [showCountdown, setShowCountdown] = React.useState(false);
+  const [publishTime, setPublishTime] = React.useState<Date | null>(null);
 
-  const { data: profiles, isLoading, error } = useQuery<GameProfile[]>({
+  const { data: profiles, isLoading: profilesLoading, error: profilesError } = useQuery<GameProfile[]>({
     queryKey: ["gameLeaderboard"],
     queryFn: fetchGameLeaderboard,
   });
 
-  React.useEffect(() => {
-    const channel = supabase
-      .channel('game-leaderboard-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: 'game_points=gt.0' // Only listen for changes to game_points
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['gameLeaderboard'] });
-        }
-      )
-      .subscribe();
+  const { data: activeSet, isLoading: setisLoading } = useQuery<TyperSet | null>({
+    queryKey: ["activeTyperSet"],
+    queryFn: fetchActiveTyperSet,
+  });
 
-    return () => {
-      supabase.removeChannel(channel);
+  React.useEffect(() => {
+    if (!activeSet || !activeSet.end_time) return;
+
+    const checkTime = () => {
+      const now = new Date();
+      const [endH, endM] = activeSet.end_time!.split(':').map(Number);
+      
+      const endTimeToday = new Date();
+      endTimeToday.setHours(endH, endM, 0, 0);
+
+      const publishTimeToday = new Date(endTimeToday.getTime() + 5 * 60 * 1000);
+
+      if (now > endTimeToday && now < publishTimeToday) {
+        setShowCountdown(true);
+        setPublishTime(publishTimeToday);
+      } else {
+        setShowCountdown(false);
+        setPublishTime(null);
+      }
     };
-  }, [queryClient]);
+
+    checkTime();
+    const interval = setInterval(checkTime, 5000); // Check every 5 seconds
+    return () => clearInterval(interval);
+  }, [activeSet]);
+
+  const handleCountdownEnd = () => {
+    setShowCountdown(false);
+    queryClient.invalidateQueries({ queryKey: ["gameLeaderboard"] });
+  };
 
   const getRankIcon = (rank: number) => {
     if (rank === 0) return <Medal className="h-6 w-6 text-vibrant-gold" />;
@@ -78,7 +113,7 @@ const GameLeaderboardPage = () => {
     return <Award className="h-5 w-5 text-muted-foreground" />;
   };
 
-  if (isLoading) {
+  if (profilesLoading || setisLoading) {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl sm:text-3xl font-bold">Game Leaderboard</h1>
@@ -89,13 +124,29 @@ const GameLeaderboardPage = () => {
     );
   }
 
-  if (error) {
+  if (profilesError) {
     return (
       <Alert variant="destructive">
         <Trophy className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{error.message}</AlertDescription>
+        <AlertDescription>{profilesError.message}</AlertDescription>
       </Alert>
+    );
+  }
+
+  if (showCountdown && publishTime) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-purple dark:text-vibrant-pink">Game Leaderboard</h1>
+        <Card className="shadow-md overflow-hidden">
+          <CardHeader>
+            <CardTitle>Leaderboard Update in Progress</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <GameCountdown publishTime={publishTime} onEnd={handleCountdownEnd} />
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
