@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/carousel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TyperSet, TypingText } from "@/types/typer";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ShowContentDialogProps {
   open: boolean;
@@ -27,7 +28,7 @@ export const ShowContentDialog = ({ open, onOpenChange, typerSet }: ShowContentD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Content for: {typerSet.title}</DialogTitle>
         </DialogHeader>
@@ -41,8 +42,10 @@ export const ShowContentDialog = ({ open, onOpenChange, typerSet }: ShowContentD
                       <CardHeader>
                         <CardTitle>{text.title} (Text {index + 1} of 7)</CardTitle>
                       </CardHeader>
-                      <CardContent className="font-mono p-4 bg-muted rounded-md whitespace-pre-wrap text-sm">
-                        {text.content}
+                      <CardContent className="p-0">
+                        <ScrollArea className="h-72 w-full rounded-md border bg-muted p-4 font-mono text-sm whitespace-pre-wrap">
+                          {text.content}
+                        </ScrollArea>
                       </CardContent>
                     </Card>
                   </div>
