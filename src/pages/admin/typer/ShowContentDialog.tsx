@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TyperSet } from "@/types/typer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/prism/atom-one-dark'; // Corrected import path
+import atomOneDark from 'react-syntax-highlighter/dist/esm/styles/prism/atom-one-dark'; // Changed to default import
 
 interface ShowContentDialogProps {
   open: boolean;
