@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthProvider";
 import { showSuccess, showError } from "@/utils/toast";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
+import { ChallengeTimer } from "@/components/game/ChallengeTimer";
 
 const fetchTypingTextWithSet = async (textId: string): Promise<TypingTextWithSet> => {
   const { data, error } = await supabase
@@ -104,6 +105,7 @@ const TyperPage = () => {
   const [pointsAwarded, setPointsAwarded] = React.useState<number | null>(null);
   const [timeState, setTimeState] = React.useState<'PENDING' | 'ACTIVE' | 'EXPIRED'>('PENDING');
   const [nextStartTime, setNextStartTime] = React.useState<Date | null>(null);
+  const [challengeEndTime, setChallengeEndTime] = React.useState<Date | null>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
   const { data: challengeText, isLoading: challengeTextLoading } = useQuery<TypingTextWithSet>({
@@ -211,6 +213,7 @@ const TyperPage = () => {
     const set = currentText.typer_sets;
     if (!set || !set.start_time || !set.end_time) {
       setTimeState('ACTIVE');
+      setChallengeEndTime(null); // No specific end time for free play
       return;
     }
 
@@ -227,27 +230,28 @@ const TyperPage = () => {
       if (now < startTimeToday) {
         setTimeState('PENDING');
         setNextStartTime(startTimeToday);
+        setChallengeEndTime(null);
       } else if (now > endTimeToday) {
+        // If the test was active and now it's over, calculate results
+        if (timeState === 'ACTIVE' && !endTime) {
+            calculateResults(inputText);
+        }
         setTimeState('EXPIRED');
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(startH, startM, 0, 0);
         setNextStartTime(tomorrow);
+        setChallengeEndTime(null);
       } else {
         setTimeState('ACTIVE');
-        const remaining = endTimeToday.getTime() - now.getTime();
-        setTimeout(() => {
-          if (inputRef.current && !endTime) {
-            calculateResults(inputRef.current.value);
-          }
-        }, remaining);
+        setChallengeEndTime(endTimeToday);
       }
     };
 
     checkTime();
-    const interval = setInterval(checkTime, 60000); // Check every minute
+    const interval = setInterval(checkTime, 1000); // Check every second
     return () => clearInterval(interval);
-  }, [currentText, calculateResults, endTime]);
+  }, [currentText, calculateResults, endTime, timeState, inputText]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (!currentText || endTime || timeState !== 'ACTIVE') return;
@@ -285,10 +289,17 @@ const TyperPage = () => {
       </div>
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle>{currentText ? currentText.title : "All Texts Completed!"}</CardTitle>
-          <CardDescription>
-            {currentText ? "Type the code below as fast and accurately as you can." : "Great job! Check back later for new texts."}
-          </CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>{currentText ? currentText.title : "All Texts Completed!"}</CardTitle>
+              <CardDescription>
+                {currentText ? "Type the code below as fast and accurately as you can." : "Great job! Check back later for new texts."}
+              </CardDescription>
+            </div>
+            {timeState === 'ACTIVE' && challengeEndTime && (
+              <ChallengeTimer endTime={challengeEndTime} />
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {timeState !== 'ACTIVE' && nextStartTime ? (
@@ -303,7 +314,7 @@ const TyperPage = () => {
                   ))}
                 </div>
               </div>
-              <Textarea ref={inputRef} value={inputText} onChange={handleInputChange} placeholder="Start typing here..." className="text-lg font-mono" rows={8} disabled={!!endTime} />
+              <Textarea ref={inputRef} value={inputText} onChange={handleInputChange} placeholder="Start typing here..." className="text-lg font-mono" rows={8} disabled={!!endTime || timeState !== 'ACTIVE'} />
             </>
           ) : (
             <div className="text-center py-10 text-muted-foreground">
