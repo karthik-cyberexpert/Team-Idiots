@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TyperSet } from "@/types/typer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import * as prismStyles from 'react-syntax-highlighter/dist/esm/styles/prism'; // Import all prism styles
+import * as prismStyles from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface ShowContentDialogProps {
   open: boolean;
@@ -28,12 +28,11 @@ interface ShowContentDialogProps {
 export const ShowContentDialog = ({ open, onOpenChange, typerSet }: ShowContentDialogProps) => {
   if (!typerSet) return null;
 
-  // Access atomOneDark from the imported styles object
   const atomOneDark = prismStyles.atomOneDark;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-5xl"> {/* Changed max-w-3xl to max-w-5xl */}
         <DialogHeader>
           <DialogTitle>Content for: {typerSet.title}</DialogTitle>
         </DialogHeader>
@@ -50,20 +49,20 @@ export const ShowContentDialog = ({ open, onOpenChange, typerSet }: ShowContentD
                       <CardContent className="p-0 flex-grow">
                         <ScrollArea className="w-full h-full rounded-md border bg-muted">
                           <SyntaxHighlighter
-                            language="javascript" // Assuming JavaScript/TypeScript code. Can be made dynamic if text type is added.
+                            language="javascript"
                             style={atomOneDark}
                             showLineNumbers={true}
                             wrapLines={true}
                             customStyle={{
-                              backgroundColor: 'transparent', // Use parent's background
+                              backgroundColor: 'transparent',
                               padding: '1rem',
-                              fontSize: '0.875rem', // text-sm
-                              fontFamily: 'var(--font-mono)', // Use the mono font family
-                              margin: 0, // Remove default margin
+                              fontSize: '0.875rem',
+                              fontFamily: 'var(--font-mono)',
+                              margin: 0,
                             }}
                             lineNumberStyle={{
-                              color: '#666', // Lighter color for line numbers
-                              minWidth: '2.5em', // Ensure enough space for line numbers
+                              color: '#666',
+                              minWidth: '2.5em',
                               paddingRight: '1em',
                               userSelect: 'none',
                             }}
