@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TyperSet } from "@/types/typer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import atomOneDark from 'react-syntax-highlighter/dist/esm/styles/prism/atom-one-dark'; // Changed to default import
+import * as prismStyles from 'react-syntax-highlighter/dist/esm/styles/prism'; // Import all prism styles
 
 interface ShowContentDialogProps {
   open: boolean;
@@ -27,6 +27,9 @@ interface ShowContentDialogProps {
 
 export const ShowContentDialog = ({ open, onOpenChange, typerSet }: ShowContentDialogProps) => {
   if (!typerSet) return null;
+
+  // Access atomOneDark from the imported styles object
+  const atomOneDark = prismStyles.atomOneDark;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
