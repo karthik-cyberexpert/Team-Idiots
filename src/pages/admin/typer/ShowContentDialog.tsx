@@ -36,9 +36,9 @@ export const ShowContentDialog = ({ open, onOpenChange, typerSet }: ShowContentD
           <Carousel className="w-full">
             <CarouselContent>
               {typerSet.typing_texts.map((text, index) => (
-                <CarouselItem key={text.id}>
+                <CarouselItem key={text.id} className="basis-full">
                   <div className="p-1">
-                    <Card className="w-[696px] h-[400px] flex flex-col">
+                    <Card className="h-[400px] flex flex-col">
                       <CardHeader>
                         <CardTitle>{text.title} (Text {index + 1} of 35)</CardTitle>
                       </CardHeader>
