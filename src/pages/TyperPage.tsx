@@ -208,16 +208,17 @@ const TyperPage = () => {
     resetTest();
   }, [challengeText, allTexts, completedResults, resetTest]);
 
+  // Effect to manage the time state of the challenge
   React.useEffect(() => {
     if (!currentText) return;
     const set = currentText.typer_sets;
     if (!set || !set.start_time || !set.end_time) {
       setTimeState('ACTIVE');
-      setChallengeEndTime(null); // No specific end time for free play
+      setChallengeEndTime(null);
       return;
     }
 
-    const checkTime = () => {
+    const interval = setInterval(() => {
       const now = new Date();
       const [startH, startM] = set.start_time!.split(':').map(Number);
       const [endH, endM] = set.end_time!.split(':').map(Number);
@@ -232,41 +233,43 @@ const TyperPage = () => {
         setNextStartTime(startTimeToday);
         setChallengeEndTime(null);
       } else if (now > endTimeToday) {
-        // If the test was active and now it's over, calculate results
-        if (timeState === 'ACTIVE' && !endTime) {
-            calculateResults(inputText);
-        }
         setTimeState('EXPIRED');
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(startH, startM, 0, 0);
         setNextStartTime(tomorrow);
         setChallengeEndTime(null);
+        clearInterval(interval);
       } else {
         setTimeState('ACTIVE');
         setChallengeEndTime(endTimeToday);
+        setNextStartTime(null);
       }
-    };
+    }, 1000);
 
-    checkTime();
-    const interval = setInterval(checkTime, 1000); // Check every second
     return () => clearInterval(interval);
-  }, [currentText, calculateResults, endTime, timeState, inputText]);
+  }, [currentText]);
+
+  // Effect to auto-submit when the time expires
+  React.useEffect(() => {
+    if (timeState === 'EXPIRED' && startTime && !endTime) {
+      calculateResults(inputText);
+    }
+  }, [timeState, startTime, endTime, inputText, calculateResults]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (!currentText || endTime || timeState !== 'ACTIVE') return;
     const value = e.target.value;
     setInputText(value);
     if (!startTime) setStartTime(Date.now());
-    if (value === currentText.content) calculateResults(value);
+    if (value.length >= currentText.content.length) {
+      calculateResults(value);
+    }
   };
 
   const getCharClass = (char: string, index: number) => {
-    if (!currentText) return "";
-    if (index < inputText.length) {
-      return inputText[index] === char ? "text-vibrant-green" : "text-vibrant-red";
-    }
-    return "text-muted-foreground";
+    if (index >= inputText.length) return "text-muted-foreground";
+    return inputText[index] === char ? "text-vibrant-green" : "text-vibrant-red";
   };
 
   const isLoadingData = textsLoading || resultsLoading || challengeTextLoading;
@@ -307,12 +310,9 @@ const TyperPage = () => {
           ) : currentText ? (
             <>
               <div className="relative p-4 border rounded-md bg-muted/50 text-lg font-mono leading-relaxed whitespace-pre-wrap">
-                <div className="absolute inset-0 p-4 text-muted-foreground opacity-50">{currentText.content}</div>
-                <div className="relative z-10">
-                  {currentText.content.split("").map((char, index) => (
-                    <span key={index} className={cn(getCharClass(char, index))}>{char}</span>
-                  ))}
-                </div>
+                {currentText.content.split("").map((char, index) => (
+                  <span key={index} className={cn(getCharClass(char, index))}>{char}</span>
+                ))}
               </div>
               <Textarea ref={inputRef} value={inputText} onChange={handleInputChange} placeholder="Start typing here..." className="text-lg font-mono" rows={8} disabled={!!endTime || timeState !== 'ACTIVE'} />
             </>
