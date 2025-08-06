@@ -361,7 +361,11 @@ const TyperPage = () => {
             <Countdown targetDate={nextStartTime} onEnd={resetTest} />
           ) : currentText ? (
             <>
-              <div className="relative p-4 border rounded-md bg-muted/50 text-lg font-mono leading-relaxed whitespace-pre-wrap">
+              <div 
+                className="relative p-4 border rounded-md bg-muted/50 text-lg font-mono leading-relaxed whitespace-pre-wrap select-none"
+                onCopy={(e) => e.preventDefault()}
+                onContextMenu={(e) => e.preventDefault()}
+              >
                 {currentText.content.split("").map((char, index) => (
                   <span key={index} className={cn(getCharClass(char, index))}>{char}</span>
                 ))}
