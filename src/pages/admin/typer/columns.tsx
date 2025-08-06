@@ -128,6 +128,11 @@ export const getColumns = (actions: TyperSetActions): ColumnDef<TyperSet>[] => [
                 <X className="mr-2 h-4 w-4" /> Make Inactive
               </DropdownMenuItem>
             )}
+            {set.status === 'inactive' && (
+              <DropdownMenuItem onClick={() => actions.onUpdateStatus(set.id, 'published')}>
+                <Play className="mr-2 h-4 w-4" /> Republish
+              </DropdownMenuItem>
+            )}
             {set.status !== 'published' && (
               <DropdownMenuItem className="text-destructive" onClick={() => actions.onDelete(set.id)}>
                 <Trash2 className="mr-2 h-4 w-4" /> Delete

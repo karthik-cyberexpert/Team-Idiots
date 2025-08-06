@@ -75,6 +75,13 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    // Enable row selection optimizations
+    enableRowSelection: true,
+    enableMultiRowSelection: false,
+    // Optimize rendering
+    debugTable: false,
+    debugHeaders: false,
+    debugColumns: false,
     ...(isServerSidePagination
       ? {
           manualPagination: true,

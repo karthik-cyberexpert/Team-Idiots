@@ -1,0 +1,13 @@
+{
+  "title": "Test Typer Set",
+  "texts": [
+    {
+      "title": "Test Paragraph 1",
+      "content": "This is a simple test paragraph to verify that the edge function is working correctly."
+    },
+    {
+      "title": "Test Paragraph 2",
+      "content": "This is another test paragraph with different content to ensure multiple texts are handled properly."
+    }
+  ]
+}

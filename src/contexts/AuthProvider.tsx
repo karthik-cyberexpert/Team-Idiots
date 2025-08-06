@@ -61,11 +61,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, full_name, role, xp')
         .eq('id', userId)
         .single();
       
-      if (profileError) throw profileError;
+      if (profileError) {
+        // Handle specific error cases
+        if (profileError.code === 'PGRST116') {
+          console.warn('Profile not found for user:', userId);
+        } else {
+          console.error('Profile fetch error:', profileError);
+        }
+        throw profileError;
+      }
 
       if (profileData) {
         const typedProfile = profileData as Profile;
@@ -77,6 +85,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error fetching profile:", error);
       setProfile(null);
+      setUserLevel(1);
+      setUserBadge("Bronze");
     } finally {
       setProfileLoading(false);
     }

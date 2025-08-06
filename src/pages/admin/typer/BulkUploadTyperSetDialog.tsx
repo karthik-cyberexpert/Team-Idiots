@@ -21,11 +21,11 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
 const bulkTextSchema = z.object({
-  header: z.string().min(1, "Header is required."),
-  code: z.string().min(1, "Code is required."),
+  title: z.string().min(1, "Title is required."),
+  content: z.string().min(1, "Content is required."),
 });
 
-const bulkUploadSchema = z.array(bulkTextSchema).length(35, "You must provide exactly 35 texts.");
+const bulkUploadSchema = z.array(bulkTextSchema).min(1, "You must provide at least 1 text.");
 
 interface BulkUploadTyperSetDialogProps {
   open: boolean;
@@ -94,27 +94,27 @@ export const BulkUploadTyperSetDialog = ({ open, onOpenChange, suggestedTitle }:
     reader.readAsBinaryString(file);
   };
 
-  const templateData = Array.from({ length: 35 }, (_, i) => ({
-    header: `Example Title ${i + 1}`,
-    code: `// Code for text ${i + 1}\nfunction example() {\n  return "Hello, World!";\n}`,
+  const templateData = Array.from({ length: 5 }, (_, i) => ({
+    title: `Paragraph ${i + 1}`,
+    content: `This is an example paragraph ${i + 1} for typing practice. It contains various words and punctuation marks to help improve your typing speed and accuracy. Feel free to replace this with your own content.`,
   }));
 
   const handleDownloadJsonTemplate = () => {
     const jsonString = JSON.stringify(templateData, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
-    saveAs(blob, "weekly_typer_set_template.json");
+    saveAs(blob, "typer_set_template.json");
     showSuccess("JSON template downloaded!");
   };
 
   const handleDownloadXlsxTemplate = () => {
     const worksheet = XLSX.utils.json_to_sheet(templateData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Weekly Set");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Typer Set");
     // Adjust column widths
     worksheet['!cols'] = [{ wch: 30 }, { wch: 80 }];
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
-    saveAs(data, "weekly_typer_set_template.xlsx");
+    saveAs(data, "typer_set_template.xlsx");
     showSuccess("XLSX template downloaded!");
   };
 
@@ -122,9 +122,9 @@ export const BulkUploadTyperSetDialog = ({ open, onOpenChange, suggestedTitle }:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Upload Weekly Typer Set</DialogTitle>
+          <DialogTitle>Upload Typer Set</DialogTitle>
           <DialogDescription>
-            Upload a JSON, CSV, or XLSX file containing exactly 35 typing texts.
+            Upload a JSON, CSV, or XLSX file containing typing paragraphs. You can include any number of texts.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

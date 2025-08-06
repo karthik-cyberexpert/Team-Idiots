@@ -84,7 +84,7 @@ const TyperSetManagementPage = () => {
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold">Typer Set Management</h1>
-          <Button disabled>Upload Weekly Set</Button>
+          <Button disabled>Upload Set</Button>
         </div>
         <div className="space-y-2">
           <Skeleton className="h-12 w-full" />
@@ -112,7 +112,7 @@ const TyperSetManagementPage = () => {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-blue dark:text-vibrant-pink">Typer Set Management</h1>
           <Button onClick={() => setIsUploadOpen(true)}>
-            <FileUp className="mr-2 h-4 w-4" /> Upload Weekly Set
+            <FileUp className="mr-2 h-4 w-4" /> Upload Set
           </Button>
         </div>
         <DataTable columns={columns} data={typerSets || []} filterColumn="title" filterPlaceholder="Filter by title..." />
@@ -121,7 +121,7 @@ const TyperSetManagementPage = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete the set and its 35 typing texts.</AlertDialogDescription>
+            <AlertDialogDescription>This will permanently delete the set and all its typing texts.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
