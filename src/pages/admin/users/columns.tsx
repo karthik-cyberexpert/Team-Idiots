@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { User } from "@/types/user"
 import { Badge } from "@/components/ui/badge"
+import { showSuccess } from "@/utils/toast"
 
 export const getColumns = (
   onDelete: (userId: string) => void, 
@@ -93,7 +94,10 @@ export const getColumns = (
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(user.id)}
+              onClick={() => {
+                navigator.clipboard.writeText(user.id);
+                showSuccess("User ID copied to clipboard.");
+              }}
             >
               Copy user ID
             </DropdownMenuItem>
