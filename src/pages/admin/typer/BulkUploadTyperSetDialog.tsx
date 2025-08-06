@@ -70,10 +70,17 @@ export const BulkUploadTyperSetDialog = ({ open, onOpenChange, suggestedTitle }:
         if (!content) throw new Error("Could not read file content.");
         
         let jsonData;
-        if (file.name.endsWith('.json')) {
+        const fileName = file.name.toLowerCase();
+
+        if (fileName.endsWith('.json')) {
           jsonData = JSON.parse(content as string);
-        } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.csv')) {
-          const workbook = XLSX.read(content, { type: 'binary' });
+        } else if (fileName.endsWith('.xlsx')) {
+          const workbook = XLSX.read(content, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          jsonData = XLSX.utils.sheet_to_json(worksheet);
+        } else if (fileName.endsWith('.csv')) {
+          const workbook = XLSX.read(content as string, { type: 'string' });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
           jsonData = XLSX.utils.sheet_to_json(worksheet);
@@ -91,7 +98,13 @@ export const BulkUploadTyperSetDialog = ({ open, onOpenChange, suggestedTitle }:
       }
     };
     reader.onerror = () => showError("Error reading file.");
-    reader.readAsBinaryString(file);
+
+    const fileName = file.name.toLowerCase();
+    if (fileName.endsWith('.json') || fileName.endsWith('.csv')) {
+      reader.readAsText(file, 'UTF-8');
+    } else if (fileName.endsWith('.xlsx')) {
+      reader.readAsArrayBuffer(file);
+    }
   };
 
   const templateData = Array.from({ length: 5 }, (_, i) => ({
