@@ -24,6 +24,8 @@ import TyperPage from "./pages/TyperPage";
 import TyperSetManagementPage from "./pages/admin/typer/TyperSetManagementPage";
 import GameLeaderboardPage from "./pages/GameLeaderboardPage";
 import ErrorBoundary from "./components/ErrorBoundary";
+import AuctionManagementPage from "./pages/admin/AuctionManagementPage";
+import AuctionPage from "./pages/AuctionPage";
 
 export const AppRoutes = () => {
   const { maintenanceMode, loading: settingsLoading } = useSettings();
@@ -62,11 +64,13 @@ export const AppRoutes = () => {
           <Route path="/dashboard/xp-history" element={<ErrorBoundary><XpHistoryPage /></ErrorBoundary>} />
           <Route path="/dashboard/typer" element={<ErrorBoundary><TyperPage /></ErrorBoundary>} />
           <Route path="/dashboard/game-leaderboard" element={<ErrorBoundary><GameLeaderboardPage /></ErrorBoundary>} />
+          <Route path="/dashboard/auction" element={<ErrorBoundary><AuctionPage /></ErrorBoundary>} />
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<ErrorBoundary><UserManagement /></ErrorBoundary>} />
             <Route path="/admin/tasks" element={<ErrorBoundary><TaskManagement /></ErrorBoundary>} />
             <Route path="/admin/data-management" element={<ErrorBoundary><DataManagementPage /></ErrorBoundary>} />
             <Route path="/admin/typer-management" element={<ErrorBoundary><TyperSetManagementPage /></ErrorBoundary>} />
+            <Route path="/admin/auction-management" element={<ErrorBoundary><AuctionManagementPage /></ErrorBoundary>} />
           </Route>
         </Route>
       </Route>
