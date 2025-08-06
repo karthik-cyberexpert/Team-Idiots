@@ -34,7 +34,18 @@ interface PlaceBidDialogProps {
 export const PlaceBidDialog = ({ open, onOpenChange, auction }: PlaceBidDialogProps) => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
-  const form = useForm<FormValues>({ resolver: zodResolver(formSchema) });
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      bid_amount: 0,
+    },
+  });
+
+  React.useEffect(() => {
+    if (auction && open) {
+      form.setValue('bid_amount', auction.current_price + 1);
+    }
+  }, [auction, open, form]);
 
   const mutation = useMutation({
     mutationFn: placeBid,

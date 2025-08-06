@@ -36,7 +36,13 @@ interface CreateAuctionDialogProps {
 
 export const CreateAuctionDialog = ({ open, onOpenChange, item }: CreateAuctionDialogProps) => {
   const queryClient = useQueryClient();
-  const form = useForm<FormValues>({ resolver: zodResolver(formSchema) });
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      start_time: '',
+      end_time: '',
+    },
+  });
 
   const mutation = useMutation({
     mutationFn: createAuction,
