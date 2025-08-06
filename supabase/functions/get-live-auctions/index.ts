@@ -19,7 +19,7 @@ serve(async (_req) => {
 
     const { data, error } = await supabase
       .from('auctions')
-      .select('*, auction_items(name, description), profiles(full_name)')
+      .select('*, auction_items(name, description), profiles!current_highest_bidder(full_name)')
       .eq('status', 'active')
       .order('end_time', { ascending: true });
 
