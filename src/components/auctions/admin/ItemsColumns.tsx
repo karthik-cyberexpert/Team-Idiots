@@ -7,7 +7,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AuctionItem } from "@/types/auction";
 
 export const getItemsColumns = (
-  onCreateAuction: (item: AuctionItem) => void
+  onCreateAuction: (item: AuctionItem) => void,
+  onDelete: (item: AuctionItem) => void
 ): ColumnDef<AuctionItem>[] => [
   { accessorKey: "name", header: "Name" },
   { accessorKey: "description", header: "Description" },
@@ -21,6 +22,7 @@ export const getItemsColumns = (
           <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onCreateAuction(item)}>Create Auction</DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive" onClick={() => onDelete(item)}>Delete Item</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

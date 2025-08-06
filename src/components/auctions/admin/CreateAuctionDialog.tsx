@@ -14,8 +14,8 @@ import { showSuccess, showError } from "@/utils/toast";
 import { AuctionItem } from "@/types/auction";
 
 const formSchema = z.object({
-  start_time: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Invalid date format" }),
-  end_time: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Invalid date format" }),
+  start_time: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Invalid date format" }),
+  end_time: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Invalid date format" }),
 }).refine(data => new Date(data.end_time) > new Date(data.start_time), {
   message: "End time must be after start time.",
   path: ["end_time"],
@@ -70,10 +70,10 @@ export const CreateAuctionDialog = ({ open, onOpenChange, item }: CreateAuctionD
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField control={form.control} name="start_time" render={({ field }) => (
-              <FormItem><FormLabel>Start Time</FormLabel><FormControl><Input type="datetime-local" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Start Time</FormLabel><FormControl><Input type="datetime-local" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="end_time" render={({ field }) => (
-              <FormItem><FormLabel>End Time</FormLabel><FormControl><Input type="datetime-local" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>End Time</FormLabel><FormControl><Input type="datetime-local" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
             )} />
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
