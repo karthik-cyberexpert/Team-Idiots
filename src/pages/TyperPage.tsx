@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthProvider";
 import { showSuccess, showError } from "@/utils/toast";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { ChallengeTimer } from "@/components/game/ChallengeTimer";
 
 const fetchTypingText = async (textId: string): Promise<TypingTextWithSet> => {
   const { data, error } = await supabase
@@ -74,10 +75,12 @@ const TyperPage = () => {
   const [currentText, setCurrentText] = React.useState<TypingTextWithSet | null>(null);
   const [inputText, setInputText] = React.useState("");
   const [startTime, setStartTime] = React.useState<number | null>(null);
-  const [endTime, setEndTime] = React.useState<number | null>(null);
+  const [completionTime, setCompletionTime] = React.useState<number | null>(null);
   const [accuracy, setAccuracy] = React.useState<number | null>(null);
   const [wpm, setWpm] = React.useState<number | null>(null);
   const [pointsAwarded, setPointsAwarded] = React.useState<number | null>(null);
+  const [challengeEndTime, setChallengeEndTime] = React.useState<Date | null>(null);
+  const [isChallengeOver, setIsChallengeOver] = React.useState(false);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
   const { data: challengeText, isLoading: challengeTextLoading, error: challengeTextError } = useQuery<TypingTextWithSet>({
@@ -129,7 +132,7 @@ const TyperPage = () => {
   const calculateResults = React.useCallback((finalInputText: string) => {
     if (startTime && currentText && user) {
       const finalTime = Date.now();
-      setEndTime(finalTime);
+      setCompletionTime(finalTime);
       const durationInMinutes = (finalTime - startTime) / 60000;
       
       const originalTextPortion = currentText.content.substring(0, finalInputText.length);
@@ -159,25 +162,38 @@ const TyperPage = () => {
 
   const resetTest = React.useCallback(() => {
     setStartTime(null);
-    setEndTime(null);
+    setCompletionTime(null);
     setAccuracy(null);
     setWpm(null);
     setPointsAwarded(null);
     setInputText("");
+    setChallengeEndTime(null);
+    setIsChallengeOver(false);
+
+    let textToSet: TypingTextWithSet | null = null;
 
     if (textId) {
-      if (challengeText) setCurrentText(challengeText);
+      if (challengeText) textToSet = challengeText;
     } else if (allTexts) {
       const completedIds = new Set(completedResults?.map(r => r.text_id));
       const playableTexts = allTexts.filter(text => !completedIds.has(text.id));
       
       if (playableTexts.length > 0) {
         const randomIndex = Math.floor(Math.random() * playableTexts.length);
-        setCurrentText(playableTexts[randomIndex]);
-      } else {
-        setCurrentText(null);
+        textToSet = playableTexts[randomIndex];
       }
     }
+    
+    setCurrentText(textToSet);
+
+    if (textToSet?.typer_sets?.assign_date && textToSet?.typer_sets?.end_time) {
+      const { assign_date, end_time } = textToSet.typer_sets;
+      const [hours, minutes, seconds] = end_time.split(':').map(Number);
+      const endDateTime = new Date(assign_date);
+      endDateTime.setUTCHours(hours, minutes, seconds || 0, 0);
+      setChallengeEndTime(endDateTime);
+    }
+
     inputRef.current?.focus();
   }, [textId, challengeText, allTexts, completedResults]);
 
@@ -185,8 +201,21 @@ const TyperPage = () => {
     resetTest();
   }, [challengeText, allTexts, completedResults, resetTest]);
 
+  React.useEffect(() => {
+    if (!challengeEndTime) return;
+
+    const checkTime = () => {
+      if (new Date() > challengeEndTime) {
+        setIsChallengeOver(true);
+      }
+    };
+    const interval = setInterval(checkTime, 1000);
+    checkTime();
+    return () => clearInterval(interval);
+  }, [challengeEndTime]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (!currentText || endTime) return;
+    if (!currentText || completionTime || isChallengeOver) return;
     const value = e.target.value;
     setInputText(value);
     if (!startTime) setStartTime(Date.now());
@@ -220,10 +249,15 @@ const TyperPage = () => {
       </div>
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle>{currentText ? currentText.title : "All Texts Completed!"}</CardTitle>
-          <CardDescription>
-            {currentText ? "Type the text below as fast and accurately as you can." : "Great job! Check back later for new texts."}
-          </CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>{currentText ? currentText.title : "All Texts Completed!"}</CardTitle>
+              <CardDescription>
+                {currentText ? "Type the text below as fast and accurately as you can." : "Great job! Check back later for new texts."}
+              </CardDescription>
+            </div>
+            {challengeEndTime && <ChallengeTimer endTime={challengeEndTime} />}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {challengeTextError ? (
@@ -242,7 +276,7 @@ const TyperPage = () => {
                   <span key={index} className={cn(getCharClass(char, index))}>{char}</span>
                 ))}
               </div>
-              <Textarea ref={inputRef} value={inputText} onChange={handleInputChange} placeholder="Start typing here..." className="text-lg font-mono" rows={8} disabled={!!endTime} />
+              <Textarea ref={inputRef} value={inputText} onChange={handleInputChange} placeholder="Start typing here..." className="text-lg font-mono" rows={8} disabled={!!completionTime || isChallengeOver} />
             </>
           ) : (
             <div className="text-center py-10 text-muted-foreground">
@@ -253,12 +287,19 @@ const TyperPage = () => {
           )}
           
           <div className="flex justify-end">
-            <Button onClick={resetTest} disabled={!!endTime} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
+            <Button onClick={resetTest} disabled={!!completionTime} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
               <RefreshCw className="mr-2 h-4 w-4" /> {taskId ? "Restart Challenge" : "Next Text"}
             </Button>
           </div>
           
-          {endTime && (
+          {isChallengeOver && !completionTime && (
+            <div className="mt-4 p-4 border rounded-md bg-destructive/20 text-destructive text-center">
+              <p className="font-bold">Time's up!</p>
+              <p>You did not complete the challenge in time.</p>
+            </div>
+          )}
+
+          {completionTime && (
             <div className="mt-4 p-4 border rounded-md bg-card flex flex-col sm:flex-row justify-around items-center text-center sm:text-left gap-4">
               <div className="flex items-center gap-2"><CheckCircle className="h-6 w-6 text-vibrant-green" /><div><p className="text-sm text-muted-foreground">Accuracy</p><p className="text-2xl font-bold text-vibrant-green">{accuracy}%</p></div></div>
               <div className="flex items-center gap-2"><XCircle className="h-6 w-6 text-vibrant-orange" /><div><p className="text-sm text-muted-foreground">WPM</p><p className="text-2xl font-bold text-vibrant-orange">{wpm}</p></div></div>
