@@ -17,15 +17,40 @@ serve(async (_req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    const { data, error } = await supabase
+    const { data: auctions, error: auctionsError } = await supabase
       .from('auctions')
-      .select('*, auction_items(name, description), profiles!current_highest_bidder(full_name)')
+      .select('*, auction_items(name, description)')
       .eq('status', 'active')
       .order('end_time', { ascending: true });
 
-    if (error) throw error;
+    if (auctionsError) throw auctionsError;
 
-    return new Response(JSON.stringify(data), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const bidderIds = auctions
+      .map(a => a.current_highest_bidder)
+      .filter(id => id !== null);
+
+    if (bidderIds.length > 0) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', bidderIds);
+
+      if (profilesError) throw profilesError;
+
+      const profilesMap = new Map(profiles.map(p => [p.id, p]));
+
+      auctions.forEach(auction => {
+        if (auction.current_highest_bidder) {
+          auction.profiles = profilesMap.get(auction.current_highest_bidder) || null;
+        } else {
+          auction.profiles = null;
+        }
+      });
+    } else {
+      auctions.forEach(auction => auction.profiles = null);
+    }
+
+    return new Response(JSON.stringify(auctions), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }

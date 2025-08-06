@@ -26,10 +26,35 @@ serve(async (_req) => {
 
     const { data: auctions, error: auctionsError } = await supabaseAdmin
       .from('auctions')
-      .select('*, auction_items(name, description), profiles!current_highest_bidder(full_name)')
+      .select('*, auction_items(name, description)')
       .order('created_at', { ascending: false });
 
     if (auctionsError) throw auctionsError;
+
+    const bidderIds = auctions
+      .map(a => a.current_highest_bidder)
+      .filter(id => id !== null);
+
+    if (bidderIds.length > 0) {
+      const { data: profiles, error: profilesError } = await supabaseAdmin
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', bidderIds);
+
+      if (profilesError) throw profilesError;
+
+      const profilesMap = new Map(profiles.map(p => [p.id, p]));
+
+      auctions.forEach(auction => {
+        if (auction.current_highest_bidder) {
+          auction.profiles = profilesMap.get(auction.current_highest_bidder) || null;
+        } else {
+          auction.profiles = null;
+        }
+      });
+    } else {
+      auctions.forEach(auction => auction.profiles = null);
+    }
 
     return new Response(JSON.stringify({ items, auctions }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
