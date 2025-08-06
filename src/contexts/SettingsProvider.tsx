@@ -66,6 +66,11 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       showError("You are not authorized to perform this action.");
       return;
     }
+
+    // Optimistically update the UI for an instant feel
+    const previousValue = maintenanceMode;
+    setMaintenanceMode(enabled);
+
     try {
       const { error, data } = await supabase.functions.invoke("toggle-maintenance-mode", {
         body: { enabled },
@@ -73,7 +78,10 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
       showSuccess(data.message);
+      // The real-time subscription will ensure other clients are updated.
     } catch (err: any) {
+      // If the server update fails, roll back the optimistic change
+      setMaintenanceMode(previousValue);
       showError(err.message);
     }
   };
