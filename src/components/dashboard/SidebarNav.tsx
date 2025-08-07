@@ -68,6 +68,11 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       icon: <Zap className="h-4 w-4" />,
     },
     {
+      href: "/dashboard/settings",
+      label: "Settings",
+      icon: <Settings className="h-4 w-4" />,
+    },
+    {
       href: "/admin/users",
       label: "Users",
       icon: <Users className="h-4 w-4" />,
