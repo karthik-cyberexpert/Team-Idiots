@@ -88,6 +88,20 @@
     --ring: 195 53% 40%;
     --radius: 0.3rem;
   }
+
+  /* Magic Themes */
+  .theme-sunset { --background: 35 100% 95%; --foreground: 20 15% 25%; --card: 35 100% 92%; --primary: 350 80% 55%; --primary-foreground: 0 0% 100%; --secondary: 10 80% 85%; --accent: 300 80% 60%; }
+  .theme-ocean { --background: 200 100% 98%; --foreground: 210 30% 20%; --card: 200 100% 95%; --primary: 210 80% 50%; --primary-foreground: 0 0% 100%; --secondary: 180 50% 90%; --accent: 170 70% 40%; }
+  .theme-forest { --background: 100 20% 95%; --foreground: 100 25% 15%; --card: 100 20% 92%; --primary: 120 60% 30%; --primary-foreground: 0 0% 100%; --secondary: 80 30% 85%; --accent: 40 60% 50%; }
+  .theme-lavender { --background: 250 50% 98%; --foreground: 250 20% 20%; --card: 250 50% 96%; --primary: 250 60% 60%; --primary-foreground: 0 0% 100%; --secondary: 250 30% 92%; --accent: 270 70% 70%; }
+  .theme-rose { --background: 350 100% 98%; --foreground: 350 30% 25%; --card: 350 100% 96%; --primary: 340 80% 65%; --primary-foreground: 0 0% 100%; --secondary: 350 70% 94%; --accent: 0 80% 70%; }
+  .theme-slate { --background: 220 20% 97%; --foreground: 220 25% 15%; --card: 220 20% 94%; --primary: 220 50% 50%; --primary-foreground: 0 0% 100%; --secondary: 220 30% 90%; --accent: 210 60% 60%; }
+  .theme-coffee { --background: 30 40% 96%; --foreground: 30 30% 20%; --card: 30 40% 93%; --primary: 30 60% 40%; --primary-foreground: 0 0% 100%; --secondary: 30 50% 88%; --accent: 35 70% 55%; }
+  .theme-matrix { --background: 120 100% 5%; --foreground: 120 80% 70%; --card: 120 100% 8%; --primary: 120 70% 50%; --primary-foreground: 120 100% 10%; --secondary: 120 50% 12%; --accent: 120 90% 60%; }
+  .theme-cyberpunk { --background: 240 50% 8%; --foreground: 240 20% 90%; --card: 240 50% 12%; --primary: 330 100% 60%; --primary-foreground: 0 0% 100%; --secondary: 240 40% 18%; --accent: 180 100% 50%; }
+  .theme-autumn { --background: 30 100% 96%; --foreground: 25 40% 20%; --card: 30 100% 93%; --primary: 20 80% 50%; --primary-foreground: 0 0% 100%; --secondary: 40 70% 90%; --accent: 0 70% 60%; }
+  .theme-spring { --background: 90 100% 97%; --foreground: 100 20% 25%; --card: 90 100% 94%; --primary: 140 60% 60%; --primary-foreground: 0 0% 100%; --secondary: 40 80% 92%; --accent: 340 80% 75%; }
+  .theme-monochrome { --background: 0 0% 98%; --foreground: 0 0% 10%; --card: 0 0% 100%; --primary: 0 0% 20%; --primary-foreground: 0 0% 95%; --secondary: 0 0% 94%; --accent: 0 0% 40%; }
 }
 
 @layer base {
@@ -135,7 +149,7 @@
   }
 }
 
-/* New animation for leaderboard highlight */
+/* New animation for leaderboard highlight and gradient text */
 @keyframes animated-gradient {
   0% {
     background-position: 0% 50%;
@@ -159,6 +173,22 @@
   background-size: 400% 400%;
   animation: animated-gradient 4s ease infinite;
 }
+
+/* Magic Theme 3: Gradient Text */
+.magic-gradient-text h1, 
+.magic-gradient-text h2, 
+.magic-gradient-text h3, 
+.magic-gradient-text .text-primary,
+.magic-gradient-text .font-bold {
+  background: linear-gradient(-45deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--vibrant-green)), hsl(var(--vibrant-blue)));
+  background-size: 400% 400%;
+  animation: animated-gradient 10s ease infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
 
 /* New animations for leaderboard rank changes */
 @layer utilities {
