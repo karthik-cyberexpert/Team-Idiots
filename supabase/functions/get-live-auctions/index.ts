@@ -26,22 +26,42 @@ serve(async (req) => {
   }
 
   try {
-    // Create an authenticated Supabase client using the user's token from the request
+    // Authenticate the user first
     const supabase = await getAuthenticatedClient(req);
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       throw new Error("User not authenticated or session expired.");
     }
 
+    // Use service role key for updating statuses and fetching data
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
     const now = new Date().toISOString();
 
-    // Fetch auctions where the current time is between the start and end times.
-    // This is the most reliable way to determine if an auction is "live".
-    const { data: auctions, error: auctionsError } = await supabase
+    // --- START: Update statuses on load ---
+    // Transition scheduled auctions to active
+    await supabaseAdmin
+      .from('auctions')
+      .update({ status: 'active' })
+      .eq('status', 'scheduled')
+      .lte('start_time', now);
+
+    // Transition active auctions to ended
+    await supabaseAdmin
+      .from('auctions')
+      .update({ status: 'ended' })
+      .eq('status', 'active')
+      .lte('end_time', now);
+    // --- END: Update statuses on load ---
+
+    // Fetch auctions that are currently active.
+    const { data: auctions, error: auctionsError } = await supabaseAdmin
       .from('auctions')
       .select('*, auction_items(name, description, is_mystery_box)')
-      .lte('start_time', now) // Start time is in the past or present
-      .gte('end_time', now)   // End time is in the future or present
+      .eq('status', 'active') // Now we can reliably filter by status
       .order('end_time', { ascending: true });
 
     if (auctionsError) throw auctionsError;
@@ -51,7 +71,7 @@ serve(async (req) => {
       .filter(id => id !== null);
 
     if (bidderIds.length > 0) {
-      const { data: profiles, error: profilesError } = await supabase
+      const { data: profiles, error: profilesError } = await supabaseAdmin
         .from('profiles')
         .select('id, full_name')
         .in('id', bidderIds);
