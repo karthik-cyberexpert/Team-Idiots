@@ -84,7 +84,7 @@ serve(async (_req) => {
 
     const { data: auctions, error: auctionsError } = await supabaseAdmin
       .from('auctions')
-      .select('*, auction_items(name, description, is_mystery_box)')
+      .select('*, auction_items(name, description, is_mystery_box, is_power_box)')
       .order('created_at', { ascending: false });
 
     if (auctionsError) throw auctionsError;

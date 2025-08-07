@@ -89,7 +89,7 @@ export const AuctionCard = ({ auction }: AuctionCardProps) => {
         "transition-all duration-500",
         isVanishing && "opacity-0",
         isMysteryBox && "bg-gradient-to-br from-vibrant-purple to-vibrant-pink text-white",
-        isPowerBox && "bg-gradient-to-br from-vibrant-yellow to-vibrant-orange text-white"
+        isPowerBox && "bg-gradient-to-br from-vibrant-yellow to-vibrant-orange text-black"
       )}>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -101,7 +101,10 @@ export const AuctionCard = ({ auction }: AuctionCardProps) => {
         <CardContent className="space-y-4">
           {(isMysteryBox || isPowerBox) && !finalResult && (
             <div className="flex items-center justify-center h-24 bg-black/20 rounded-md">
-              <div className={cn("relative w-20 h-20 border-2 border-white/80 rounded-lg flex items-center justify-center shadow-inner", isMysteryBox ? "bg-purple-300/50" : "bg-yellow-300/50")}>
+              <div className={cn(
+                "relative w-20 h-20 border-2 border-white/80 rounded-lg flex items-center justify-center shadow-inner",
+                isMysteryBox ? "bg-purple-300/50" : "bg-yellow-300/50"
+              )}>
                 {isMysteryBox && <span className="text-5xl font-bold text-white/90 select-none">?</span>}
                 {isPowerBox && <Zap className="h-12 w-12 text-white/90" />}
               </div>
