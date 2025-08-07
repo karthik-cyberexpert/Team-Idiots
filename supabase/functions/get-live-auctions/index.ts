@@ -17,10 +17,15 @@ serve(async (_req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
+    const now = new Date().toISOString();
+
+    // Fetch auctions that are either 'active' or 'scheduled' but should be active
     const { data: auctions, error: auctionsError } = await supabase
       .from('auctions')
       .select('*, auction_items(name, description, is_mystery_box)')
-      .eq('status', 'active')
+      .lte('start_time', now) // Start time is in the past
+      .gte('end_time', now)   // End time is in the future
+      .in('status', ['scheduled', 'active']) // Should be one of these statuses
       .order('end_time', { ascending: true });
 
     if (auctionsError) throw auctionsError;
