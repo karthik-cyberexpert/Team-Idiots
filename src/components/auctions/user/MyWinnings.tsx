@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Auction, MysteryBoxContent } from "@/types/auction";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RevealPrizeDialog } from "./RevealPrizeDialog";
-import { Trophy, Gift } from "lucide-react";
+import { ItemDetailsDialog } from "./ItemDetailsDialog";
+import { Trophy, Gift, Eye } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { useAuth } from "@/contexts/AuthProvider";
 
@@ -32,18 +33,21 @@ export const MyWinnings = ({ isDialog = false }: MyWinningsProps) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [auctionToReveal, setAuctionToReveal] = React.useState<Auction | null>(null);
+  const [itemToShowDetails, setItemToShowDetails] = React.useState<Auction | null>(null);
   const { data: winnings, isLoading } = useQuery<Auction[]>({
     queryKey: ["myWinnings"],
     queryFn: fetchMyWinnings,
   });
 
   const claimMutation = useMutation({
-    mutationFn: claimPrize,
-    onSuccess: (data) => {
-      // Use the specific message from the server
+    mutationFn: (auction: Auction) => claimPrize(auction.id),
+    onSuccess: (data, auction) => {
       showSuccess(data.message);
       
-      // Invalidate all relevant queries to update UI
+      if (!auction.auction_items.is_mystery_box) {
+        setItemToShowDetails(auction);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ["myWinnings"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["xpHistory", user?.id] });
@@ -58,7 +62,7 @@ export const MyWinnings = ({ isDialog = false }: MyWinningsProps) => {
     if (auction.auction_items.is_mystery_box) {
       setAuctionToReveal(auction);
     } else {
-      claimMutation.mutate(auction.id);
+      claimMutation.mutate(auction);
     }
   };
 
@@ -83,6 +87,7 @@ export const MyWinnings = ({ isDialog = false }: MyWinningsProps) => {
   return (
     <>
       <RevealPrizeDialog open={!!auctionToReveal} onOpenChange={() => setAuctionToReveal(null)} auction={auctionToReveal} />
+      <ItemDetailsDialog open={!!itemToShowDetails} onOpenChange={() => setItemToShowDetails(null)} auction={itemToShowDetails} />
       <Card className={isDialog ? "border-none shadow-none" : ""}>
         {!isDialog && (
           <CardHeader>
@@ -98,17 +103,19 @@ export const MyWinnings = ({ isDialog = false }: MyWinningsProps) => {
                 <p className="text-sm text-muted-foreground">Won for {auction.current_price} GP</p>
               </div>
               {auction.is_claimed ? (
-                <span className="text-sm font-medium text-green-500">Claimed</span>
+                <Button variant="outline" size="sm" onClick={() => setItemToShowDetails(auction)}>
+                  <Eye className="mr-2 h-4 w-4" /> View Details
+                </Button>
               ) : (
                 <Button 
                   size="sm" 
                   onClick={() => handleClaim(auction)}
-                  disabled={claimMutation.isPending && claimMutation.variables === auction.id}
+                  disabled={claimMutation.isPending && claimMutation.variables?.id === auction.id}
                 >
                   {auction.auction_items.is_mystery_box ? (
                     <><Gift className="mr-2 h-4 w-4" /> Reveal Prize</>
                   ) : (
-                    claimMutation.isPending && claimMutation.variables === auction.id ? (
+                    claimMutation.isPending && claimMutation.variables?.id === auction.id ? (
                       "Claiming..."
                     ) : (
                       <><Trophy className="mr-2 h-4 w-4" /> Claim Item</>
