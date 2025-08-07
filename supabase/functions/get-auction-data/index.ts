@@ -17,7 +17,14 @@ serve(async (_req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Statuses are now managed by a separate cron job.
+    const now = new Date().toISOString();
+
+    // Start auctions that are scheduled and whose start time has passed
+    await supabaseAdmin
+      .from('auctions')
+      .update({ status: 'active' })
+      .eq('status', 'scheduled')
+      .lte('start_time', now);
 
     const { data: items, error: itemsError } = await supabaseAdmin
       .from('auction_items')

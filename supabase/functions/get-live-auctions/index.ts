@@ -33,13 +33,22 @@ serve(async (req) => {
       throw new Error("User not authenticated or session expired.");
     }
 
-    // Use service role key for fetching data
+    // Use service role key for fetching data and updating statuses
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Fetch auctions that are currently active. Statuses are now managed by a separate cron job.
+    const now = new Date().toISOString();
+
+    // Start auctions that are scheduled and whose start time has passed
+    await supabaseAdmin
+      .from('auctions')
+      .update({ status: 'active' })
+      .eq('status', 'scheduled')
+      .lte('start_time', now);
+
+    // Fetch auctions that are currently active
     const { data: auctions, error: auctionsError } = await supabaseAdmin
       .from('auctions')
       .select('*, auction_items(name, description, is_mystery_box)')
