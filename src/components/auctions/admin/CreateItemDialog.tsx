@@ -120,8 +120,8 @@ export const CreateItemDialog = ({ open, onOpenChange, isMystery = false }: Crea
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{isMysteryBox ? "Create New Mystery Box" : "Create New Auction Item"}</DialogTitle>
           <DialogDescription>
             {isMysteryBox
@@ -129,85 +129,86 @@ export const CreateItemDialog = ({ open, onOpenChange, isMystery = false }: Crea
               : "Enter the details for the new item."}
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
-            <FormField control={form.control} name="name" render={({ field }) => (
-              <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
-            <FormField control={form.control} name="description" render={({ field }) => (
-              <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
-            <FormField control={form.control} name="starting_price" render={({ field }) => (
-              <FormItem><FormLabel>Starting Price (GP)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
-            
-            <FormField
-              control={form.control}
-              name="is_mystery_box"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                  <div className="space-y-0.5">
-                    <FormLabel>Mystery Box</FormLabel>
-                    <FormDescription>Is this item a mystery box?</FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            {isMysteryBox && (
-              <div className="space-y-4 rounded-lg border p-4">
-                <h3 className="text-sm font-medium">Mystery Box Prizes</h3>
-                {fields.map((field, index) => (
-                  <div key={field.id}>
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name={`mystery_box_contents.${index}.type`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Prize {index + 1} Type</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="gp">Game Points (GP)</SelectItem>
-                                <SelectItem value="xp">Experience (XP)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`mystery_box_contents.${index}.amount`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Amount</FormLabel>
-                            <FormControl><Input type="number" placeholder="e.g., 500 or -100" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+        <div className="flex-grow overflow-y-auto -mr-6 pr-6">
+          <Form {...form}>
+            <form id="create-item-form" onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
+              <FormField control={form.control} name="name" render={({ field }) => (
+                <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="description" render={({ field }) => (
+                <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="starting_price" render={({ field }) => (
+                <FormItem><FormLabel>Starting Price (GP)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+              
+              <FormField
+                control={form.control}
+                name="is_mystery_box"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Mystery Box</FormLabel>
+                      <FormDescription>Is this item a mystery box?</FormDescription>
                     </div>
-                    {index < fields.length - 1 && <Separator className="mt-4" />}
-                  </div>
-                ))}
-              </div>
-            )}
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? "Creating..." : "Create Item"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              {isMysteryBox && (
+                <div className="space-y-4 rounded-lg border p-4">
+                  <h3 className="text-sm font-medium">Mystery Box Prizes</h3>
+                  {fields.map((field, index) => (
+                    <div key={field.id}>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`mystery_box_contents.${index}.type`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Prize {index + 1} Type</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="gp">Game Points (GP)</SelectItem>
+                                  <SelectItem value="xp">Experience (XP)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`mystery_box_contents.${index}.amount`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Amount</FormLabel>
+                              <FormControl><Input type="number" placeholder="e.g., 500 or -100" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      {index < fields.length - 1 && <Separator className="mt-4" />}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </form>
+          </Form>
+        </div>
+        <DialogFooter className="flex-shrink-0 pt-4 border-t -mx-6 px-6">
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button type="submit" form="create-item-form" disabled={mutation.isPending}>
+            {mutation.isPending ? "Creating..." : "Create Item"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
