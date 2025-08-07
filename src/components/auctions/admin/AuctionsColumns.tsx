@@ -27,6 +27,11 @@ export const getAuctionsColumns = (
     cell: ({ row }) => row.original.profiles?.full_name || "N/A"
   },
   { 
+    accessorKey: "start_time", 
+    header: "Start Time",
+    cell: ({ row }) => format(new Date(row.original.start_time), "PPP p")
+  },
+  { 
     accessorKey: "end_time", 
     header: "End Time",
     cell: ({ row }) => format(new Date(row.original.end_time), "PPP p")
