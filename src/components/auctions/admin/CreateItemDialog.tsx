@@ -64,9 +64,10 @@ const createAuctionItem = async (values: FormValues) => {
 interface CreateItemDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isMystery?: boolean;
 }
 
-export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) => {
+export const CreateItemDialog = ({ open, onOpenChange, isMystery = false }: CreateItemDialogProps) => {
   const queryClient = useQueryClient();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -74,7 +75,7 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
       name: "",
       description: "",
       starting_price: 0,
-      is_mystery_box: false,
+      is_mystery_box: isMystery,
       mystery_box_contents: [
         { type: "gp", amount: 0 },
         { type: "gp", amount: 0 },
@@ -82,6 +83,22 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
       ],
     },
   });
+
+  React.useEffect(() => {
+    if (open) {
+      form.reset({
+        name: "",
+        description: "",
+        starting_price: 0,
+        is_mystery_box: isMystery,
+        mystery_box_contents: [
+          { type: "gp", amount: 0 },
+          { type: "gp", amount: 0 },
+          { type: "gp", amount: 0 },
+        ],
+      });
+    }
+  }, [open, isMystery, form]);
 
   const { fields } = useFieldArray({
     control: form.control,
@@ -105,8 +122,12 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New Auction Item</DialogTitle>
-          <DialogDescription>Enter the details for the new item.</DialogDescription>
+          <DialogTitle>{isMysteryBox ? "Create New Mystery Box" : "Create New Auction Item"}</DialogTitle>
+          <DialogDescription>
+            {isMysteryBox
+              ? "Define the mystery box and its three potential prizes."
+              : "Enter the details for the new item."}
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">

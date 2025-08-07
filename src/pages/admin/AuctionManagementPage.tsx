@@ -37,6 +37,7 @@ const deleteAuction = async (auctionId: string) => {
 const AuctionManagementPage = () => {
   const queryClient = useQueryClient();
   const [isCreateItemOpen, setIsCreateItemOpen] = React.useState(false);
+  const [createAsMystery, setCreateAsMystery] = React.useState(false);
   const [itemToAuction, setItemToAuction] = React.useState<AuctionItem | null>(null);
   const [itemToDelete, setItemToDelete] = React.useState<AuctionItem | null>(null);
   const [auctionToDelete, setAuctionToDelete] = React.useState<Auction | null>(null);
@@ -72,6 +73,11 @@ const AuctionManagementPage = () => {
     },
   });
 
+  const handleOpenCreateDialog = (isMystery: boolean) => {
+    setCreateAsMystery(isMystery);
+    setIsCreateItemOpen(true);
+  };
+
   const itemsColumns = React.useMemo(() => getItemsColumns(setItemToAuction, setItemToDelete), []);
   const auctionsColumns = React.useMemo(() => getAuctionsColumns((auctionId) => {
     const auction = data?.auctions.find(a => a.id === auctionId);
@@ -84,7 +90,11 @@ const AuctionManagementPage = () => {
 
   return (
     <>
-      <CreateItemDialog open={isCreateItemOpen} onOpenChange={setIsCreateItemOpen} />
+      <CreateItemDialog 
+        open={isCreateItemOpen} 
+        onOpenChange={setIsCreateItemOpen} 
+        isMystery={createAsMystery} 
+      />
       <CreateAuctionDialog open={!!itemToAuction} onOpenChange={() => setItemToAuction(null)} item={itemToAuction} />
       
       <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
@@ -124,7 +134,10 @@ const AuctionManagementPage = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl sm:text-3xl font-bold">Auction Management</h1>
-          <Button onClick={() => setIsCreateItemOpen(true)}>Create New Item</Button>
+          <div className="flex gap-2">
+            <Button onClick={() => handleOpenCreateDialog(false)}>Create New Item</Button>
+            <Button variant="outline" onClick={() => handleOpenCreateDialog(true)}>Create Mystery Box</Button>
+          </div>
         </div>
         <Card>
           <CardHeader>
