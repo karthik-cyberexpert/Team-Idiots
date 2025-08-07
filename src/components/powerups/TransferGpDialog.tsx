@@ -25,7 +25,7 @@ interface OtherUser {
 
 const formSchema = z.object({
   targetUserId: z.string().uuid({ message: "Please select a user." }),
-  amount: z.coerce.number().int().positive("Amount must be a positive number."),
+  percentage: z.coerce.number().int().min(1, "Percentage must be at least 1%.").max(15, "Percentage cannot exceed 15%."),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -36,9 +36,10 @@ const fetchOtherUsers = async (): Promise<OtherUser[]> => {
   return data || [];
 };
 
-const useGpTransfer = async (values: FormValues & { powerUpId: string }) => {
-  const { error } = await supabase.functions.invoke("use-gp-transfer", { body: values });
+const useGpSiphon = async (values: FormValues & { powerUpId: string }): Promise<{ message: string }> => {
+  const { data, error } = await supabase.functions.invoke("use-gp-transfer", { body: values });
   if (error) throw new Error(error.message);
+  return data;
 };
 
 interface TransferGpDialogProps {
@@ -52,6 +53,9 @@ export const TransferGpDialog = ({ open, onOpenChange, powerUp }: TransferGpDial
   const { profile } = useAuth();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      percentage: 15,
+    },
   });
 
   const { data: users, isLoading: usersLoading } = useQuery<OtherUser[]>({
@@ -61,11 +65,12 @@ export const TransferGpDialog = ({ open, onOpenChange, powerUp }: TransferGpDial
   });
 
   const mutation = useMutation({
-    mutationFn: useGpTransfer,
-    onSuccess: () => {
-      showSuccess("GP transferred successfully!");
+    mutationFn: useGpSiphon,
+    onSuccess: (data) => {
+      showSuccess(data.message);
       queryClient.invalidateQueries({ queryKey: ["myPowerUps"] });
       queryClient.invalidateQueries({ queryKey: ["users"] }); // To update GP in admin list
+      queryClient.invalidateQueries({ queryKey: ["gameLeaderboard"] });
       onOpenChange(false);
     },
     onError: (err: Error) => showError(err.message),
@@ -73,10 +78,6 @@ export const TransferGpDialog = ({ open, onOpenChange, powerUp }: TransferGpDial
 
   const onSubmit = (values: FormValues) => {
     if (!powerUp) return;
-    if (profile && profile.game_points < values.amount) {
-      form.setError("amount", { message: "You cannot transfer more GP than you have." });
-      return;
-    }
     mutation.mutate({ ...values, powerUpId: powerUp.id });
   };
 
@@ -84,16 +85,16 @@ export const TransferGpDialog = ({ open, onOpenChange, powerUp }: TransferGpDial
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Transfer Game Points</DialogTitle>
-          <DialogDescription>Your current balance: {profile?.game_points || 0} GP</DialogDescription>
+          <DialogTitle>Siphon Game Points</DialogTitle>
+          <DialogDescription>Choose a target and a percentage of their GP to siphon. Max 15%.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField control={form.control} name="targetUserId" render={({ field }) => (
               <FormItem>
-                <FormLabel>Recipient</FormLabel>
+                <FormLabel>Target</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Select a user to send GP to" /></SelectTrigger></FormControl>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Select a user to siphon GP from" /></SelectTrigger></FormControl>
                   <SelectContent>
                     {usersLoading ? <SelectItem value="loading" disabled>Loading...</SelectItem> : users?.map(user => (
                       <SelectItem key={user.id} value={user.id}>{user.full_name}</SelectItem>
@@ -103,17 +104,17 @@ export const TransferGpDialog = ({ open, onOpenChange, powerUp }: TransferGpDial
                 <FormMessage />
               </FormItem>
             )} />
-            <FormField control={form.control} name="amount" render={({ field }) => (
+            <FormField control={form.control} name="percentage" render={({ field }) => (
               <FormItem>
-                <FormLabel>Amount to Transfer</FormLabel>
-                <FormControl><Input type="number" {...field} /></FormControl>
+                <FormLabel>Percentage to Siphon (1-15%)</FormLabel>
+                <FormControl><Input type="number" min="1" max="15" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
               <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? "Transferring..." : "Confirm Transfer"}
+                {mutation.isPending ? "Siphoning..." : "Confirm Siphon"}
               </Button>
             </DialogFooter>
           </form>

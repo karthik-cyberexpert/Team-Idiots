@@ -22,21 +22,21 @@ serve(async (req) => {
 
   try {
     const supabase = await getAuthenticatedClient(req);
-    const { powerUpId, targetUserId, amount } = await req.json();
+    const { powerUpId, targetUserId, percentage } = await req.json();
 
-    if (!powerUpId || !targetUserId || !amount) {
-      throw new Error("Power-up ID, target user ID, and amount are required.");
+    if (!powerUpId || !targetUserId || !percentage) {
+      throw new Error("Power-up ID, target user ID, and percentage are required.");
     }
 
-    const { error } = await supabase.rpc('execute_gp_transfer', {
+    const { data: message, error } = await supabase.rpc('execute_gp_transfer', {
       p_power_up_id: powerUpId,
       p_target_user_id: targetUserId,
-      p_transfer_amount: amount,
+      p_siphon_percentage: percentage,
     });
 
     if (error) throw error;
 
-    return new Response(JSON.stringify({ message: "GP transferred successfully." }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ message }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }

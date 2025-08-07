@@ -35,7 +35,7 @@ const powerUpDetails: Record<PowerUpType, { icon: React.ElementType; title: stri
   '2x_boost': { icon: Zap, title: "2X Boost", description: "Doubles all XP and GP gains for 24 hours.", interactive: false },
   '4x_boost': { icon: Zap, title: "4X Boost", description: "Quadruples all XP and GP gains for 24 hours.", interactive: false },
   'shield': { icon: Shield, title: "Shield", description: "Automatically protects you from one Attack.", interactive: false },
-  'gp_transfer': { icon: Handshake, title: "GP Transfer", description: "Securely transfer some of your GP to another user.", interactive: true },
+  'gp_transfer': { icon: Handshake, title: "GP Siphon", description: "Siphon up to 15% of another user's GP. Can be blocked by a Shield.", interactive: true },
   'attack': { icon: Swords, title: "Attack", description: "Deduct 10% of another user's GP. Can be blocked by a Shield.", interactive: true },
   'nothing': { icon: Sparkles, title: "Dud", description: "This was a dud from a Power Box. Better luck next time!", interactive: false },
 };
