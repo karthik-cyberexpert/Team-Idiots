@@ -15,6 +15,7 @@ import { LeaderboardPopup } from "@/components/LeaderboardPopup";
 import { useSettings } from "@/contexts/SettingsProvider";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Notifications } from "@/components/notifications/Notifications"; // Import Notifications
 
 export function DashboardLayout() {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
@@ -108,6 +109,7 @@ export function DashboardLayout() {
             {theme === 'dark' ? <Moon className="h-4 w-4 text-white" /> : <Sun className="h-4 w-4 text-gray-800" />}
           </Switch>
           <RefreshButton />
+          <Notifications /> {/* Add Notifications component here */}
           <UserNav />
         </div>
       </header>
@@ -157,6 +159,7 @@ export function DashboardLayout() {
             {theme === 'dark' ? <Moon className="h-4 w-4 text-white" /> : <Sun className="h-4 w-4 text-gray-800" />}
           </Switch>
           <RefreshButton />
+          <Notifications /> {/* Add Notifications component here */}
           <UserNav />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
