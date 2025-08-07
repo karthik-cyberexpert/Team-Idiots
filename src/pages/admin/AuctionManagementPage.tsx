@@ -12,6 +12,11 @@ import { CreateAuctionDialog } from "@/components/auctions/admin/CreateAuctionDi
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { showSuccess, showError } from "@/utils/toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { format, startOfDay, endOfDay } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface AuctionData {
   items: AuctionItem[];
@@ -41,11 +46,26 @@ const AuctionManagementPage = () => {
   const [itemToAuction, setItemToAuction] = React.useState<AuctionItem | null>(null);
   const [itemToDelete, setItemToDelete] = React.useState<AuctionItem | null>(null);
   const [auctionToDelete, setAuctionToDelete] = React.useState<Auction | null>(null);
+  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(undefined);
 
   const { data, isLoading } = useQuery<AuctionData>({
     queryKey: ["auctionData"],
     queryFn: fetchAuctionData,
   });
+
+  const filteredAuctions = React.useMemo(() => {
+    if (!data?.auctions) return [];
+    if (!selectedDate) return data.auctions;
+
+    const startOfSelectedDay = startOfDay(selectedDate);
+    const endOfSelectedDay = endOfDay(selectedDate);
+
+    return data.auctions.filter(auction => {
+      const auctionStart = new Date(auction.start_time);
+      const auctionEnd = new Date(auction.end_time);
+      return auctionStart <= endOfSelectedDay && auctionEnd >= startOfSelectedDay;
+    });
+  }, [data?.auctions, selectedDate]);
 
   const deleteItemMutation = useMutation({
     mutationFn: deleteAuctionItem,
@@ -150,11 +170,42 @@ const AuctionManagementPage = () => {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Scheduled & Active Auctions</CardTitle>
-            <CardDescription>Monitor and manage ongoing auctions.</CardDescription>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Scheduled & Active Auctions</CardTitle>
+                <CardDescription>Monitor and manage ongoing auctions.</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-[240px] justify-start text-left font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "PPP") : <span>Filter by date...</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                {selectedDate && (
+                  <Button variant="ghost" onClick={() => setSelectedDate(undefined)}>Clear</Button>
+                )}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <DataTable columns={auctionsColumns} data={data?.auctions || []} />
+            <DataTable columns={auctionsColumns} data={filteredAuctions} />
           </CardContent>
         </Card>
       </div>
