@@ -1,22 +1,37 @@
 import { serve } from "https://deno.land/std@0.200.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.0'
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.47.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (_req) => {
-  if (_req.method === 'OPTIONS') {
+// Helper function to create an authenticated Supabase client from the request
+async function getAuthenticatedClient(req: Request): Promise<SupabaseClient> {
+  const authHeader = req.headers.get('Authorization')!
+  if (!authHeader) {
+    throw new Error("Missing Authorization header");
+  }
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { global: { headers: { Authorization: authHeader } } }
+  )
+  return supabase
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // Use the regular anon client to fetch data respecting RLS
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    );
+    // Create an authenticated Supabase client using the user's token from the request
+    const supabase = await getAuthenticatedClient(req);
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error("User not authenticated or session expired.");
+    }
 
     const now = new Date().toISOString();
 
