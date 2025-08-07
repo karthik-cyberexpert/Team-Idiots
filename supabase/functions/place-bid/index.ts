@@ -21,29 +21,6 @@ serve(async (req) => {
   }
 
   try {
-    // Use service role key for updating statuses
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-    const now = new Date().toISOString();
-
-    // --- START: Update statuses before processing bid ---
-    // Transition scheduled auctions to active
-    await supabaseAdmin
-      .from('auctions')
-      .update({ status: 'active' })
-      .eq('status', 'scheduled')
-      .lte('start_time', now);
-
-    // Transition active auctions to ended
-    await supabaseAdmin
-      .from('auctions')
-      .update({ status: 'ended' })
-      .eq('status', 'active')
-      .lte('end_time', now);
-    // --- END: Update statuses ---
-
     const supabase = await getAuthenticatedClient(req);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated.");
@@ -53,7 +30,8 @@ serve(async (req) => {
       throw new Error("Auction ID and bid amount are required.");
     }
 
-    // Now call the RPC function with the authenticated client
+    // The new `update-auction-statuses` cron job will handle status changes.
+    // We can now directly call the RPC function.
     const { error } = await supabase.rpc('place_bid', {
       p_auction_id: auction_id,
       p_user_id: user.id,
