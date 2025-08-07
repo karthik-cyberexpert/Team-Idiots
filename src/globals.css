@@ -199,7 +199,7 @@
 .magic-gradient-text.gradient-scope-full [class*="description"]:not([data-radix-collection-item]),
 .magic-gradient-text.gradient-scope-full [class*="foreground"]:not([data-radix-collection-item]),
 .magic-gradient-text.gradient-scope-full button > span,
-.magic-gradient-text.gradient-scope-full a {
+.magic-gradient-text.gradient-scope-full a > span {
   background-image: var(--magic-gradient, linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab));
   background-size: 400% 400%;
   animation: animated-gradient 15s ease infinite;
@@ -215,9 +215,9 @@
   -webkit-background-clip: initial !important;
   background-clip: initial !important;
   background-image: none !important;
-  -webkit-text-fill-color: initial !important;
-  color: currentColor !important;
-  fill: currentColor !important;
+  -webkit-text-fill-color: hsl(var(--foreground)) !important;
+  color: hsl(var(--foreground)) !important;
+  fill: hsl(var(--foreground)) !important;
 }
 
 /* Prevent radio buttons from becoming transparent */

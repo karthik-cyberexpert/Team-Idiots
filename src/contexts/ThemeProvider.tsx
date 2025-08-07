@@ -20,58 +20,7 @@ const darkMagicThemeNames = [
 
 const allMagicThemes = [...lightMagicThemeNames, ...darkMagicThemeNames];
 
-const gradients = [
-  "linear-gradient(-45deg, #ff0000, #00ff00, #0000ff, #ffff00)",
-  "linear-gradient(-45deg, #ffff00, #a52a2a, #ffd700, #ffc0cb)",
-  "linear-gradient(-45deg, #8a2be2, #00ffff, #ff7f50, #dc143c)",
-  "linear-gradient(-45deg, #ff6347, #ffd700, #adff2f, #40e0d0)",
-  "linear-gradient(-45deg, #4158D0, #C850C0, #FFCC70)",
-  "linear-gradient(-45deg, #FA8BFF, #2BD2FF, #2BFF88)",
-  "linear-gradient(-45deg, #FF3CAC, #784BA0, #2B86C5)",
-  "linear-gradient(-45deg, #FEE140, #FA709A)",
-  "linear-gradient(-45deg, #A9C9FF, #FFBBEC)",
-  "linear-gradient(-45deg, #00DBDE, #FC00FF)",
-  "linear-gradient(-45deg, #08AEEA, #2AF598)",
-  "linear-gradient(-45deg, #F4D03F, #16A085)",
-  "linear-gradient(-45deg, #D4145A, #FBB03B)",
-  "linear-gradient(-45deg, #662D8C, #ED1E79)",
-  "linear-gradient(-45deg, #EEAD92, #6018DC)",
-  "linear-gradient(-45deg, #FBAB7E, #F7CE68)",
-  "linear-gradient(-45deg, #85FFBD, #FFFB7D)",
-  "linear-gradient(-45deg, #3EECAC, #EE74E1)",
-  "linear-gradient(-45deg, #EA00FF, #0098F0, #00FF9D)",
-  "linear-gradient(-45deg, #FF3E9D, #0E1F40, #0098F0)",
-  "linear-gradient(-45deg, #FF0000, #FF7F00, #FFFF00)",
-  "linear-gradient(-45deg, #00FF00, #00FFFF, #0000FF)",
-  "linear-gradient(-45deg, #8A2BE2, #FF00FF, #FF1493)",
-  "linear-gradient(-45deg, #FFD700, #FFA500, #FF4500)",
-  "linear-gradient(-45deg, #ADFF2F, #7FFF00, #32CD32)",
-  "linear-gradient(-45deg, #40E0D0, #20B2AA, #008080)",
-  "linear-gradient(-45deg, #FF69B4, #FF1493, #C71585)",
-  "linear-gradient(-45deg, #1E90FF, #4169E1, #0000CD)",
-  "linear-gradient(-45deg, #F08080, #CD5C5C, #A52A2A)",
-  "linear-gradient(-45deg, #9370DB, #8A2BE2, #4B0082)",
-  "linear-gradient(-45deg, #3CB371, #2E8B57, #006400)",
-  "linear-gradient(-45deg, #FFA07A, #FF7F50, #FF6347)",
-  "linear-gradient(-45deg, #B0C4DE, #778899, #708090)",
-  "linear-gradient(-45deg, #FFC0CB, #FFB6C1, #FF69B4)",
-  "linear-gradient(-45deg, #FFE4B5, #FFDAB9, #FFDEAD)",
-  "linear-gradient(-45deg, #98FB98, #90EE90, #3CB371)",
-  "linear-gradient(-45deg, #ADD8E6, #87CEEB, #87CEFA)",
-  "linear-gradient(-45deg, #F0E68C, #EEE8AA, #BDB76B)",
-  "linear-gradient(-45deg, #E6E6FA, #D8BFD8, #DDA0DD)",
-  "linear-gradient(-45deg, #FFFACD, #FAFAD2, #FFFFE0)",
-  "linear-gradient(-45deg, #00FA9A, #00FF7F, #32CD32)",
-  "linear-gradient(-45deg, #48D1CC, #40E0D0, #20B2AA)",
-  "linear-gradient(-45deg, #C71585, #DB7093, #FF1493)",
-  "linear-gradient(-45deg, #6495ED, #4169E1, #1E90FF)",
-  "linear-gradient(-45deg, #DC143C, #B22222, #8B0000)",
-  "linear-gradient(-45deg, #FF8C00, #FFA500, #FFD700)",
-  "linear-gradient(-45deg, #228B22, #008000, #006400)",
-  "linear-gradient(-45deg, #4682B4, #5F9EA0, #66CDAA)",
-  "linear-gradient(-45deg, #BA55D3, #9932CC, #8A2BE2)",
-  "linear-gradient(-45deg, #CD853F, #D2691E, #A0522D)",
-];
+const VIBGYOR_GRADIENT = "linear-gradient(-45deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #9400D3)";
 
 interface ThemeProviderState {
   theme: Theme;
@@ -121,8 +70,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       if (gradientScope === 'full') {
         root.classList.add('gradient-scope-full');
       }
-      const randomIndex = Math.floor(Math.random() * gradients.length);
-      root.style.setProperty('--magic-gradient', gradients[randomIndex]);
+      root.style.setProperty('--magic-gradient', VIBGYOR_GRADIENT);
     }
     
     if (magicTheme === 'none') {
