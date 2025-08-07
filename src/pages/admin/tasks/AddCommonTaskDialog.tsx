@@ -63,6 +63,7 @@ interface AddCommonTaskDialogProps {
 export const AddCommonTaskDialog = ({ open, onOpenChange }: AddCommonTaskDialogProps) => {
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
+  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
 
   const form = useForm<AddCommonTaskFormValues>({
     resolver: zodResolver(formSchema),
@@ -138,7 +139,7 @@ export const AddCommonTaskDialog = ({ open, onOpenChange }: AddCommonTaskDialogP
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Due Date (Optional)</FormLabel>
-                  <Popover>
+                  <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -161,7 +162,10 @@ export const AddCommonTaskDialog = ({ open, onOpenChange }: AddCommonTaskDialogP
                       <Calendar
                         mode="single"
                         selected={field.value || undefined}
-                        onSelect={field.onChange}
+                        onSelect={(date) => {
+                          field.onChange(date);
+                          setIsDatePickerOpen(false);
+                        }}
                         initialFocus
                       />
                     </PopoverContent>

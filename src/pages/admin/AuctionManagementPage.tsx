@@ -47,6 +47,7 @@ const AuctionManagementPage = () => {
   const [itemToDelete, setItemToDelete] = React.useState<AuctionItem | null>(null);
   const [auctionToDelete, setAuctionToDelete] = React.useState<Auction | null>(null);
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(undefined);
+  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
 
   const { data, isLoading } = useQuery<AuctionData>({
     queryKey: ["auctionData"],
@@ -182,7 +183,7 @@ const AuctionManagementPage = () => {
                 <CardDescription>Monitor and manage ongoing auctions.</CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Popover>
+                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant={"outline"}
@@ -199,7 +200,10 @@ const AuctionManagementPage = () => {
                     <Calendar
                       mode="single"
                       selected={selectedDate}
-                      onSelect={setSelectedDate}
+                      onSelect={(date) => {
+                        setSelectedDate(date);
+                        setIsDatePickerOpen(false);
+                      }}
                       initialFocus
                     />
                   </PopoverContent>

@@ -95,6 +95,7 @@ interface AddTaskDialogProps {
 export const AddTaskDialog = ({ open, onOpenChange }: AddTaskDialogProps) => {
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
+  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
 
   const form = useForm<AddTaskFormValues>({
     resolver: zodResolver(formSchema),
@@ -214,7 +215,7 @@ export const AddTaskDialog = ({ open, onOpenChange }: AddTaskDialogProps) => {
                   render={({ field }) => (
                     <FormItem className="flex flex-col flex-1">
                       <FormLabel>Due Date (Optional)</FormLabel>
-                      <Popover>
+                      <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
@@ -237,7 +238,10 @@ export const AddTaskDialog = ({ open, onOpenChange }: AddTaskDialogProps) => {
                           <Calendar
                             mode="single"
                             selected={field.value || undefined}
-                            onSelect={field.onChange}
+                            onSelect={(date) => {
+                              field.onChange(date);
+                              setIsDatePickerOpen(false);
+                            }}
                             initialFocus
                           />
                         </PopoverContent>

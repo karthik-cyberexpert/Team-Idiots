@@ -39,6 +39,7 @@ export const MyWinnings = ({ isDialog = false }: MyWinningsProps) => {
   const { data: winnings, isLoading } = useQuery<Auction[]>({
     queryKey: ["myWinnings"],
     queryFn: fetchMyWinnings,
+    refetchInterval: 15000, // Refetch every 15 seconds
   });
 
   const claimMutation = useMutation({

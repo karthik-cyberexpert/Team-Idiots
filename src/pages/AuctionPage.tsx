@@ -21,7 +21,7 @@ const AuctionPage = () => {
   const { data: auctions, isLoading } = useQuery<Auction[]>({
     queryKey: ["liveAuctions"],
     queryFn: fetchLiveAuctions,
-    refetchInterval: 30000, // Refetch every 30 seconds to get new auctions
+    refetchInterval: 5000, // Refetch every 5 seconds
   });
 
   return (

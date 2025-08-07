@@ -100,6 +100,7 @@ interface EditTaskDialogProps {
 
 export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps) => {
   const queryClient = useQueryClient();
+  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
 
   const form = useForm<EditTaskFormValues>({
     resolver: zodResolver(formSchema),
@@ -218,7 +219,7 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
                     render={({ field }) => (
                       <FormItem className="flex flex-col flex-1">
                         <FormLabel>Due Date (Optional)</FormLabel>
-                        <Popover>
+                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                           <PopoverTrigger asChild>
                             <FormControl>
                               <Button
@@ -241,7 +242,10 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
                             <Calendar
                               mode="single"
                               selected={field.value || undefined}
-                              onSelect={field.onChange}
+                              onSelect={(date) => {
+                                field.onChange(date);
+                                setIsDatePickerOpen(false);
+                              }}
                               initialFocus
                             />
                           </PopoverContent>

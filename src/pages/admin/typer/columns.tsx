@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table"
 import { MoreHorizontal, ArrowUpDown, Check, X, Play, Calendar as CalendarIcon, Trash2, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -43,11 +44,12 @@ export const getColumns = (actions: TyperSetActions): ColumnDef<TyperSet>[] => [
     accessorKey: "assign_date",
     header: "Assign Date",
     cell: ({ row }) => {
+      const [isOpen, setIsOpen] = React.useState(false);
       const set = row.original;
       const date = set.assign_date ? new Date(set.assign_date) : null;
 
       return (
-        <Popover>
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" disabled={set.status !== 'published'}>
               <CalendarIcon className="mr-2 h-4 w-4" />
@@ -58,7 +60,10 @@ export const getColumns = (actions: TyperSetActions): ColumnDef<TyperSet>[] => [
             <Calendar
               mode="single"
               selected={date || undefined}
-              onSelect={(day) => day && actions.onUpdateDate(set.id, day)}
+              onSelect={(day) => {
+                if (day) actions.onUpdateDate(set.id, day);
+                setIsOpen(false);
+              }}
               initialFocus
             />
           </PopoverContent>

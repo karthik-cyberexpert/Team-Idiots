@@ -56,6 +56,9 @@ interface CreateAuctionDialogProps {
 
 export const CreateAuctionDialog = ({ open, onOpenChange, item }: CreateAuctionDialogProps) => {
   const queryClient = useQueryClient();
+  const [isStartDatePickerOpen, setIsStartDatePickerOpen] = React.useState(false);
+  const [isEndDatePickerOpen, setIsEndDatePickerOpen] = React.useState(false);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -118,7 +121,7 @@ export const CreateAuctionDialog = ({ open, onOpenChange, item }: CreateAuctionD
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Start Date</FormLabel>
-                    <Popover>
+                    <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
@@ -141,7 +144,10 @@ export const CreateAuctionDialog = ({ open, onOpenChange, item }: CreateAuctionD
                         <Calendar
                           mode="single"
                           selected={field.value || undefined}
-                          onSelect={field.onChange}
+                          onSelect={(date) => {
+                            field.onChange(date);
+                            setIsStartDatePickerOpen(false);
+                          }}
                           initialFocus
                         />
                       </PopoverContent>
@@ -171,7 +177,7 @@ export const CreateAuctionDialog = ({ open, onOpenChange, item }: CreateAuctionD
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>End Date</FormLabel>
-                    <Popover>
+                    <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
@@ -194,7 +200,10 @@ export const CreateAuctionDialog = ({ open, onOpenChange, item }: CreateAuctionD
                         <Calendar
                           mode="single"
                           selected={field.value || undefined}
-                          onSelect={field.onChange}
+                          onSelect={(date) => {
+                            field.onChange(date);
+                            setIsEndDatePickerOpen(false);
+                          }}
                           initialFocus
                         />
                       </PopoverContent>
