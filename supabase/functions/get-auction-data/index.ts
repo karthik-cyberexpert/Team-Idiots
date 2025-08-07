@@ -19,13 +19,62 @@ serve(async (_req) => {
 
     const now = new Date().toISOString();
 
-    // Start auctions that are scheduled and whose start time has passed
+    // 1. Start auctions that are scheduled and whose start time has passed
     await supabaseAdmin
       .from('auctions')
       .update({ status: 'active' })
       .eq('status', 'scheduled')
       .lte('start_time', now);
 
+    // 2. Find and process active auctions that have ended
+    const { data: auctionsToEnd, error: fetchEndError } = await supabaseAdmin
+      .from('auctions')
+      .select('*')
+      .eq('status', 'active')
+      .lte('end_time', now);
+
+    if (fetchEndError) throw fetchEndError;
+
+    for (const auction of auctionsToEnd) {
+      if (auction.current_highest_bidder) {
+        const winnerId = auction.current_highest_bidder;
+        const finalPrice = auction.current_price;
+
+        const { data: winnerProfile, error: profileError } = await supabaseAdmin
+          .from('profiles')
+          .select('game_points')
+          .eq('id', winnerId)
+          .single();
+
+        if (profileError) {
+          console.error(`Could not fetch profile for winner ${winnerId} of auction ${auction.id}.`, profileError);
+          await supabaseAdmin.from('auctions').update({ status: 'ended', current_highest_bidder: null }).eq('id', auction.id);
+          continue;
+        }
+
+        if (winnerProfile.game_points >= finalPrice) {
+          const newBalance = winnerProfile.game_points - finalPrice;
+          const { error: updateError } = await supabaseAdmin
+            .from('profiles')
+            .update({ game_points: newBalance })
+            .eq('id', winnerId);
+
+          if (updateError) {
+            console.error(`Failed to deduct points for winner ${winnerId} of auction ${auction.id}.`, updateError);
+            await supabaseAdmin.from('auctions').update({ status: 'ended', current_highest_bidder: null }).eq('id', auction.id);
+          } else {
+            await supabaseAdmin.from('auctions').update({ status: 'ended' }).eq('id', auction.id);
+          }
+        } else {
+          console.warn(`Winner ${winnerId} of auction ${auction.id} has insufficient funds.`);
+          await supabaseAdmin.from('auctions').update({ status: 'ended', current_highest_bidder: null }).eq('id', auction.id);
+        }
+      } else {
+        await supabaseAdmin.from('auctions').update({ status: 'ended' }).eq('id', auction.id);
+      }
+    }
+
+    // 3. Fetch all items and auctions (statuses will be up-to-date)
     const { data: items, error: itemsError } = await supabaseAdmin
       .from('auction_items')
       .select('*')
