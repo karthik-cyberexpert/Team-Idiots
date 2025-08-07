@@ -12,20 +12,38 @@ serve(async (_req) => {
   }
 
   try {
+    // Use admin client to update statuses first for consistency
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    const now = new Date().toISOString();
+
+    // Transition scheduled auctions to active
+    await supabaseAdmin
+      .from('auctions')
+      .update({ status: 'active' })
+      .eq('status', 'scheduled')
+      .lte('start_time', now);
+
+    // Transition active auctions to ended
+    await supabaseAdmin
+      .from('auctions')
+      .update({ status: 'ended' })
+      .eq('status', 'active')
+      .lte('end_time', now);
+
+    // Now, use the regular anon client to fetch data respecting RLS
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    const now = new Date().toISOString();
-
-    // Fetch auctions that are either 'active' or 'scheduled' but should be active
+    // Fetch auctions that are now active
     const { data: auctions, error: auctionsError } = await supabase
       .from('auctions')
       .select('*, auction_items(name, description, is_mystery_box)')
-      .lte('start_time', now) // Start time is in the past
-      .gte('end_time', now)   // End time is in the future
-      .in('status', ['scheduled', 'active']) // Should be one of these statuses
+      .eq('status', 'active')
       .order('end_time', { ascending: true });
 
     if (auctionsError) throw auctionsError;
