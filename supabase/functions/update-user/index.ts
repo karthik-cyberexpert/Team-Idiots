@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, email, password, fullName, role } = await req.json()
+    const { userId, email, password, fullName, role, avatar_url } = await req.json()
 
     if (!userId) {
       throw new Error("User ID is required.")
@@ -25,10 +25,16 @@ serve(async (req) => {
     )
 
     // Prepare update data for auth.users
-    const authUpdateData: { email?: string; password?: string; user_metadata?: { full_name?: string } } = {};
+    const authUpdateData: { email?: string; password?: string; user_metadata?: { full_name?: string, avatar_url?: string } } = {};
     if (email) authUpdateData.email = email;
     if (password) authUpdateData.password = password;
-    if (fullName) authUpdateData.user_metadata = { full_name: fullName };
+    
+    const user_metadata: { full_name?: string, avatar_url?: string } = {};
+    if (fullName) user_metadata.full_name = fullName;
+    if (avatar_url) user_metadata.avatar_url = avatar_url;
+    if (Object.keys(user_metadata).length > 0) {
+      authUpdateData.user_metadata = user_metadata;
+    }
 
     // Update user in auth.users
     if (Object.keys(authUpdateData).length > 0) {
@@ -40,12 +46,15 @@ serve(async (req) => {
     }
 
     // Update user profile in public.profiles
-    const { error: profileUpdateError } = await supabaseAdmin
-      .from('profiles')
-      .update({ full_name: fullName, role })
-      .eq('id', userId);
+    // The trigger will handle syncing full_name and avatar_url, but we still need to update the role here.
+    if (role) {
+      const { error: profileUpdateError } = await supabaseAdmin
+        .from('profiles')
+        .update({ role })
+        .eq('id', userId);
 
-    if (profileUpdateError) throw profileUpdateError;
+      if (profileUpdateError) throw profileUpdateError;
+    }
 
     return new Response(
       JSON.stringify({ message: "User updated successfully" }),

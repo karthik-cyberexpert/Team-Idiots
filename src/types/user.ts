@@ -6,4 +6,5 @@ export interface User {
   xp: number;
   game_points: number;
   created_at: string;
+  avatar_url?: string;
 }

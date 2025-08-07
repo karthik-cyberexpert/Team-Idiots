@@ -8,6 +8,7 @@ interface Profile {
   role: 'admin' | 'user';
   xp: number;
   game_points: number;
+  avatar_url?: string;
 }
 
 interface AuthContextType {
@@ -62,7 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, full_name, role, xp, game_points')
+        .select('id, full_name, role, xp, game_points, avatar_url')
         .eq('id', userId)
         .single();
       

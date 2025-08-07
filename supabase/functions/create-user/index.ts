@@ -28,7 +28,7 @@ serve(async (req) => {
       email,
       password,
       email_confirm: true, // Automatically confirm the email
-      user_metadata: { full_name: fullName },
+      user_metadata: { full_name: fullName, avatar_url: null }, // Add avatar_url
     })
 
     if (createError) throw createError;
