@@ -155,3 +155,4 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       })}
     </nav>
   );
+}
