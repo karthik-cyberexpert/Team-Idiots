@@ -26,7 +26,7 @@ serve(async (_req) => {
 
     const { data: auctions, error: auctionsError } = await supabaseAdmin
       .from('auctions')
-      .select('*, auction_items(name, description)')
+      .select('*, auction_items(name, description, is_mystery_box)')
       .order('created_at', { ascending: false });
 
     if (auctionsError) throw auctionsError;
@@ -47,13 +47,13 @@ serve(async (_req) => {
 
       auctions.forEach(auction => {
         if (auction.current_highest_bidder) {
-          auction.profiles = profilesMap.get(auction.current_highest_bidder) || null;
+          (auction as any).profiles = profilesMap.get(auction.current_highest_bidder) || null;
         } else {
-          auction.profiles = null;
+          (auction as any).profiles = null;
         }
       });
     } else {
-      auctions.forEach(auction => auction.profiles = null);
+      auctions.forEach(auction => (auction as any).profiles = null);
     }
 
     return new Response(JSON.stringify({ items, auctions }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

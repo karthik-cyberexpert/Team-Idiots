@@ -25,17 +25,34 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated.");
 
-    const { name, description, starting_price } = await req.json();
+    const { name, description, starting_price, is_mystery_box, mystery_box_contents } = await req.json();
     if (!name || starting_price === undefined) {
       throw new Error("Name and starting price are required.");
     }
 
-    const { error } = await supabase.from('auction_items').insert({
+    const itemToInsert: any = {
       name,
       description,
       starting_price,
       created_by: user.id,
-    });
+      is_mystery_box: is_mystery_box || false,
+      mystery_box_contents: null,
+    };
+
+    if (is_mystery_box) {
+      if (!Array.isArray(mystery_box_contents) || mystery_box_contents.length !== 3) {
+        throw new Error("Mystery box must have exactly 3 prize options.");
+      }
+      // Basic validation for contents
+      mystery_box_contents.forEach(item => {
+        if ((item.type !== 'gp' && item.type !== 'xp') || typeof item.amount !== 'number') {
+          throw new Error("Invalid mystery box content. Each item must have a 'type' ('gp' or 'xp') and a numeric 'amount'.");
+        }
+      });
+      itemToInsert.mystery_box_contents = mystery_box_contents;
+    }
+
+    const { error } = await supabase.from('auction_items').insert(itemToInsert);
 
     if (error) throw error;
 
