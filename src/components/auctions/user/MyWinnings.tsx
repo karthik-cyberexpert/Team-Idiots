@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RevealPrizeDialog } from "./RevealPrizeDialog";
 import { Trophy, Gift } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
+import { useAuth } from "@/contexts/AuthProvider";
 
 const fetchMyWinnings = async (): Promise<Auction[]> => {
   const { data, error } = await supabase.functions.invoke("get-my-winnings");
@@ -17,7 +18,7 @@ const fetchMyWinnings = async (): Promise<Auction[]> => {
   return data || [];
 };
 
-const claimPrize = async (auction_id: string): Promise<{ prize: MysteryBoxContent | null }> => {
+const claimPrize = async (auction_id: string): Promise<{ prize: MysteryBoxContent | null; message: string }> => {
   const { data, error } = await supabase.functions.invoke("claim-auction-prize", { body: { auction_id } });
   if (error) throw new Error(error.message);
   return data;
@@ -29,6 +30,7 @@ interface MyWinningsProps {
 
 export const MyWinnings = ({ isDialog = false }: MyWinningsProps) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [auctionToReveal, setAuctionToReveal] = React.useState<Auction | null>(null);
   const { data: winnings, isLoading } = useQuery<Auction[]>({
     queryKey: ["myWinnings"],
@@ -38,11 +40,14 @@ export const MyWinnings = ({ isDialog = false }: MyWinningsProps) => {
   const claimMutation = useMutation({
     mutationFn: claimPrize,
     onSuccess: (data) => {
-      if (!data.prize) { // This was a regular item
-        showSuccess("Item claimed successfully!");
-      }
-      // For mystery boxes, success is handled in the reveal dialog
+      // Use the specific message from the server
+      showSuccess(data.message);
+      
+      // Invalidate all relevant queries to update UI
       queryClient.invalidateQueries({ queryKey: ["myWinnings"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["xpHistory", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
     },
     onError: (err: Error) => {
       showError(err.message);

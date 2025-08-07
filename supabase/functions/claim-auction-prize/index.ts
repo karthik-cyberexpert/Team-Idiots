@@ -49,6 +49,7 @@ serve(async (req) => {
     if (auction.is_claimed) throw new Error("This prize has already been claimed.");
 
     let awardedPrize = null;
+    let awardedMessage = "Prize claimed successfully!";
 
     // 3. Handle prize logic
     if (auction.auction_items.is_mystery_box) {
@@ -59,6 +60,7 @@ serve(async (req) => {
 
       // Randomly select a prize
       awardedPrize = contents[Math.floor(Math.random() * contents.length)];
+      awardedMessage = `You won ${awardedPrize.amount} ${awardedPrize.type.toUpperCase()}!`;
 
       // Fetch user's current profile to update points/xp
       const { data: profile, error: profileError } = await supabaseAdmin
@@ -82,6 +84,37 @@ serve(async (req) => {
         .eq('id', user.id);
 
       if (updateProfileError) throw updateProfileError;
+    } else {
+      // This is a regular item. Award a small XP bonus for claiming.
+      const xpBonus = 25;
+      
+      const { data: profile, error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .select('xp')
+        .eq('id', user.id)
+        .single();
+      
+      if (profileError) throw profileError;
+
+      const { error: updateProfileError } = await supabaseAdmin
+        .from('profiles')
+        .update({ xp: profile.xp + xpBonus })
+        .eq('id', user.id);
+
+      if (updateProfileError) throw updateProfileError;
+
+      // Log the XP change
+      const { error: logError } = await supabaseAdmin
+        .from('xp_history')
+        .insert({
+          user_id: user.id,
+          xp_change: xpBonus,
+          reason: `Claimed auction item: ${auction.auction_items.name}`,
+        });
+      
+      if (logError) console.error("Failed to log XP history for auction claim:", logError.message);
+
+      awardedMessage = `Item claimed! You received a bonus of ${xpBonus} XP.`;
     }
 
     // 4. Mark auction as claimed
@@ -92,7 +125,7 @@ serve(async (req) => {
 
     if (updateAuctionError) throw updateAuctionError;
 
-    return new Response(JSON.stringify({ message: "Prize claimed successfully!", prize: awardedPrize }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ message: awardedMessage, prize: awardedPrize }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
