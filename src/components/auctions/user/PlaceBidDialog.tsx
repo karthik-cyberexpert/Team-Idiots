@@ -22,7 +22,22 @@ type FormValues = z.infer<typeof formSchema>;
 
 const placeBid = async (values: FormValues & { auction_id: string }) => {
   const { error } = await supabase.functions.invoke("place-bid", { body: values });
-  if (error) throw new Error(error.message);
+  if (error) {
+    // Try to get a more specific error message from the function's response
+    if (error.context && typeof error.context.json === 'function') {
+      try {
+        const errorBody = await error.context.json();
+        if (errorBody.error) {
+          throw new Error(errorBody.error);
+        }
+      } catch (e) {
+        // Ignore parsing errors and fall back to the default message
+        console.error("Could not parse error response from edge function:", e);
+      }
+    }
+    // Fallback to the default Supabase error message
+    throw new Error(error.message);
+  }
 };
 
 interface PlaceBidDialogProps {
