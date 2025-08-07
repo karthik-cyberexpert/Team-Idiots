@@ -37,7 +37,7 @@ const mysteryBoxContentSchema = z.object({
 });
 
 const formSchema = z.object({
-  name: z.string().min(1, "Name is required."),
+  name: z.string().optional(),
   description: z.string().optional(),
   starting_price: z.coerce.number().int().min(0, "Starting price must be non-negative."),
   is_mystery_box: z.boolean().default(false),
@@ -49,6 +49,14 @@ const formSchema = z.object({
         code: z.ZodIssueCode.custom,
         message: "A mystery box must have exactly 3 prize options.",
         path: ["mystery_box_contents"],
+      });
+    }
+  } else {
+    if (!data.name || data.name.trim().length < 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Name is required for a standard item.",
+        path: ["name"],
       });
     }
   }
@@ -118,6 +126,15 @@ export const CreateItemDialog = ({ open, onOpenChange, isMystery = false }: Crea
     onError: (err: Error) => showError(err.message),
   });
 
+  const onSubmit = (values: FormValues) => {
+    let submissionValues = { ...values };
+    if (submissionValues.is_mystery_box) {
+      submissionValues.name = "Mystery Box";
+      submissionValues.description = "What could be inside?";
+    }
+    mutation.mutate(submissionValues);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
@@ -131,13 +148,17 @@ export const CreateItemDialog = ({ open, onOpenChange, isMystery = false }: Crea
         </DialogHeader>
         <div className="flex-grow overflow-y-auto -mr-6 pr-6">
           <Form {...form}>
-            <form id="create-item-form" onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
-              <FormField control={form.control} name="name" render={({ field }) => (
-                <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="description" render={({ field }) => (
-                <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
+            <form id="create-item-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {!isMysteryBox && (
+                <>
+                  <FormField control={form.control} name="name" render={({ field }) => (
+                    <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={form.control} name="description" render={({ field }) => (
+                    <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                </>
+              )}
               <FormField control={form.control} name="starting_price" render={({ field }) => (
                 <FormItem><FormLabel>Starting Price (GP)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
               )} />

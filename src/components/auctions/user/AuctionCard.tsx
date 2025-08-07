@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gavel, Gift } from 'lucide-react';
+import { Gavel } from 'lucide-react';
 import { Auction } from "@/types/auction";
 import { PlaceBidDialog } from "./PlaceBidDialog";
 import { CountdownTimer } from "../CountdownTimer";
@@ -122,7 +122,7 @@ export const AuctionCard = ({ auction }: AuctionCardProps) => {
           ) : (
             <>
               <CardTitle>{auction.auction_items.name}</CardTitle>
-              <CardDescription className={cn(isMysteryBox && "text-purple-200")}>
+              <CardDescription>
                 {auction.auction_items.description}
               </CardDescription>
             </>
@@ -131,7 +131,9 @@ export const AuctionCard = ({ auction }: AuctionCardProps) => {
         <CardContent className="space-y-4">
           {isMysteryBox && !finalResult && (
             <div className="flex items-center justify-center h-24 bg-black/20 rounded-md">
-              <Gift className="h-16 w-16 text-white/80" />
+              <div className="relative w-20 h-20 bg-purple-300/50 border-2 border-white/80 rounded-lg flex items-center justify-center shadow-inner">
+                  <span className="text-5xl font-bold text-white/90 select-none">?</span>
+              </div>
             </div>
           )}
           {renderCardContent()}
