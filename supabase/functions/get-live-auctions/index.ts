@@ -25,8 +25,8 @@ serve(async (_req) => {
     const { data: auctions, error: auctionsError } = await supabase
       .from('auctions')
       .select('*, auction_items(name, description, is_mystery_box)')
-      .lte('start_time', now) // Start time is in the past
-      .gte('end_time', now)   // End time is in the future
+      .lte('start_time', now) // Start time is in the past or present
+      .gte('end_time', now)   // End time is in the future or present
       .order('end_time', { ascending: true });
 
     if (auctionsError) throw auctionsError;
