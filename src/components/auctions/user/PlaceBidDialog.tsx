@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
 import { HandCoins } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   bid_amount: z.coerce.number().int().positive("Bid must be a positive number."),
@@ -61,9 +62,10 @@ interface PlaceBidDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   auction: Auction | null;
+  isFinalSeconds: boolean;
 }
 
-export const PlaceBidDialog = ({ open, onOpenChange, auction }: PlaceBidDialogProps) => {
+export const PlaceBidDialog = ({ open, onOpenChange, auction, isFinalSeconds }: PlaceBidDialogProps) => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const form = useForm<FormValues>({
@@ -76,7 +78,7 @@ export const PlaceBidDialog = ({ open, onOpenChange, auction }: PlaceBidDialogPr
   const { data: bids, isLoading: bidsLoading } = useQuery<BidWithProfile[]>({
     queryKey: ["bids", auction?.id],
     queryFn: () => fetchBids(auction!.id),
-    enabled: !!auction && open,
+    enabled: !!auction && open && !isFinalSeconds,
   });
 
   React.useEffect(() => {
@@ -114,7 +116,6 @@ export const PlaceBidDialog = ({ open, onOpenChange, auction }: PlaceBidDialogPr
     mutationFn: placeBid,
     onSuccess: () => {
       showSuccess("Bid placed successfully!");
-      // Keep dialog open and update suggested bid
       const latestPrice = (queryClient.getQueryData<Auction[]>(['liveAuctions'])?.find(a => a.id === auction?.id)?.current_price) || auction?.current_price || 0;
       form.reset({ bid_amount: latestPrice + 1 });
     },
@@ -123,7 +124,7 @@ export const PlaceBidDialog = ({ open, onOpenChange, auction }: PlaceBidDialogPr
 
   const onSubmit = (values: FormValues) => {
     if (!auction) return;
-    if (values.bid_amount <= auction.current_price) {
+    if (!isFinalSeconds && values.bid_amount <= auction.current_price) {
       form.setError("bid_amount", { message: "Bid must be higher than the current price." });
       return;
     }
@@ -136,49 +137,49 @@ export const PlaceBidDialog = ({ open, onOpenChange, auction }: PlaceBidDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className={cn("sm:max-w-3xl", isFinalSeconds && "sm:max-w-md")}>
         <DialogHeader>
           <DialogTitle>Place Bid on: {auction?.auction_items.name}</DialogTitle>
           <DialogDescription>
-            Current price is {auction?.current_price} GP. Your balance is {profile?.game_points || 0} GP.
+            {isFinalSeconds
+              ? "Bidding is blind for the final moments!"
+              : `Current price is ${auction?.current_price} GP.`}
+            {' '}Your balance is {profile?.game_points || 0} GP.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-          {/* Left side: Live Bidding */}
-          <div className="space-y-2">
-            <h3 className="font-semibold">Live Bidding</h3>
-            <ScrollArea className="h-72 w-full rounded-md border p-2">
-              {bidsLoading ? (
-                <div className="space-y-2 p-2">
-                  <Skeleton className="h-8 w-full" />
-                  <Skeleton className="h-8 w-full" />
-                  <Skeleton className="h-8 w-full" />
-                </div>
-              ) : bids && bids.length > 0 ? (
-                <ul className="space-y-2">
-                  {bids.map(bid => (
-                    <li key={bid.id} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded-md">
-                      <div className="flex items-center gap-2">
-                        <HandCoins className="h-4 w-4 text-muted-foreground" />
-                        <span>
-                          <span className="font-semibold">{bid.profiles?.full_name || 'A user'}</span> bid <span className="font-bold text-primary">{bid.bid_amount} GP</span>
+        <div className={cn("grid gap-6 py-4", !isFinalSeconds && "md:grid-cols-2")}>
+          {!isFinalSeconds && (
+            <div className="space-y-2">
+              <h3 className="font-semibold">Live Bidding</h3>
+              <ScrollArea className="h-72 w-full rounded-md border p-2">
+                {bidsLoading ? (
+                  <div className="space-y-2 p-2">
+                    <Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" />
+                  </div>
+                ) : bids && bids.length > 0 ? (
+                  <ul className="space-y-2">
+                    {bids.map(bid => (
+                      <li key={bid.id} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <HandCoins className="h-4 w-4 text-muted-foreground" />
+                          <span>
+                            <span className="font-semibold">{bid.profiles?.full_name || 'A user'}</span> bid <span className="font-bold text-primary">{bid.bid_amount} GP</span>
+                          </span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(bid.created_at), { addSuffix: true })}
                         </span>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(bid.created_at), { addSuffix: true })}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                  No bids yet. Be the first!
-                </div>
-              )}
-            </ScrollArea>
-          </div>
-
-          {/* Right side: Place Bid Form */}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                    No bids yet. Be the first!
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+          )}
           <div>
             <h3 className="font-semibold mb-2">Your Bid</h3>
             <Form {...form}>

@@ -1,14 +1,12 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gavel, Trophy } from 'lucide-react'; // Import Trophy icon
+import { Trophy } from 'lucide-react';
 import { Auction } from "@/types/auction";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PlaceBidDialog } from "@/components/auctions/user/PlaceBidDialog";
-import { CountdownTimer } from "@/components/auctions/CountdownTimer";
-import { MyWinningsDialog } from "@/components/auctions/user/MyWinningsDialog"; // Import the new dialog
+import { MyWinningsDialog } from "@/components/auctions/user/MyWinningsDialog";
+import { AuctionCard } from "@/components/auctions/user/AuctionCard";
 
 const fetchLiveAuctions = async (): Promise<Auction[]> => {
   const { data, error } = await supabase.functions.invoke("get-live-auctions");
@@ -17,17 +15,16 @@ const fetchLiveAuctions = async (): Promise<Auction[]> => {
 };
 
 const AuctionPage = () => {
-  const [auctionToBid, setAuctionToBid] = React.useState<Auction | null>(null);
-  const [isWinningsDialogOpen, setIsWinningsDialogOpen] = React.useState(false); // State for winnings dialog
-  const { data: auctions, isLoading, refetch } = useQuery<Auction[]>({
+  const [isWinningsDialogOpen, setIsWinningsDialogOpen] = React.useState(false);
+  const { data: auctions, isLoading } = useQuery<Auction[]>({
     queryKey: ["liveAuctions"],
     queryFn: fetchLiveAuctions,
+    refetchInterval: 30000, // Refetch every 30 seconds to get new auctions
   });
 
   return (
     <>
-      <PlaceBidDialog open={!!auctionToBid} onOpenChange={() => setAuctionToBid(null)} auction={auctionToBid} />
-      <MyWinningsDialog open={isWinningsDialogOpen} onOpenChange={setIsWinningsDialogOpen} /> {/* Render the dialog */}
+      <MyWinningsDialog open={isWinningsDialogOpen} onOpenChange={setIsWinningsDialogOpen} />
       
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -54,29 +51,7 @@ const AuctionPage = () => {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
             {auctions.map((auction) => (
-              <Card key={auction.id}>
-                <CardHeader>
-                  <CardTitle>{auction.auction_items.name}</CardTitle>
-                  <CardDescription>{auction.auction_items.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Current Bid</p>
-                    <p className="text-2xl font-bold">{auction.current_price} GP</p>
-                    <p className="text-xs text-muted-foreground">
-                      by {auction.profiles?.full_name || "No bids yet"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Time Remaining</p>
-                    <CountdownTimer targetDate={auction.end_time} onEnd={refetch} className="font-semibold" />
-                  </div>
-                  <Button className="w-full" onClick={() => setAuctionToBid(auction)}>
-                    <Gavel className="mr-2 h-4 w-4" />
-                    Place Bid
-                  </Button>
-                </CardContent>
-              </Card>
+              <AuctionCard key={auction.id} auction={auction} />
             ))}
           </div>
         )}
