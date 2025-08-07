@@ -16,7 +16,11 @@ const fetchMyWinnings = async (): Promise<Auction[]> => {
   return data || [];
 };
 
-export const MyWinnings = () => {
+interface MyWinningsProps {
+  isDialog?: boolean; // New prop to indicate if it's used inside a dialog
+}
+
+export const MyWinnings = ({ isDialog = false }: MyWinningsProps) => {
   const [auctionToReveal, setAuctionToReveal] = React.useState<Auction | null>(null);
   const { data: winnings, isLoading } = useQuery<Auction[]>({
     queryKey: ["myWinnings"],
@@ -32,25 +36,32 @@ export const MyWinnings = () => {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader><CardTitle>My Winnings</CardTitle></CardHeader>
+      <Card className={isDialog ? "border-none shadow-none" : ""}>
+        {!isDialog && <CardHeader><CardTitle>My Winnings</CardTitle></CardHeader>}
         <CardContent><Skeleton className="h-24 w-full" /></CardContent>
       </Card>
     );
   }
 
   if (!winnings || winnings.length === 0) {
-    return null; // Don't show the section if there are no winnings
+    return (
+      <div className="text-center py-10 text-muted-foreground">
+        <Trophy className="mx-auto h-12 w-12 mb-4" />
+        <p>No winnings yet. Start bidding!</p>
+      </div>
+    );
   }
 
   return (
     <>
       <RevealPrizeDialog open={!!auctionToReveal} onOpenChange={() => setAuctionToReveal(null)} auction={auctionToReveal} />
-      <Card>
-        <CardHeader>
-          <CardTitle>My Winnings</CardTitle>
-          <CardDescription>Prizes from auctions you've won.</CardDescription>
-        </CardHeader>
+      <Card className={isDialog ? "border-none shadow-none" : ""}>
+        {!isDialog && (
+          <CardHeader>
+            <CardTitle>My Winnings</CardTitle>
+            <CardDescription>Prizes from auctions you've won.</CardDescription>
+          </CardHeader>
+        )}
         <CardContent className="space-y-4">
           {winnings.map(auction => (
             <div key={auction.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
