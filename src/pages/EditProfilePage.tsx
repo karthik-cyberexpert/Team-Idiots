@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { showSuccess, showError } from "@/utils/toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AvatarUpload } from "@/components/profile/AvatarUpload"; // Import the new component
 
 const profileFormSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
@@ -114,11 +115,12 @@ const EditProfilePage = () => {
       <Card className="group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.01] hover:shadow-lg hover:rotate-x-0.5 hover:rotate-y-0.5 shadow-md">
         <CardHeader>
           <CardTitle>Profile Information</CardTitle>
-          <CardDescription>Update your full name here.</CardDescription>
+          <CardDescription>Update your avatar and full name here.</CardDescription>
         </CardHeader>
         <Form {...profileForm}>
           <form onSubmit={profileForm.handleSubmit((v) => updateProfileMutation.mutate(v))}>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <AvatarUpload />
               <FormField control={profileForm.control} name="fullName" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
