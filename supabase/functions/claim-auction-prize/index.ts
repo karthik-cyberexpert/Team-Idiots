@@ -28,13 +28,11 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated.");
 
-    // Use service role key for admin-level operations
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 1. Fetch the auction and item details
     const { data: auction, error: auctionError } = await supabaseAdmin
       .from('auctions')
       .select('*, auction_items(*)')
@@ -43,7 +41,6 @@ serve(async (req) => {
 
     if (auctionError) throw auctionError;
 
-    // 2. Security checks
     if (auction.status !== 'ended') throw new Error("Auction has not ended yet.");
     if (auction.current_highest_bidder !== user.id) throw new Error("You are not the winner of this auction.");
     if (auction.is_claimed) throw new Error("This prize has already been claimed.");
@@ -51,79 +48,50 @@ serve(async (req) => {
     let awardedPrize = null;
     let awardedMessage = "Prize claimed successfully!";
 
-    // 3. Handle prize logic
     if (auction.auction_items.is_mystery_box) {
       const contents = auction.auction_items.mystery_box_contents;
-      if (!Array.isArray(contents) || contents.length === 0) {
-        throw new Error("Mystery box contents are invalid.");
-      }
-
-      // Randomly select a prize
+      if (!Array.isArray(contents) || contents.length === 0) throw new Error("Mystery box contents are invalid.");
+      
       awardedPrize = contents[Math.floor(Math.random() * contents.length)];
       awardedMessage = `You won ${awardedPrize.amount} ${awardedPrize.type.toUpperCase()}!`;
 
-      // Fetch user's current profile to update points/xp
-      const { data: profile, error: profileError } = await supabaseAdmin
-        .from('profiles')
-        .select('game_points, xp')
-        .eq('id', user.id)
-        .single();
-      
-      if (profileError) throw profileError;
+      if (awardedPrize.type !== 'nothing') {
+        const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('game_points, xp').eq('id', user.id).single();
+        if (profileError) throw profileError;
 
-      const updatePayload: { game_points?: number; xp?: number } = {};
-      if (awardedPrize.type === 'gp') {
-        updatePayload.game_points = Math.max(0, profile.game_points + awardedPrize.amount);
-      } else if (awardedPrize.type === 'xp') {
-        updatePayload.xp = Math.max(0, profile.xp + awardedPrize.amount);
+        const updatePayload: { game_points?: number; xp?: number } = {};
+        if (awardedPrize.type === 'gp') updatePayload.game_points = Math.max(0, profile.game_points + awardedPrize.amount);
+        if (awardedPrize.type === 'xp') updatePayload.xp = Math.max(0, profile.xp + awardedPrize.amount);
+        
+        await supabaseAdmin.from('profiles').update(updatePayload).eq('id', user.id);
       }
+    } else if (auction.auction_items.is_power_box) {
+      const contents = auction.auction_items.power_box_contents;
+      if (!Array.isArray(contents) || contents.length === 0) throw new Error("Power box contents are invalid.");
 
-      const { error: updateProfileError } = await supabaseAdmin
-        .from('profiles')
-        .update(updatePayload)
-        .eq('id', user.id);
+      const powerWon = contents[Math.floor(Math.random() * contents.length)];
+      awardedPrize = { type: 'power_up', power: powerWon };
+      awardedMessage = `You received the power: ${powerWon.replace(/_/g, ' ')}!`;
 
-      if (updateProfileError) throw updateProfileError;
+      if (powerWon !== 'nothing') {
+        const powerUpPayload: any = { user_id: user.id, power_type: powerWon };
+        if (powerWon === '2x_boost' || powerWon === '4x_boost') {
+          const expires = new Date();
+          expires.setHours(expires.getHours() + 24);
+          powerUpPayload.expires_at = expires.toISOString();
+        }
+        await supabaseAdmin.from('user_power_ups').insert(powerUpPayload);
+      }
     } else {
-      // This is a regular item. Award a small XP bonus for claiming.
       const xpBonus = 25;
-      
-      const { data: profile, error: profileError } = await supabaseAdmin
-        .from('profiles')
-        .select('xp')
-        .eq('id', user.id)
-        .single();
-      
+      const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('xp').eq('id', user.id).single();
       if (profileError) throw profileError;
-
-      const { error: updateProfileError } = await supabaseAdmin
-        .from('profiles')
-        .update({ xp: profile.xp + xpBonus })
-        .eq('id', user.id);
-
-      if (updateProfileError) throw updateProfileError;
-
-      // Log the XP change
-      const { error: logError } = await supabaseAdmin
-        .from('xp_history')
-        .insert({
-          user_id: user.id,
-          xp_change: xpBonus,
-          reason: `Claimed auction item: ${auction.auction_items.name}`,
-        });
-      
-      if (logError) console.error("Failed to log XP history for auction claim:", logError.message);
-
+      await supabaseAdmin.from('profiles').update({ xp: profile.xp + xpBonus }).eq('id', user.id);
+      await supabaseAdmin.from('xp_history').insert({ user_id: user.id, xp_change: xpBonus, reason: `Claimed auction item: ${auction.auction_items.name}` });
       awardedMessage = `Item claimed! You received a bonus of ${xpBonus} XP.`;
     }
 
-    // 4. Mark auction as claimed
-    const { error: updateAuctionError } = await supabaseAdmin
-      .from('auctions')
-      .update({ is_claimed: true })
-      .eq('id', auction_id);
-
-    if (updateAuctionError) throw updateAuctionError;
+    await supabaseAdmin.from('auctions').update({ is_claimed: true }).eq('id', auction_id);
 
     return new Response(JSON.stringify({ message: awardedMessage, prize: awardedPrize }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 

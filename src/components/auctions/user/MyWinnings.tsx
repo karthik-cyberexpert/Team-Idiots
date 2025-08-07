@@ -9,7 +9,7 @@ import { Auction, MysteryBoxContent } from "@/types/auction";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RevealPrizeDialog } from "./RevealPrizeDialog";
 import { ItemDetailsDialog } from "./ItemDetailsDialog";
-import { Trophy, Gift, Eye } from "lucide-react";
+import { Trophy, Gift, Eye, Zap } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { useAuth } from "@/contexts/AuthProvider";
 import { format } from "date-fns";
@@ -46,7 +46,7 @@ export const MyWinnings = ({ isDialog = false }: MyWinningsProps) => {
     onSuccess: (data, auction) => {
       showSuccess(data.message);
       
-      if (!auction.auction_items.is_mystery_box) {
+      if (!auction.auction_items.is_mystery_box && !auction.auction_items.is_power_box) {
         setItemToShowDetails(auction);
       }
       
@@ -61,7 +61,7 @@ export const MyWinnings = ({ isDialog = false }: MyWinningsProps) => {
   });
 
   const handleClaim = (auction: Auction) => {
-    if (auction.auction_items.is_mystery_box) {
+    if (auction.auction_items.is_mystery_box || auction.auction_items.is_power_box) {
       setAuctionToReveal(auction);
     } else {
       claimMutation.mutate(auction);
@@ -105,7 +105,8 @@ export const MyWinnings = ({ isDialog = false }: MyWinningsProps) => {
                   <div>
                     <p className="font-semibold flex items-center gap-2">
                       {auction.auction_items.is_mystery_box && <Gift className="h-4 w-4 text-vibrant-purple" />}
-                      {auction.auction_items.is_mystery_box ? "Mystery Box" : auction.auction_items.name}
+                      {auction.auction_items.is_power_box && <Zap className="h-4 w-4 text-vibrant-yellow" />}
+                      {auction.auction_items.is_mystery_box ? "Mystery Box" : auction.auction_items.is_power_box ? "Power Box" : auction.auction_items.name}
                     </p>
                     <p className="text-sm text-muted-foreground">Won for {auction.current_price} GP</p>
                     <p className="text-xs text-muted-foreground">
@@ -122,7 +123,7 @@ export const MyWinnings = ({ isDialog = false }: MyWinningsProps) => {
                       onClick={() => handleClaim(auction)}
                       disabled={claimMutation.isPending && claimMutation.variables?.id === auction.id}
                     >
-                      {auction.auction_items.is_mystery_box ? (
+                      {(auction.auction_items.is_mystery_box || auction.auction_items.is_power_box) ? (
                         <><Gift className="mr-2 h-4 w-4" /> Reveal Prize</>
                       ) : (
                         claimMutation.isPending && claimMutation.variables?.id === auction.id ? (

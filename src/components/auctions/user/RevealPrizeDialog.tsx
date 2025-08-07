@@ -6,11 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { showError } from "@/utils/toast";
-import { Auction, MysteryBoxContent } from "@/types/auction";
-import { Gift, Star, Coins } from "lucide-react";
+import { Auction, MysteryBoxContent, PowerUpType } from "@/types/auction";
+import { Gift, Star, Coins, Zap, Shield, X, Handshake, Swords } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const claimPrize = async (auction_id: string): Promise<{ prize: MysteryBoxContent | null }> => {
+type RevealedPrize = (MysteryBoxContent & { power?: never }) | { type: 'power_up'; power: PowerUpType; amount?: never };
+
+const claimPrize = async (auction_id: string): Promise<{ prize: RevealedPrize | null }> => {
   const { data, error } = await supabase.functions.invoke("claim-auction-prize", { body: { auction_id } });
   if (error) throw new Error(error.message);
   return data;
@@ -22,20 +24,55 @@ interface RevealPrizeDialogProps {
   auction: Auction | null;
 }
 
+const PrizeIcon = ({ prize }: { prize: RevealedPrize }) => {
+  if (prize.type === 'gp') return <Coins className="h-8 w-8 text-vibrant-gold" />;
+  if (prize.type === 'xp') return <Star className="h-8 w-8 text-vibrant-yellow" />;
+  if (prize.type === 'nothing') return <X className="h-8 w-8 text-muted-foreground" />;
+  if (prize.type === 'power_up') {
+    switch (prize.power) {
+      case '2x_boost':
+      case '4x_boost':
+        return <Zap className="h-8 w-8 text-vibrant-blue" />;
+      case 'shield':
+        return <Shield className="h-8 w-8 text-vibrant-green" />;
+      case 'attack':
+        return <Swords className="h-8 w-8 text-vibrant-red" />;
+      case 'gp_transfer':
+        return <Handshake className="h-8 w-8 text-vibrant-pink" />;
+      default:
+        return <X className="h-8 w-8 text-muted-foreground" />;
+    }
+  }
+  return null;
+};
+
+const PrizeText = ({ prize }: { prize: RevealedPrize }) => {
+  if (prize.type === 'gp' || prize.type === 'xp') {
+    return <p className="text-2xl font-bold mt-2">{prize.amount > 0 ? '+' : ''}{prize.amount} {prize.type.toUpperCase()}</p>;
+  }
+  if (prize.type === 'nothing') {
+    return <p className="text-lg font-semibold mt-2">You get nothing 😝</p>;
+  }
+  if (prize.type === 'power_up') {
+    const powerLabel = prize.power.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return <p className="text-lg font-semibold mt-2">{powerLabel}</p>;
+  }
+  return null;
+};
+
 export const RevealPrizeDialog = ({ open, onOpenChange, auction }: RevealPrizeDialogProps) => {
   const queryClient = useQueryClient();
   const [revealedIndex, setRevealedIndex] = React.useState<number | null>(null);
-  const [revealedPrize, setRevealedPrize] = React.useState<MysteryBoxContent | null>(null);
+  const [revealedPrize, setRevealedPrize] = React.useState<RevealedPrize | null>(null);
   const [isRevealing, setIsRevealing] = React.useState(false);
 
   React.useEffect(() => {
     if (!open) {
-      // Reset state when dialog closes
       setTimeout(() => {
         setRevealedIndex(null);
         setRevealedPrize(null);
         setIsRevealing(false);
-      }, 300); // Delay to allow animations to finish
+      }, 300);
     }
   }, [open]);
 
@@ -44,7 +81,7 @@ export const RevealPrizeDialog = ({ open, onOpenChange, auction }: RevealPrizeDi
     onSuccess: (data) => {
       setRevealedPrize(data.prize);
       queryClient.invalidateQueries({ queryKey: ["myWinnings"] });
-      queryClient.invalidateQueries({ queryKey: ["users"] }); // To update game points/xp
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (err: Error) => {
       showError(err.message);
@@ -60,16 +97,14 @@ export const RevealPrizeDialog = ({ open, onOpenChange, auction }: RevealPrizeDi
     mutation.mutate(auction.id);
   };
 
-  const PrizeIcon = ({ type }: { type: 'gp' | 'xp' }) => {
-    if (type === 'gp') return <Coins className="h-8 w-8 text-vibrant-gold" />;
-    return <Star className="h-8 w-8 text-vibrant-yellow" />;
-  };
+  const boxType = auction?.auction_items.is_power_box ? 'Power Box' : 'Mystery Prize';
+  const BoxIcon = auction?.auction_items.is_power_box ? Zap : Gift;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Reveal Your Mystery Prize!</DialogTitle>
+          <DialogTitle>Reveal Your {boxType}!</DialogTitle>
           <DialogDescription>Pick one card to reveal your prize.</DialogDescription>
         </DialogHeader>
         <div className="py-8 [perspective:1000px]">
@@ -82,21 +117,17 @@ export const RevealPrizeDialog = ({ open, onOpenChange, auction }: RevealPrizeDi
                     revealedIndex === index && "[transform:rotateY(180deg)]"
                   )}
                 >
-                  {/* Card Front (Question Mark) */}
                   <div className="absolute w-full h-full flex items-center justify-center bg-primary rounded-lg shadow-lg cursor-pointer [backface-visibility:hidden]">
-                    <Gift className="h-16 w-16 text-primary-foreground" />
+                    <BoxIcon className="h-16 w-16 text-primary-foreground" />
                   </div>
-                  {/* Card Back (Prize) */}
                   <div className="absolute w-full h-full flex flex-col items-center justify-center bg-card border rounded-lg shadow-lg [transform:rotateY(180deg)] [backface-visibility:hidden]">
                     {revealedPrize ? (
                       <>
-                        <PrizeIcon type={revealedPrize.type} />
-                        <p className="text-2xl font-bold mt-2">
-                          {revealedPrize.amount > 0 ? '+' : ''}{revealedPrize.amount} {revealedPrize.type.toUpperCase()}
-                        </p>
+                        <PrizeIcon prize={revealedPrize} />
+                        <PrizeText prize={revealedPrize} />
                       </>
                     ) : (
-                      <Gift className="h-16 w-16 text-muted-foreground animate-pulse" />
+                      <BoxIcon className="h-16 w-16 text-muted-foreground animate-pulse" />
                     )}
                   </div>
                 </div>
@@ -106,7 +137,7 @@ export const RevealPrizeDialog = ({ open, onOpenChange, auction }: RevealPrizeDi
         </div>
         {revealedPrize && (
           <div className="text-center">
-            <p className="text-lg font-semibold">Congratulations! You've won {revealedPrize.amount} {revealedPrize.type.toUpperCase()}!</p>
+            <p className="text-lg font-semibold">Congratulations!</p>
             <Button className="mt-4" onClick={() => onOpenChange(false)}>Close</Button>
           </div>
         )}
