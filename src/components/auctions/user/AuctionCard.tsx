@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Gavel } from 'lucide-react';
 import { Auction } from "@/types/auction";
 import { PlaceBidDialog } from "./PlaceBidDialog";
-import { CountdownTimer } from "./CountdownTimer";
+import { CountdownTimer } from "../CountdownTimer";
 import { FinalCountdown } from "./FinalCountdown";
 import { AuctionEndDisplay } from "./AuctionEndDisplay";
 import { supabase } from "@/integrations/supabase/client";
