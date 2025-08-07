@@ -53,6 +53,12 @@ const AuctionManagementPage = () => {
     queryFn: fetchAuctionData,
   });
 
+  const availableItems = React.useMemo(() => {
+    if (!data) return [];
+    const auctionedItemIds = new Set(data.auctions.map(auction => auction.item_id));
+    return data.items.filter(item => !auctionedItemIds.has(item.id));
+  }, [data]);
+
   const filteredAuctions = React.useMemo(() => {
     if (!data?.auctions) return [];
     if (!selectedDate) return data.auctions;
@@ -165,7 +171,7 @@ const AuctionManagementPage = () => {
             <CardDescription>Manage items available for auction.</CardDescription>
           </CardHeader>
           <CardContent>
-            <DataTable columns={itemsColumns} data={data?.items || []} />
+            <DataTable columns={itemsColumns} data={availableItems} />
           </CardContent>
         </Card>
         <Card>
