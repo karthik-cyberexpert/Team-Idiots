@@ -198,8 +198,8 @@
 .magic-gradient-text.gradient-scope-full label:not([data-radix-collection-item]),
 .magic-gradient-text.gradient-scope-full [class*="description"]:not([data-radix-collection-item]),
 .magic-gradient-text.gradient-scope-full [class*="foreground"]:not([data-radix-collection-item]),
-.magic-gradient-text.gradient-scope-full button:not([data-radix-collection-item]),
-.magic-gradient-text.gradient-scope-full a:not([data-radix-collection-item]) {
+.magic-gradient-text.gradient-scope-full button > span,
+.magic-gradient-text.gradient-scope-full a {
   background-image: var(--magic-gradient, linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab));
   background-size: 400% 400%;
   animation: animated-gradient 15s ease infinite;
@@ -207,6 +207,28 @@
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
+}
+
+/* --- FIXES for Gradient Theme --- */
+/* Prevent icons from becoming transparent */
+.magic-gradient-text svg {
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  background-image: none !important;
+  -webkit-text-fill-color: initial !important;
+  color: currentColor !important;
+  fill: currentColor !important;
+}
+
+/* Prevent radio buttons from becoming transparent */
+.magic-gradient-text [role="radio"] > span {
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  background-image: none !important;
+  -webkit-text-fill-color: initial !important;
+}
+.magic-gradient-text [role="radio"][data-state="checked"] > span {
+  background-color: hsl(var(--primary)) !important;
 }
 
 
