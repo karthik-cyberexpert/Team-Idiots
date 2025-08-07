@@ -26,6 +26,7 @@ import GameLeaderboardPage from "./pages/GameLeaderboardPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AuctionManagementPage from "./pages/admin/AuctionManagementPage";
 import AuctionPage from "./pages/AuctionPage";
+import PowerUpsPage from "./pages/PowerUpsPage";
 
 export const AppRoutes = () => {
   const { maintenanceMode, loading: settingsLoading } = useSettings();
@@ -65,6 +66,7 @@ export const AppRoutes = () => {
           <Route path="/dashboard/typer" element={<ErrorBoundary><TyperPage /></ErrorBoundary>} />
           <Route path="/dashboard/game-leaderboard" element={<ErrorBoundary><GameLeaderboardPage /></ErrorBoundary>} />
           <Route path="/dashboard/auction" element={<ErrorBoundary><AuctionPage /></ErrorBoundary>} />
+          <Route path="/dashboard/power-ups" element={<ErrorBoundary><PowerUpsPage /></ErrorBoundary>} />
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<ErrorBoundary><UserManagement /></ErrorBoundary>} />
             <Route path="/admin/tasks" element={<ErrorBoundary><TaskManagement /></ErrorBoundary>} />
