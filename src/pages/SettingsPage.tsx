@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const SettingsPage = () => {
-  const { theme, setTheme, fontSize, setFontSize, fontFamily, setFontFamily, magicTheme, setMagicTheme } = useTheme();
+  const { theme, setTheme, fontSize, setFontSize, fontFamily, setFontFamily, magicTheme, setMagicTheme, gradientScope, setGradientScope } = useTheme();
 
   return (
     <div className="space-y-6 [perspective:1000px]">
@@ -75,6 +75,25 @@ const SettingsPage = () => {
               <Label htmlFor="magic-gradient">Motion Gradient Text</Label>
             </div>
           </RadioGroup>
+          {magicTheme === 'gradient' && (
+            <div className="pt-4 mt-4 border-t">
+              <Label>Gradient Scope</Label>
+              <RadioGroup
+                value={gradientScope}
+                onValueChange={(value) => setGradientScope(value as any)}
+                className="space-y-2 mt-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="headings" id="scope-headings" />
+                  <Label htmlFor="scope-headings">Headings Only</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="full" id="scope-full" />
+                  <Label htmlFor="scope-full">Everything</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -89,7 +89,7 @@
     --radius: 0.3rem;
   }
 
-  /* Light Magic Themes (background is NOT changed) */
+  /* Light Magic Themes (background is inherited from .light) */
   .theme-sunset { --foreground: 20 15% 25%; --card: 35 100% 92%; --primary: 350 80% 55%; --primary-foreground: 0 0% 100%; --secondary: 10 80% 85%; --accent: 300 80% 60%; }
   .theme-ocean { --foreground: 210 30% 20%; --card: 200 100% 95%; --primary: 210 80% 50%; --primary-foreground: 0 0% 100%; --secondary: 180 50% 90%; --accent: 170 70% 40%; }
   .theme-forest { --foreground: 100 25% 15%; --card: 100 20% 92%; --primary: 120 60% 30%; --primary-foreground: 0 0% 100%; --secondary: 80 30% 85%; --accent: 40 60% 50%; }
@@ -103,7 +103,7 @@
   .theme-spring { --foreground: 100 20% 25%; --card: 90 100% 94%; --primary: 140 60% 60%; --primary-foreground: 0 0% 100%; --secondary: 40 80% 92%; --accent: 340 80% 75%; }
   .theme-monochrome { --foreground: 0 0% 10%; --card: 0 0% 100%; --primary: 0 0% 20%; --primary-foreground: 0 0% 95%; --secondary: 0 0% 94%; --accent: 0 0% 40%; }
 
-  /* Dark Magic Themes (background is NOT changed) */
+  /* Dark Magic Themes (background is inherited from :root/dark) */
   .theme-matrix { --foreground: 120 80% 70%; --card: 120 100% 8%; --primary: 120 70% 50%; --primary-foreground: 120 100% 10%; --secondary: 120 50% 12%; --accent: 120 90% 60%; }
   .theme-cyberpunk { --foreground: 240 20% 90%; --card: 240 50% 12%; --primary: 330 100% 60%; --primary-foreground: 0 0% 100%; --secondary: 240 40% 18%; --accent: 180 100% 50%; }
   .theme-tokyo-night { --foreground: 240 15% 85%; --card: 240 15% 12%; --primary: 270 80% 70%; --primary-foreground: 0 0% 100%; --secondary: 240 10% 18%; --accent: 190 80% 65%; }
@@ -189,17 +189,52 @@
 }
 
 /* Magic Theme 3: Gradient Text */
-html.magic-gradient-text h1, 
-html.magic-gradient-text h2, 
-html.magic-gradient-text h3, 
-html.magic-gradient-text .text-primary,
-html.magic-gradient-text .font-bold {
-  background-image: linear-gradient(-45deg, #ff0000, #8A2BE2, #4B0082, #00FF00, #0000FF, #EE82EE, #ff0000);
+.magic-gradient-text h1, 
+.magic-gradient-text h2, 
+.magic-gradient-text h3, 
+.magic-gradient-text .text-primary,
+.magic-gradient-text .font-bold,
+.magic-gradient-text.gradient-scope-full p,
+.magic-gradient-text.gradient-scope-full label,
+.magic-gradient-text.gradient-scope-full [class*="description"],
+.magic-gradient-text.gradient-scope-full [class*="foreground"],
+.magic-gradient-text.gradient-scope-full button,
+.magic-gradient-text.gradient-scope-full a {
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
   background-size: 400% 400%;
   animation: animated-gradient 10s ease infinite;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+}
+
+.light .magic-gradient-text,
+.retro .magic-gradient-text {
+  --gradient-color-1: #6a11cb;
+  --gradient-color-2: #2575fc;
+  --gradient-color-3: #ec008c;
+  --gradient-color-4: #fc6767;
+}
+
+.dark .magic-gradient-text {
+  --gradient-color-1: #f8ffae;
+  --gradient-color-2: #43c6ac;
+  --gradient-color-3: #ff7e5f;
+  --gradient-color-4: #feb47b;
+}
+
+.magic-gradient-text h1, 
+.magic-gradient-text h2, 
+.magic-gradient-text h3, 
+.magic-gradient-text .text-primary,
+.magic-gradient-text .font-bold,
+.magic-gradient-text.gradient-scope-full p,
+.magic-gradient-text.gradient-scope-full label,
+.magic-gradient-text.gradient-scope-full [class*="description"],
+.magic-gradient-text.gradient-scope-full [class*="foreground"],
+.magic-gradient-text.gradient-scope-full button,
+.magic-gradient-text.gradient-scope-full a {
+  background-image: linear-gradient(-45deg, var(--gradient-color-1), var(--gradient-color-2), var(--gradient-color-3), var(--gradient-color-4));
 }
 
 

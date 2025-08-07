@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Settings, Gamepad2, Gavel, Zap } from "lucide-react";
+import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Gamepad2, Gavel, Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -66,11 +66,6 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       href: "/dashboard/power-ups",
       label: "My Power-ups",
       icon: <Zap className="h-4 w-4" />,
-    },
-    {
-      href: "/dashboard/settings",
-      label: "Settings",
-      icon: <Settings className="h-4 w-4" />,
     },
     {
       href: "/admin/users",

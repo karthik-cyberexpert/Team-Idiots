@@ -4,6 +4,7 @@ type Theme = "light" | "dark" | "retro";
 type FontSize = "sm" | "md" | "lg";
 type FontFamily = "sans" | "serif" | "mono";
 type MagicTheme = "none" | "refresh" | "click" | "gradient";
+type GradientScope = "headings" | "full";
 
 const lightMagicThemeNames = [
   "theme-sunset", "theme-ocean", "theme-forest", "theme-lavender",
@@ -24,10 +25,12 @@ interface ThemeProviderState {
   fontSize: FontSize;
   fontFamily: FontFamily;
   magicTheme: MagicTheme;
+  gradientScope: GradientScope;
   setTheme: (theme: Theme) => void;
   setFontSize: (size: FontSize) => void;
   setFontFamily: (family: FontFamily) => void;
   setMagicTheme: (magicTheme: MagicTheme) => void;
+  setGradientScope: (scope: GradientScope) => void;
 }
 
 const initialState: ThemeProviderState = {
@@ -35,10 +38,12 @@ const initialState: ThemeProviderState = {
   fontSize: "md",
   fontFamily: "sans",
   magicTheme: "none",
+  gradientScope: "headings",
   setTheme: () => null,
   setFontSize: () => null,
   setFontFamily: () => null,
   setMagicTheme: () => null,
+  setGradientScope: () => null,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -48,27 +53,41 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [fontSize, setFontSizeState] = useState<FontSize>(() => (localStorage.getItem("font-size") as FontSize) || "md");
   const [fontFamily, setFontFamilyState] = useState<FontFamily>(() => (localStorage.getItem("font-family") as FontFamily) || "sans");
   const [magicTheme, setMagicThemeState] = useState<MagicTheme>(() => (localStorage.getItem("magic-theme") as MagicTheme) || "none");
+  const [gradientScope, setGradientScopeState] = useState<GradientScope>(() => (localStorage.getItem("gradient-scope") as GradientScope) || "headings");
   const [currentMagicThemeClass, setCurrentMagicThemeClass] = useState<string>('');
 
   // Handle theme application to the root element
   useEffect(() => {
     const root = window.document.documentElement;
     
-    root.classList.remove("light", "dark", "retro", "magic-gradient-text", ...allMagicThemes);
+    root.classList.remove("light", "dark", "retro", "magic-gradient-text", "gradient-scope-full", ...allMagicThemes);
 
     if (magicTheme === 'gradient') {
-      root.classList.add(theme);
       root.classList.add('magic-gradient-text');
-    } else if (magicTheme === 'none') {
+      if (gradientScope === 'full') {
+        root.classList.add('gradient-scope-full');
+      }
+    }
+    
+    if (magicTheme === 'none') {
       root.classList.add(theme);
-    } else {
+    } else if (magicTheme !== 'gradient') {
       if (currentMagicThemeClass) {
         root.classList.add(currentMagicThemeClass);
+        // Add base theme class for background color
+        if (lightMagicThemeNames.includes(currentMagicThemeClass)) {
+          root.classList.add('light');
+        } else {
+          root.classList.add('dark');
+        }
       } else {
         root.classList.add(theme);
       }
+    } else {
+      // For gradient theme, just add the base theme for background
+      root.classList.add(theme);
     }
-  }, [theme, magicTheme, currentMagicThemeClass]);
+  }, [theme, magicTheme, gradientScope, currentMagicThemeClass]);
 
   // Handle Magic Theme 1: Refresh
   useEffect(() => {
@@ -124,15 +143,22 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     setMagicThemeState(newMagicTheme);
   };
 
+  const setGradientScope = (newScope: GradientScope) => {
+    localStorage.setItem("gradient-scope", newScope);
+    setGradientScopeState(newScope);
+  };
+
   const value = {
     theme,
     fontSize,
     fontFamily,
     magicTheme,
+    gradientScope,
     setTheme,
     setFontSize: setFontSizeState,
     setFontFamily: setFontFamilyState,
     setMagicTheme,
+    setGradientScope,
   };
 
   return (
