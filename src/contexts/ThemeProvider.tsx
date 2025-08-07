@@ -20,7 +20,7 @@ const darkMagicThemeNames = [
 
 const allMagicThemes = [...lightMagicThemeNames, ...darkMagicThemeNames];
 
-const VIBGYOR_GRADIENT = "linear-gradient(-45deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #9400D3)";
+const VIBGYOR_GRADIENT = "linear-gradient(-45deg, #9400D3, #4B0082, #0000FF, #00FF00, #FFFF00, #FF7F00, #FF0000)";
 
 interface ThemeProviderState {
   theme: Theme;
