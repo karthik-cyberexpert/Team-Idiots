@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { showSuccess, showError } from "@/utils/toast";
 import { AuctionItem } from "@/types/auction";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -17,12 +16,13 @@ import { Calendar } from "@/components/ui/calendar";
 import { format, setHours, setMinutes } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TimePicker } from "@/components/ui/time-picker";
 
 const formSchema = z.object({
   startDate: z.date({ required_error: "Start date is required." }),
-  startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid start time format (HH:mm)." }),
+  startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Start time is required." }),
   endDate: z.date({ required_error: "End date is required." }),
-  endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid end time format (HH:mm)." }),
+  endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "End time is required." }),
 }).refine(data => {
   if (!data.startDate || !data.startTime || !data.endDate || !data.endTime) {
     return false;
@@ -104,19 +104,19 @@ export const CreateAuctionDialog = ({ open, onOpenChange, item }: CreateAuctionD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Schedule Auction for: {item?.name}</DialogTitle>
           <DialogDescription>Set the start and end times for the auction.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="flex gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="startDate"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col flex-1">
+                  <FormItem>
                     <FormLabel>Start Date</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -154,22 +154,22 @@ export const CreateAuctionDialog = ({ open, onOpenChange, item }: CreateAuctionD
                 control={form.control}
                 name="startTime"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col w-1/3">
-                    <FormLabel>Time</FormLabel>
+                  <FormItem>
+                    <FormLabel>Start Time</FormLabel>
                     <FormControl>
-                      <Input type="time" {...field} />
+                      <TimePicker value={field.value} onChange={field.onChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="endDate"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col flex-1">
+                  <FormItem>
                     <FormLabel>End Date</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -207,10 +207,10 @@ export const CreateAuctionDialog = ({ open, onOpenChange, item }: CreateAuctionD
                 control={form.control}
                 name="endTime"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col w-1/3">
-                    <FormLabel>Time</FormLabel>
+                  <FormItem>
+                    <FormLabel>End Time</FormLabel>
                     <FormControl>
-                      <Input type="time" {...field} />
+                      <TimePicker value={field.value} onChange={field.onChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -14,8 +14,8 @@ import { TyperSet } from "@/types/typer"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { Input } from "@/components/ui/input"
 import { format } from "date-fns"
+import { TimePicker } from "@/components/ui/time-picker"
 
 type TyperSetActions = {
   onShowContent: (set: TyperSet) => void;
@@ -72,11 +72,9 @@ export const getColumns = (actions: TyperSetActions): ColumnDef<TyperSet>[] => [
     cell: ({ row }) => {
       const set = row.original;
       return (
-        <Input
-          type="time"
-          defaultValue={set.start_time || ""}
-          onBlur={(e) => actions.onUpdateTime(set.id, 'start_time', e.target.value)}
-          className="w-32"
+        <TimePicker
+          value={set.start_time || ""}
+          onChange={(time) => actions.onUpdateTime(set.id, 'start_time', time)}
           disabled={set.status !== 'published'}
         />
       );
@@ -88,11 +86,9 @@ export const getColumns = (actions: TyperSetActions): ColumnDef<TyperSet>[] => [
     cell: ({ row }) => {
       const set = row.original;
       return (
-        <Input
-          type="time"
-          defaultValue={set.end_time || ""}
-          onBlur={(e) => actions.onUpdateTime(set.id, 'end_time', e.target.value)}
-          className="w-32"
+        <TimePicker
+          value={set.end_time || ""}
+          onChange={(time) => actions.onUpdateTime(set.id, 'end_time', time)}
           disabled={set.status !== 'published'}
         />
       );
