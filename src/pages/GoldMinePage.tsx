@@ -16,14 +16,20 @@ interface GoldMineStatus {
   next_reset: string;
 }
 
+const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 const fetchGoldMineStatus = async (): Promise<GoldMineStatus> => {
-  const { data, error } = await supabase.functions.invoke("get-gold-mine-status");
+  const { data, error } = await supabase.functions.invoke("get-gold-mine-status", {
+    body: { timezone }
+  });
   if (error) throw new Error(error.message);
   return data;
 };
 
 const logGoldMineClick = async (): Promise<GoldMineStatus & { success: boolean; message: string }> => {
-  const { data, error } = await supabase.functions.invoke("log-gold-mine-click");
+  const { data, error } = await supabase.functions.invoke("log-gold-mine-click", {
+    body: { timezone }
+  });
   if (error) throw new Error(error.message);
   return data;
 };

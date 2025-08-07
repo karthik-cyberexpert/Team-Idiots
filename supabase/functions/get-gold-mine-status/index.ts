@@ -21,8 +21,9 @@ serve(async (req) => {
   }
 
   try {
+    const { timezone } = await req.json().catch(() => ({ timezone: 'UTC' }));
     const supabase = await getAuthenticatedClient(req);
-    const { data, error } = await supabase.rpc('get_gold_mine_status');
+    const { data, error } = await supabase.rpc('get_gold_mine_status', { p_timezone: timezone });
 
     if (error) throw error;
 

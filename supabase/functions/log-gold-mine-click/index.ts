@@ -21,8 +21,9 @@ serve(async (req) => {
   }
 
   try {
+    const { timezone } = await req.json().catch(() => ({ timezone: 'UTC' }));
     const supabase = await getAuthenticatedClient(req);
-    const { data, error } = await supabase.rpc('log_and_award_gp_click');
+    const { data, error } = await supabase.rpc('log_and_award_gp_click', { p_timezone: timezone });
 
     if (error) throw error;
 
