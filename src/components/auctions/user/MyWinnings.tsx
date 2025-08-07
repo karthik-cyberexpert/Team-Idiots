@@ -12,6 +12,8 @@ import { ItemDetailsDialog } from "./ItemDetailsDialog";
 import { Trophy, Gift, Eye } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { useAuth } from "@/contexts/AuthProvider";
+import { format } from "date-fns";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const fetchMyWinnings = async (): Promise<Auction[]> => {
   const { data, error } = await supabase.functions.invoke("get-my-winnings");
@@ -95,36 +97,43 @@ export const MyWinnings = ({ isDialog = false }: MyWinningsProps) => {
             <CardDescription>Prizes from auctions you've won.</CardDescription>
           </CardHeader>
         )}
-        <CardContent className="space-y-4">
-          {winnings.map(auction => (
-            <div key={auction.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div>
-                <p className="font-semibold">{auction.auction_items.name}</p>
-                <p className="text-sm text-muted-foreground">Won for {auction.current_price} GP</p>
-              </div>
-              {auction.is_claimed ? (
-                <Button variant="outline" size="sm" onClick={() => setItemToShowDetails(auction)}>
-                  <Eye className="mr-2 h-4 w-4" /> View Details
-                </Button>
-              ) : (
-                <Button 
-                  size="sm" 
-                  onClick={() => handleClaim(auction)}
-                  disabled={claimMutation.isPending && claimMutation.variables?.id === auction.id}
-                >
-                  {auction.auction_items.is_mystery_box ? (
-                    <><Gift className="mr-2 h-4 w-4" /> Reveal Prize</>
+        <CardContent>
+          <ScrollArea className="h-[250px] pr-4">
+            <div className="space-y-4">
+              {winnings.map(auction => (
+                <div key={auction.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div>
+                    <p className="font-semibold">{auction.auction_items.name}</p>
+                    <p className="text-sm text-muted-foreground">Won for {auction.current_price} GP</p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(auction.end_time), "PPP 'at' p")}
+                    </p>
+                  </div>
+                  {auction.is_claimed ? (
+                    <Button variant="outline" size="sm" onClick={() => setItemToShowDetails(auction)}>
+                      <Eye className="mr-2 h-4 w-4" /> View Details
+                    </Button>
                   ) : (
-                    claimMutation.isPending && claimMutation.variables?.id === auction.id ? (
-                      "Claiming..."
-                    ) : (
-                      <><Trophy className="mr-2 h-4 w-4" /> Claim Item</>
-                    )
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleClaim(auction)}
+                      disabled={claimMutation.isPending && claimMutation.variables?.id === auction.id}
+                    >
+                      {auction.auction_items.is_mystery_box ? (
+                        <><Gift className="mr-2 h-4 w-4" /> Reveal Prize</>
+                      ) : (
+                        claimMutation.isPending && claimMutation.variables?.id === auction.id ? (
+                          "Claiming..."
+                        ) : (
+                          <><Trophy className="mr-2 h-4 w-4" /> Claim Item</>
+                        )
+                      )}
+                    </Button>
                   )}
-                </Button>
-              )}
+                </div>
+              ))}
             </div>
-          ))}
+          </ScrollArea>
         </CardContent>
       </Card>
     </>
