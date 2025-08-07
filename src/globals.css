@@ -194,12 +194,12 @@
 .magic-gradient-text h3, 
 .magic-gradient-text .text-primary,
 .magic-gradient-text .font-bold,
-.magic-gradient-text.gradient-scope-full p,
-.magic-gradient-text.gradient-scope-full label,
-.magic-gradient-text.gradient-scope-full [class*="description"],
-.magic-gradient-text.gradient-scope-full [class*="foreground"],
-.magic-gradient-text.gradient-scope-full button,
-.magic-gradient-text.gradient-scope-full a {
+.magic-gradient-text.gradient-scope-full p:not([data-radix-collection-item]),
+.magic-gradient-text.gradient-scope-full label:not([data-radix-collection-item]),
+.magic-gradient-text.gradient-scope-full [class*="description"]:not([data-radix-collection-item]),
+.magic-gradient-text.gradient-scope-full [class*="foreground"]:not([data-radix-collection-item]),
+.magic-gradient-text.gradient-scope-full button:not([data-radix-collection-item]),
+.magic-gradient-text.gradient-scope-full a:not([data-radix-collection-item]) {
   background-image: var(--magic-gradient, linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab));
   background-size: 400% 400%;
   animation: animated-gradient 15s ease infinite;
