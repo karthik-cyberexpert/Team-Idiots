@@ -24,12 +24,21 @@ const formSchema = z.object({
   endDate: z.date({ required_error: "End date is required." }),
   endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid end time format (HH:mm)." }),
 }).refine(data => {
-  const startDateTime = setMinutes(setHours(data.startDate, parseInt(data.startTime.split(':')[0]), parseInt(data.startTime.split(':')[1])), parseInt(data.startTime.split(':')[1]));
-  const endDateTime = setMinutes(setHours(data.endDate, parseInt(data.endTime.split(':')[0]), parseInt(data.endTime.split(':')[1])), parseInt(data.endTime.split(':')[1]));
+  if (!data.startDate || !data.startTime || !data.endDate || !data.endTime) {
+    return false;
+  }
+  const [startHours, startMinutes] = data.startTime.split(':').map(Number);
+  let startDateTime = setHours(data.startDate, startHours);
+  startDateTime = setMinutes(startDateTime, startMinutes);
+
+  const [endHours, endMinutes] = data.endTime.split(':').map(Number);
+  let endDateTime = setHours(data.endDate, endHours);
+  endDateTime = setMinutes(endDateTime, endMinutes);
+  
   return endDateTime > startDateTime;
 }, {
   message: "End time must be after start time.",
-  path: ["endTime"], // Point to the end time field for the error
+  path: ["endTime"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -58,24 +67,10 @@ export const CreateAuctionDialog = ({ open, onOpenChange, item }: CreateAuctionD
   });
 
   React.useEffect(() => {
-    if (item && open) {
-      const start = new Date(item.start_time);
-      const end = new Date(item.end_time);
-      form.reset({
-        startDate: start,
-        startTime: format(start, 'HH:mm'),
-        endDate: end,
-        endTime: format(end, 'HH:mm'),
-      });
-    } else if (!open) {
-      form.reset({
-        startDate: undefined,
-        startTime: '',
-        endDate: undefined,
-        endTime: '',
-      });
+    if (!open) {
+      form.reset();
     }
-  }, [item, open, form]);
+  }, [open, form]);
 
   const mutation = useMutation({
     mutationFn: createAuction,
@@ -91,8 +86,13 @@ export const CreateAuctionDialog = ({ open, onOpenChange, item }: CreateAuctionD
   const onSubmit = (values: FormValues) => {
     if (!item) return;
 
-    const startDateTime = setMinutes(setHours(values.startDate, parseInt(values.startTime.split(':')[0]), parseInt(values.startTime.split(':')[1])), parseInt(values.startTime.split(':')[1]));
-    const endDateTime = setMinutes(setHours(values.endDate, parseInt(values.endTime.split(':')[0]), parseInt(values.endTime.split(':')[1])), parseInt(values.endTime.split(':')[1]));
+    const [startHours, startMinutes] = values.startTime.split(':').map(Number);
+    let startDateTime = setHours(values.startDate, startHours);
+    startDateTime = setMinutes(startDateTime, startMinutes);
+
+    const [endHours, endMinutes] = values.endTime.split(':').map(Number);
+    let endDateTime = setHours(values.endDate, endHours);
+    endDateTime = setMinutes(endDateTime, endMinutes);
 
     mutation.mutate({
       item_id: item.id,
