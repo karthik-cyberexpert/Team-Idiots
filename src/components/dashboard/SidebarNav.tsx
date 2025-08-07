@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Gamepad2, Gavel, Zap } from "lucide-react";
+import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Gamepad2, Gavel, Zap, Pickaxe } from "lucide-react";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -68,6 +68,11 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       icon: <Zap className="h-4 w-4" />,
     },
     {
+      href: "/dashboard/gold-mine",
+      label: "Gold Mine",
+      icon: <Pickaxe className="h-4 w-4" />,
+    },
+    {
       href: "/admin/users",
       label: "Users",
       icon: <Users className="h-4 w-4" />,
@@ -115,7 +120,7 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
                 <Link
                   to={link.href}
                   className={cn(
-                    buttonVariants({ variant: isActive ? "default" : "ghost", size: "icon" }),
+                    buttonVariants({ variant: isActive ? "default" : "default", size: "icon" }),
                     "h-9 w-9",
                     isActive && "dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white"
                   )}
@@ -150,4 +155,3 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       })}
     </nav>
   );
-}
