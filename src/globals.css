@@ -89,7 +89,7 @@
     --radius: 0.3rem;
   }
 
-  /* Magic Themes */
+  /* Light Magic Themes */
   .theme-sunset { --background: 35 100% 95%; --foreground: 20 15% 25%; --card: 35 100% 92%; --primary: 350 80% 55%; --primary-foreground: 0 0% 100%; --secondary: 10 80% 85%; --accent: 300 80% 60%; }
   .theme-ocean { --background: 200 100% 98%; --foreground: 210 30% 20%; --card: 200 100% 95%; --primary: 210 80% 50%; --primary-foreground: 0 0% 100%; --secondary: 180 50% 90%; --accent: 170 70% 40%; }
   .theme-forest { --background: 100 20% 95%; --foreground: 100 25% 15%; --card: 100 20% 92%; --primary: 120 60% 30%; --primary-foreground: 0 0% 100%; --secondary: 80 30% 85%; --accent: 40 60% 50%; }
@@ -97,11 +97,25 @@
   .theme-rose { --background: 350 100% 98%; --foreground: 350 30% 25%; --card: 350 100% 96%; --primary: 340 80% 65%; --primary-foreground: 0 0% 100%; --secondary: 350 70% 94%; --accent: 0 80% 70%; }
   .theme-slate { --background: 220 20% 97%; --foreground: 220 25% 15%; --card: 220 20% 94%; --primary: 220 50% 50%; --primary-foreground: 0 0% 100%; --secondary: 220 30% 90%; --accent: 210 60% 60%; }
   .theme-coffee { --background: 30 40% 96%; --foreground: 30 30% 20%; --card: 30 40% 93%; --primary: 30 60% 40%; --primary-foreground: 0 0% 100%; --secondary: 30 50% 88%; --accent: 35 70% 55%; }
-  .theme-matrix { --background: 120 100% 5%; --foreground: 120 80% 70%; --card: 120 100% 8%; --primary: 120 70% 50%; --primary-foreground: 120 100% 10%; --secondary: 120 50% 12%; --accent: 120 90% 60%; }
-  .theme-cyberpunk { --background: 240 50% 8%; --foreground: 240 20% 90%; --card: 240 50% 12%; --primary: 330 100% 60%; --primary-foreground: 0 0% 100%; --secondary: 240 40% 18%; --accent: 180 100% 50%; }
+  .theme-sandstone { --background: 40 50% 95%; --foreground: 35 30% 25%; --card: 40 50% 92%; --primary: 25 70% 50%; --primary-foreground: 0 0% 100%; --secondary: 45 60% 88%; --accent: 15 80% 60%; }
+  .theme-mint { --background: 150 100% 98%; --foreground: 150 25% 20%; --card: 150 100% 96%; --primary: 160 60% 45%; --primary-foreground: 0 0% 100%; --secondary: 140 50% 92%; --accent: 170 70% 55%; }
   .theme-autumn { --background: 30 100% 96%; --foreground: 25 40% 20%; --card: 30 100% 93%; --primary: 20 80% 50%; --primary-foreground: 0 0% 100%; --secondary: 40 70% 90%; --accent: 0 70% 60%; }
   .theme-spring { --background: 90 100% 97%; --foreground: 100 20% 25%; --card: 90 100% 94%; --primary: 140 60% 60%; --primary-foreground: 0 0% 100%; --secondary: 40 80% 92%; --accent: 340 80% 75%; }
   .theme-monochrome { --background: 0 0% 98%; --foreground: 0 0% 10%; --card: 0 0% 100%; --primary: 0 0% 20%; --primary-foreground: 0 0% 95%; --secondary: 0 0% 94%; --accent: 0 0% 40%; }
+
+  /* Dark Magic Themes */
+  .theme-matrix { --background: 120 100% 5%; --foreground: 120 80% 70%; --card: 120 100% 8%; --primary: 120 70% 50%; --primary-foreground: 120 100% 10%; --secondary: 120 50% 12%; --accent: 120 90% 60%; }
+  .theme-cyberpunk { --background: 240 50% 8%; --foreground: 240 20% 90%; --card: 240 50% 12%; --primary: 330 100% 60%; --primary-foreground: 0 0% 100%; --secondary: 240 40% 18%; --accent: 180 100% 50%; }
+  .theme-tokyo-night { --background: 240 15% 10%; --foreground: 240 15% 85%; --card: 240 15% 12%; --primary: 270 80% 70%; --primary-foreground: 0 0% 100%; --secondary: 240 10% 18%; --accent: 190 80% 65%; }
+  .theme-dracula { --background: 230 15% 18%; --foreground: 230 15% 90%; --card: 230 15% 22%; --primary: 300 80% 75%; --primary-foreground: 0 0% 100%; --secondary: 230 10% 28%; --accent: 130 80% 65%; }
+  .theme-gruvbox-dark { --background: 40 10% 15%; --foreground: 45 20% 85%; --card: 40 10% 18%; --primary: 45 70% 60%; --primary-foreground: 40 10% 15%; --secondary: 40 5% 22%; --accent: 100 50% 60%; }
+  .theme-nord-dark { --background: 220 15% 20%; --foreground: 220 15% 88%; --card: 220 15% 24%; --primary: 210 50% 70%; --primary-foreground: 220 15% 15%; --secondary: 220 10% 28%; --accent: 180 40% 60%; }
+  .theme-synthwave { --background: 260 40% 10%; --foreground: 260 20% 90%; --card: 260 40% 14%; --primary: 320 100% 70%; --primary-foreground: 0 0% 100%; --secondary: 260 30% 20%; --accent: 180 100% 50%; }
+  .theme-volcano { --background: 20 20% 8%; --foreground: 25 20% 85%; --card: 20 20% 12%; --primary: 15 90% 60%; --primary-foreground: 0 0% 100%; --secondary: 20 15% 18%; --accent: 35 100% 55%; }
+  .theme-deep-space { --background: 240 30% 5%; --foreground: 240 10% 80%; --card: 240 30% 8%; --primary: 270 70% 75%; --primary-foreground: 0 0% 100%; --secondary: 240 20% 12%; --accent: 200 80% 60%; }
+  .theme-gotham { --background: 220 25% 12%; --foreground: 220 15% 85%; --card: 220 25% 16%; --primary: 50 80% 60%; --primary-foreground: 220 25% 10%; --secondary: 220 20% 22%; --accent: 210 40% 50%; }
+  .theme-emerald-night { --background: 160 40% 10%; --foreground: 160 15% 85%; --card: 160 40% 14%; --primary: 150 70% 50%; --primary-foreground: 0 0% 100%; --secondary: 160 30% 20%; --accent: 170 80% 40%; }
+  .theme-crimson-dark { --background: 0 30% 8%; --foreground: 0 10% 85%; --card: 0 30% 12%; --primary: 0 70% 60%; --primary-foreground: 0 0% 100%; --secondary: 0 20% 18%; --accent: 350 80% 55%; }
 }
 
 @layer base {
@@ -180,13 +194,28 @@
 .magic-gradient-text h3, 
 .magic-gradient-text .text-primary,
 .magic-gradient-text .font-bold {
-  background: linear-gradient(-45deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--vibrant-green)), hsl(var(--vibrant-blue)));
-  background-size: 400% 400%;
-  animation: animated-gradient 10s ease infinite;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-fill-color: transparent;
+  background-size: 400% 400%;
+  animation: animated-gradient 10s ease infinite;
+}
+
+.light .magic-gradient-text h1,
+.light .magic-gradient-text h2,
+.light .magic-gradient-text h3,
+.light .magic-gradient-text .text-primary,
+.light .magic-gradient-text .font-bold {
+  background-image: linear-gradient(-45deg, #6a11cb, #2575fc, #ec008c, #fc6767);
+}
+
+.dark .magic-gradient-text h1,
+.dark .magic-gradient-text h2,
+.dark .magic-gradient-text h3,
+.dark .magic-gradient-text .text-primary,
+.dark .magic-gradient-text .font-bold {
+  background-image: linear-gradient(-45deg, #f8ffae, #43c6ac, #ff7e5f, #feb47b);
 }
 
 

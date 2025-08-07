@@ -5,11 +5,19 @@ type FontSize = "sm" | "md" | "lg";
 type FontFamily = "sans" | "serif" | "mono";
 type MagicTheme = "none" | "refresh" | "click" | "gradient";
 
-const magicThemeNames = [
+const lightMagicThemeNames = [
   "theme-sunset", "theme-ocean", "theme-forest", "theme-lavender",
-  "theme-rose", "theme-slate", "theme-coffee", "theme-matrix",
-  "theme-cyberpunk", "theme-autumn", "theme-spring", "theme-monochrome"
+  "theme-rose", "theme-slate", "theme-coffee", "theme-sandstone",
+  "theme-mint", "theme-autumn", "theme-spring", "theme-monochrome"
 ];
+
+const darkMagicThemeNames = [
+  "theme-matrix", "theme-cyberpunk", "theme-tokyo-night", "theme-dracula",
+  "theme-gruvbox-dark", "theme-nord-dark", "theme-synthwave", "theme-volcano",
+  "theme-deep-space", "theme-gotham", "theme-emerald-night", "theme-crimson-dark"
+];
+
+const allMagicThemes = [...lightMagicThemeNames, ...darkMagicThemeNames];
 
 interface ThemeProviderState {
   theme: Theme;
@@ -46,11 +54,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const root = window.document.documentElement;
     
-    // Clear all possible theme classes
-    root.classList.remove("light", "dark", "retro", "magic-gradient-text", ...magicThemeNames);
+    root.classList.remove("light", "dark", "retro", "magic-gradient-text", ...allMagicThemes);
 
     if (magicTheme === 'gradient') {
-      root.classList.add(theme); // Apply base theme
+      root.classList.add(theme);
       root.classList.add('magic-gradient-text');
     } else if (magicTheme === 'none') {
       root.classList.add(theme);
@@ -58,7 +65,6 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       if (currentMagicThemeClass) {
         root.classList.add(currentMagicThemeClass);
       } else {
-        // Fallback to base theme if magic theme class isn't set yet
         root.classList.add(theme);
       }
     }
@@ -67,30 +73,32 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   // Handle Magic Theme 1: Refresh
   useEffect(() => {
     if (magicTheme === 'refresh') {
-      const currentIndex = parseInt(sessionStorage.getItem('magic-theme-index') || '-1');
-      const nextIndex = (currentIndex + 1) % magicThemeNames.length;
-      setCurrentMagicThemeClass(magicThemeNames[nextIndex]);
-      sessionStorage.setItem('magic-theme-index', nextIndex.toString());
+      const themeList = theme === 'dark' ? darkMagicThemeNames : lightMagicThemeNames;
+      const storageKey = `magic-theme-index-${theme}`;
+      const currentIndex = parseInt(sessionStorage.getItem(storageKey) || '-1');
+      const nextIndex = (currentIndex + 1) % themeList.length;
+      setCurrentMagicThemeClass(themeList[nextIndex]);
+      sessionStorage.setItem(storageKey, nextIndex.toString());
     }
-  }, [magicTheme]); // Runs once when magicTheme is set to 'refresh'
+  }, [magicTheme, theme]);
 
   // Handle Magic Theme 2: Click
   useEffect(() => {
     if (magicTheme !== 'click') return;
 
+    const themeList = theme === 'dark' ? darkMagicThemeNames : lightMagicThemeNames;
     let currentIndex = -1;
 
     const handleClick = () => {
-      currentIndex = (currentIndex + 1) % magicThemeNames.length;
-      setCurrentMagicThemeClass(magicThemeNames[currentIndex]);
+      currentIndex = (currentIndex + 1) % themeList.length;
+      setCurrentMagicThemeClass(themeList[currentIndex]);
     };
 
-    // Set initial theme for click mode
-    handleClick();
+    handleClick(); // Set initial theme
 
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
-  }, [magicTheme]);
+  }, [magicTheme, theme]);
 
   // Handle font size and family
   useEffect(() => {
