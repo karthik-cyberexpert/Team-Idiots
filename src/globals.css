@@ -200,41 +200,13 @@
 .magic-gradient-text.gradient-scope-full [class*="foreground"],
 .magic-gradient-text.gradient-scope-full button,
 .magic-gradient-text.gradient-scope-full a {
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-fill-color: transparent;
+  background-image: var(--magic-gradient, linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab));
   background-size: 400% 400%;
-  animation: animated-gradient 10s ease infinite;
-}
-
-.light .magic-gradient-text,
-.retro .magic-gradient-text {
-  --gradient-color-1: #6a11cb;
-  --gradient-color-2: #2575fc;
-  --gradient-color-3: #ec008c;
-  --gradient-color-4: #fc6767;
-}
-
-.dark .magic-gradient-text {
-  --gradient-color-1: #f8ffae;
-  --gradient-color-2: #43c6ac;
-  --gradient-color-3: #ff7e5f;
-  --gradient-color-4: #feb47b;
-}
-
-.magic-gradient-text h1, 
-.magic-gradient-text h2, 
-.magic-gradient-text h3, 
-.magic-gradient-text .text-primary,
-.magic-gradient-text .font-bold,
-.magic-gradient-text.gradient-scope-full p,
-.magic-gradient-text.gradient-scope-full label,
-.magic-gradient-text.gradient-scope-full [class*="description"],
-.magic-gradient-text.gradient-scope-full [class*="foreground"],
-.magic-gradient-text.gradient-scope-full button,
-.magic-gradient-text.gradient-scope-full a {
-  background-image: linear-gradient(-45deg, var(--gradient-color-1), var(--gradient-color-2), var(--gradient-color-3), var(--gradient-color-4));
+  animation: animated-gradient 15s ease infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
 

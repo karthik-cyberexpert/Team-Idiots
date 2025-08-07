@@ -20,6 +20,59 @@ const darkMagicThemeNames = [
 
 const allMagicThemes = [...lightMagicThemeNames, ...darkMagicThemeNames];
 
+const gradients = [
+  "linear-gradient(-45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8a2be2)",
+  "linear-gradient(-45deg, #00c6ff, #0072ff)",
+  "linear-gradient(-45deg, #f7971e, #ffd200)",
+  "linear-gradient(-45deg, #ed213a, #93291e)",
+  "linear-gradient(-45deg, #a8ff78, #78ffd6)",
+  "linear-gradient(-45deg, #ff512f, #dd2476)",
+  "linear-gradient(-45deg, #DA4453, #89216B)",
+  "linear-gradient(-45deg, #3a6186, #89253e)",
+  "linear-gradient(-45deg, #43C6AC, #191654)",
+  "linear-gradient(-45deg, #FF416C, #FF4B2B)",
+  "linear-gradient(-45deg, #00F260, #0575E6)",
+  "linear-gradient(-45deg, #f953c6, #b91d73)",
+  "linear-gradient(-45deg, #c33764, #1d2671)",
+  "linear-gradient(-45deg, #36D1DC, #5B86E5)",
+  "linear-gradient(-45deg, #e52d27, #b31217)",
+  "linear-gradient(-45deg, #2193b0, #6dd5ed)",
+  "linear-gradient(-45deg, #cc2b5e, #753a88)",
+  "linear-gradient(-45deg, #42275a, #734b6d)",
+  "linear-gradient(-45deg, #de6262, #ffb88c)",
+  "linear-gradient(-45deg, #642B73, #C6426E)",
+  "linear-gradient(-45deg, #C04848, #480048)",
+  "linear-gradient(-45deg, #1f4037, #99f2c8)",
+  "linear-gradient(-45deg, #F2C94C, #F2994A)",
+  "linear-gradient(-45deg, #00b09b, #96c93d)",
+  "linear-gradient(-45deg, #ff4e50, #f9d423)",
+  "linear-gradient(-45deg, #e65c00, #f9d423)",
+  "linear-gradient(-45deg, #2c3e50, #fd746c)",
+  "linear-gradient(-45deg, #ff5f6d, #ffc371)",
+  "linear-gradient(-45deg, #373B44, #4286f4)",
+  "linear-gradient(-45deg, #4b6cb7, #182848)",
+  "linear-gradient(-45deg, #7F00FF, #E100FF)",
+  "linear-gradient(-45deg, #00bf8f, #001510)",
+  "linear-gradient(-45deg, #FC466B, #3F5EFB)",
+  "linear-gradient(-45deg, #00416A, #799F0C, #FFE000)",
+  "linear-gradient(-45deg, #1A2980, #26D0CE)",
+  "linear-gradient(-45deg, #FDBB2D, #22C1C3)",
+  "linear-gradient(-45deg, #f857a6, #ff5858)",
+  "linear-gradient(-45deg, #aa076b, #61045f)",
+  "linear-gradient(-45deg, #20002c, #cbb4d4)",
+  "linear-gradient(-45deg, #0052D4, #4364F7, #6FB1FC)",
+  "linear-gradient(-45deg, #43e97b, #38f9d7)",
+  "linear-gradient(-45deg, #5614B0, #dbd65c)",
+  "linear-gradient(-45deg, #ff6a00, #ee0979)",
+  "linear-gradient(-45deg, #11998e, #38ef7d)",
+  "linear-gradient(-45deg, #1c92d2, #f2fcfe)",
+  "linear-gradient(-45deg, #00dbde, #fc00ff)",
+  "linear-gradient(-45deg, #00c9ff, #92fe9d)",
+  "linear-gradient(-45deg, #ef32d9, #89fffd)",
+  "linear-gradient(-45deg, #ffdde1, #ee9ca7)",
+  "linear-gradient(-45deg, #f093fb, #f5576c)",
+];
+
 interface ThemeProviderState {
   theme: Theme;
   fontSize: FontSize;
@@ -61,12 +114,15 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     const root = window.document.documentElement;
     
     root.classList.remove("light", "dark", "retro", "magic-gradient-text", "gradient-scope-full", ...allMagicThemes);
+    root.style.removeProperty('--magic-gradient');
 
     if (magicTheme === 'gradient') {
       root.classList.add('magic-gradient-text');
       if (gradientScope === 'full') {
         root.classList.add('gradient-scope-full');
       }
+      const randomIndex = Math.floor(Math.random() * gradients.length);
+      root.style.setProperty('--magic-gradient', gradients[randomIndex]);
     }
     
     if (magicTheme === 'none') {
@@ -74,7 +130,6 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     } else if (magicTheme !== 'gradient') {
       if (currentMagicThemeClass) {
         root.classList.add(currentMagicThemeClass);
-        // Add base theme class for background color
         if (lightMagicThemeNames.includes(currentMagicThemeClass)) {
           root.classList.add('light');
         } else {
@@ -84,7 +139,6 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         root.classList.add(theme);
       }
     } else {
-      // For gradient theme, just add the base theme for background
       root.classList.add(theme);
     }
   }, [theme, magicTheme, gradientScope, currentMagicThemeClass]);
