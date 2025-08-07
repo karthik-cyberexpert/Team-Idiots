@@ -46,7 +46,7 @@ const AuctionManagementPage = () => {
   const [itemToAuction, setItemToAuction] = React.useState<AuctionItem | null>(null);
   const [itemToDelete, setItemToDelete] = React.useState<AuctionItem | null>(null);
   const [auctionToDelete, setAuctionToDelete] = React.useState<Auction | null>(null);
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
 
   const { data, isLoading } = useQuery<AuctionData>({
