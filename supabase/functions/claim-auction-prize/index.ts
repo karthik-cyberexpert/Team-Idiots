@@ -91,7 +91,7 @@ serve(async (req) => {
       awardedMessage = `Item claimed! You received a bonus of ${xpBonus} XP.`;
     }
 
-    await supabaseAdmin.from('auctions').update({ is_claimed: true }).eq('id', auction_id);
+    await supabaseAdmin.from('auctions').update({ is_claimed: true, claimed_prize: awardedPrize }).eq('id', auction_id);
 
     return new Response(JSON.stringify({ message: awardedMessage, prize: awardedPrize }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 

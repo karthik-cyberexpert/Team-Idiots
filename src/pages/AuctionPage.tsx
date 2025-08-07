@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MyWinningsDialog } from "@/components/auctions/user/MyWinningsDialog";
 import { AuctionCard } from "@/components/auctions/user/AuctionCard";
 import { AuctionHistoryDialog } from "@/components/auctions/user/AuctionHistoryDialog";
+import { useAuth } from "@/contexts/AuthProvider";
 
 const fetchLiveAuctions = async (): Promise<Auction[]> => {
   const { data, error } = await supabase.functions.invoke("get-live-auctions");
@@ -15,14 +16,66 @@ const fetchLiveAuctions = async (): Promise<Auction[]> => {
   return data || [];
 };
 
+const fetchMyWinnings = async (): Promise<Auction[]> => {
+  const { data, error } = await supabase.functions.invoke("get-my-winnings");
+  if (error) throw new Error(error.message);
+  return data || [];
+};
+
+const fetchEndedAuctions = async (): Promise<Auction[]> => {
+  const { data, error } = await supabase.functions.invoke("get-ended-auctions");
+  if (error) throw new Error(error.message);
+  return data || [];
+};
+
 const AuctionPage = () => {
+  const { user } = useAuth();
   const [isWinningsDialogOpen, setIsWinningsDialogOpen] = React.useState(false);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = React.useState(false);
+  const [showWinningsIndicator, setShowWinningsIndicator] = React.useState(false);
+  const [showHistoryIndicator, setShowHistoryIndicator] = React.useState(false);
+
   const { data: auctions, isLoading } = useQuery<Auction[]>({
     queryKey: ["liveAuctions"],
     queryFn: fetchLiveAuctions,
-    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchInterval: 3000,
   });
+
+  const { data: myWinnings } = useQuery<Auction[]>({
+    queryKey: ["myWinnings"],
+    queryFn: fetchMyWinnings,
+    enabled: !!user,
+    refetchInterval: 3000,
+  });
+
+  const { data: endedAuctions } = useQuery<Auction[]>({
+    queryKey: ["endedAuctions"],
+    queryFn: fetchEndedAuctions,
+    refetchInterval: 3000,
+  });
+
+  React.useEffect(() => {
+    const hasUnclaimed = myWinnings?.some(w => !w.is_claimed);
+    setShowWinningsIndicator(!!hasUnclaimed);
+
+    const lastHistoryView = localStorage.getItem('lastHistoryView');
+    if (endedAuctions && endedAuctions.length > 0) {
+      const latestEndTime = new Date(endedAuctions[0].end_time).getTime();
+      if (!lastHistoryView || latestEndTime > parseInt(lastHistoryView, 10)) {
+        setShowHistoryIndicator(true);
+      }
+    }
+  }, [myWinnings, endedAuctions]);
+
+  const handleHistoryClick = () => {
+    setIsHistoryDialogOpen(true);
+    localStorage.setItem('lastHistoryView', Date.now().toString());
+    setShowHistoryIndicator(false);
+  };
+
+  const handleWinningsClick = () => {
+    setIsWinningsDialogOpen(true);
+  };
 
   return (
     <>
@@ -36,19 +89,21 @@ const AuctionPage = () => {
             <Button 
               variant="outline" 
               size="icon" 
-              onClick={() => setIsHistoryDialogOpen(true)} 
-              className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
+              onClick={handleHistoryClick} 
+              className="relative transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
             >
               <History className="h-5 w-5" />
+              {showHistoryIndicator && <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-vibrant-red ring-2 ring-background" />}
               <span className="sr-only">Auction History</span>
             </Button>
             <Button 
               variant="outline" 
               size="icon" 
-              onClick={() => setIsWinningsDialogOpen(true)} 
-              className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
+              onClick={handleWinningsClick} 
+              className="relative transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
             >
               <Trophy className="h-5 w-5" />
+              {showWinningsIndicator && <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-vibrant-red ring-2 ring-background" />}
               <span className="sr-only">My Winnings</span>
             </Button>
           </div>

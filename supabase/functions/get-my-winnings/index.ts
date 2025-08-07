@@ -27,7 +27,7 @@ serve(async (req) => {
 
     const { data, error } = await supabase
       .from('auctions')
-      .select('*, auction_items(*)')
+      .select('*, claimed_prize, auction_items(*)')
       .eq('status', 'ended')
       .eq('current_highest_bidder', user.id)
       .order('end_time', { ascending: false });

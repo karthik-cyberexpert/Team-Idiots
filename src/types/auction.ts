@@ -5,6 +5,8 @@ export interface MysteryBoxContent {
 
 export type PowerUpType = '2x_boost' | '4x_boost' | 'gp_transfer' | 'attack' | 'shield' | 'nothing';
 
+export type RevealedPrize = (MysteryBoxContent & { power?: never }) | { type: 'power_up'; power: PowerUpType; amount?: never };
+
 export interface AuctionItem {
   id: string;
   name: string;
@@ -28,6 +30,7 @@ export interface Auction {
   status: 'scheduled' | 'active' | 'ended' | 'cancelled';
   created_at: string;
   is_claimed: boolean;
+  claimed_prize: RevealedPrize | null;
   auction_items: {
     name: string;
     description: string | null;
