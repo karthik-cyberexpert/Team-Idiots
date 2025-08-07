@@ -23,7 +23,7 @@ serve(async (_req) => {
         id,
         end_time,
         current_price,
-        auction_items (name),
+        auction_items (name, is_mystery_box),
         profiles (full_name)
       `)
       .eq('status', 'ended')

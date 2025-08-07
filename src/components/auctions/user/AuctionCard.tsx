@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gavel } from 'lucide-react';
+import { Gavel, Gift } from 'lucide-react';
 import { Auction } from "@/types/auction";
 import { PlaceBidDialog } from "./PlaceBidDialog";
 import { CountdownTimer } from "../CountdownTimer";
@@ -12,6 +12,7 @@ import { AuctionEndDisplay } from "./AuctionEndDisplay";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 interface AuctionCardProps {
   auction: Auction;
@@ -33,6 +34,7 @@ export const AuctionCard = ({ auction }: AuctionCardProps) => {
   const [isVanishing, setIsVanishing] = React.useState(false);
 
   const isFinalSeconds = timeLeft > 0 && timeLeft <= 30;
+  const isMysteryBox = auction.auction_items.is_mystery_box;
 
   const fetchResult = React.useCallback(async () => {
     try {
@@ -106,14 +108,38 @@ export const AuctionCard = ({ auction }: AuctionCardProps) => {
         auction={auction}
         isFinalSeconds={isFinalSeconds}
       />
-      <Card className={cn("transition-opacity duration-500", isVanishing && "opacity-0")}>
+      <Card className={cn(
+        "transition-all duration-500",
+        isVanishing && "opacity-0",
+        isMysteryBox && "bg-gradient-to-br from-vibrant-purple to-vibrant-pink text-white"
+      )}>
         <CardHeader>
-          <CardTitle>{auction.auction_items.name}</CardTitle>
-          <CardDescription>{auction.auction_items.description}</CardDescription>
+          {isMysteryBox ? (
+            <div className="flex justify-between items-center">
+              <CardTitle>Mystery Box</CardTitle>
+              <Badge variant="secondary">Special Item</Badge>
+            </div>
+          ) : (
+            <>
+              <CardTitle>{auction.auction_items.name}</CardTitle>
+              <CardDescription className={cn(isMysteryBox && "text-purple-200")}>
+                {auction.auction_items.description}
+              </CardDescription>
+            </>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
+          {isMysteryBox && !finalResult && (
+            <div className="flex items-center justify-center h-24 bg-black/20 rounded-md">
+              <Gift className="h-16 w-16 text-white/80" />
+            </div>
+          )}
           {renderCardContent()}
-          <Button className="w-full" onClick={() => setIsBidDialogOpen(true)} disabled={timeLeft <= 0}>
+          <Button 
+            className={cn("w-full", isMysteryBox && "bg-white text-vibrant-purple hover:bg-gray-200")}
+            onClick={() => setIsBidDialogOpen(true)} 
+            disabled={timeLeft <= 0}
+          >
             <Gavel className="mr-2 h-4 w-4" />
             Place Bid
           </Button>

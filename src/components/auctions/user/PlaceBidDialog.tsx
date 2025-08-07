@@ -139,7 +139,7 @@ export const PlaceBidDialog = ({ open, onOpenChange, auction, isFinalSeconds }: 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn("sm:max-w-3xl", isFinalSeconds && "sm:max-w-md")}>
         <DialogHeader>
-          <DialogTitle>Place Bid on: {auction?.auction_items.name}</DialogTitle>
+          <DialogTitle>Place Bid on: {auction?.auction_items.is_mystery_box ? "Mystery Box" : auction?.auction_items.name}</DialogTitle>
           <DialogDescription>
             {isFinalSeconds
               ? "Bidding is blind for the final moments!"

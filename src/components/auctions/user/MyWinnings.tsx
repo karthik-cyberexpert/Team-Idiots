@@ -103,7 +103,10 @@ export const MyWinnings = ({ isDialog = false }: MyWinningsProps) => {
               {winnings.map(auction => (
                 <div key={auction.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                   <div>
-                    <p className="font-semibold">{auction.auction_items.name}</p>
+                    <p className="font-semibold flex items-center gap-2">
+                      {auction.auction_items.is_mystery_box && <Gift className="h-4 w-4 text-vibrant-purple" />}
+                      {auction.auction_items.is_mystery_box ? "Mystery Box" : auction.auction_items.name}
+                    </p>
                     <p className="text-sm text-muted-foreground">Won for {auction.current_price} GP</p>
                     <p className="text-xs text-muted-foreground">
                       {format(new Date(auction.end_time), "PPP 'at' p")}

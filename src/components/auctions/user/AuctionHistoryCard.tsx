@@ -2,13 +2,16 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from "date-fns";
-import { Gavel, User, Calendar } from "lucide-react";
+import { Gavel, User, Calendar, Gift } from "lucide-react";
 
 interface EndedAuction {
   id: string;
   end_time: string;
   current_price: number;
-  auction_items: { name: string } | null;
+  auction_items: { 
+    name: string;
+    is_mystery_box: boolean;
+  } | null;
   profiles: { full_name: string } | null;
 }
 
@@ -17,10 +20,15 @@ interface AuctionHistoryCardProps {
 }
 
 export const AuctionHistoryCard = ({ auction }: AuctionHistoryCardProps) => {
+  const isMysteryBox = auction.auction_items?.is_mystery_box;
+
   return (
     <Card className="shadow-md">
       <CardHeader>
-        <CardTitle className="text-lg truncate">{auction.auction_items?.name || "Unknown Item"}</CardTitle>
+        <CardTitle className="text-lg truncate flex items-center gap-2">
+          {isMysteryBox && <Gift className="h-5 w-5 text-vibrant-purple" />}
+          <span>{isMysteryBox ? "Mystery Box" : auction.auction_items?.name || "Unknown Item"}</span>
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
         <div className="flex items-center text-muted-foreground">
