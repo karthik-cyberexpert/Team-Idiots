@@ -20,9 +20,6 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   userLevel: number;
   userBadge: string;
-  leaderboardPopupData: { position: number } | null;
-  closeLeaderboardPopup: () => void;
-  checkLeaderboard: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,7 +53,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profileLoading, setProfileLoading] = useState(false);
   const [userLevel, setUserLevel] = useState(1);
   const [userBadge, setUserBadge] = useState("Bronze");
-  const [leaderboardPopupData, setLeaderboardPopupData] = useState<{ position: number } | null>(null);
 
   const fetchProfile = useCallback(async (userId: string) => {
     setProfileLoading(true);
@@ -93,27 +89,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setProfileLoading(false);
     }
   }, []);
-
-  const checkLeaderboard = useCallback(async () => {
-    if (!user || profile?.role === 'admin') return; // Don't show for admins
-    try {
-      const { data: leaderboard, error: leaderboardError } = await supabase
-        .from('profiles')
-        .select('id')
-        .order('xp', { ascending: false });
-
-      if (leaderboardError) throw leaderboardError;
-
-      const userRankIndex = leaderboard.findIndex(p => p.id === user.id);
-      
-      if (userRankIndex !== -1) {
-        const currentPosition = userRankIndex + 1;
-        setLeaderboardPopupData({ position: currentPosition });
-      }
-    } catch (error) {
-      console.error("Error checking leaderboard rank:", error);
-    }
-  }, [user, profile]);
 
   useEffect(() => {
     // This listener is crucial for initial session and subsequent changes.
@@ -153,10 +128,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
   };
 
-  const closeLeaderboardPopup = () => {
-    setLeaderboardPopupData(null);
-  };
-
   const value = {
     session,
     user,
@@ -166,9 +137,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signOut,
     userLevel,
     userBadge,
-    leaderboardPopupData,
-    closeLeaderboardPopup,
-    checkLeaderboard,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

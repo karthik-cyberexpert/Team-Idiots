@@ -11,7 +11,6 @@ import { RefreshButton } from "@/components/RefreshButton";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/contexts/ThemeProvider";
 import { useAuth } from "@/contexts/AuthProvider";
-import { LeaderboardPopup } from "@/components/LeaderboardPopup";
 import { useSettings } from "@/contexts/SettingsProvider";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -22,7 +21,7 @@ export function DashboardLayout() {
   const [isMobileSheetOpen, setIsMobileSheetOpen] = React.useState(false);
   const isMobile = useIsMobile();
   const { theme, setTheme } = useTheme();
-  const { profile, leaderboardPopupData, closeLeaderboardPopup } = useAuth();
+  const { profile } = useAuth();
   const { maintenanceMode, toggleMaintenanceMode, loading: settingsLoading } = useSettings();
 
   const toggleCollapse = () => {
@@ -171,12 +170,6 @@ export function DashboardLayout() {
 
   return (
     <>
-      {leaderboardPopupData && (
-        <LeaderboardPopup
-          position={leaderboardPopupData.position}
-          onClose={closeLeaderboardPopup}
-        />
-      )}
       {isMobile ? mobileLayout : desktopLayout}
     </>
   );
