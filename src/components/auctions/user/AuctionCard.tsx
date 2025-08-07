@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gavel } from 'lucide-react';
+import { Gavel, Gift, Zap } from 'lucide-react';
 import { Auction } from "@/types/auction";
 import { PlaceBidDialog } from "./PlaceBidDialog";
 import { CountdownTimer } from "../CountdownTimer";
@@ -35,6 +35,7 @@ export const AuctionCard = ({ auction }: AuctionCardProps) => {
 
   const isFinalSeconds = timeLeft > 0 && timeLeft <= 30;
   const isMysteryBox = auction.auction_items.is_mystery_box;
+  const isPowerBox = auction.auction_items.is_power_box;
 
   const fetchResult = React.useCallback(async () => {
     try {
@@ -44,10 +45,7 @@ export const AuctionCard = ({ auction }: AuctionCardProps) => {
       if (error) throw error;
       setFinalResult(data);
 
-      // Set a timeout to remove the card from view
-      setTimeout(() => {
-        setIsVanishing(true);
-      }, 15000); // 15 seconds
+      setTimeout(() => setIsVanishing(true), 15000);
     } catch (error) {
       console.error("Failed to fetch auction result:", error);
     }
@@ -55,42 +53,26 @@ export const AuctionCard = ({ auction }: AuctionCardProps) => {
 
   React.useEffect(() => {
     if (timeLeft <= 0) {
-      if (!finalResult) {
-        fetchResult();
-      }
+      if (!finalResult) fetchResult();
       return;
     }
-
-    const timer = setInterval(() => {
-      setTimeLeft(prev => prev - 1);
-    }, 1000);
-
+    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
     return () => clearInterval(timer);
   }, [timeLeft, fetchResult, finalResult]);
 
   const renderCardContent = () => {
     if (finalResult) {
-      return (
-        <AuctionEndDisplay
-          isWinner={finalResult.winnerId === user?.id}
-          winnerName={finalResult.winnerName}
-          winningBid={finalResult.winningBid}
-        />
-      );
+      return <AuctionEndDisplay isWinner={finalResult.winnerId === user?.id} winnerName={finalResult.winnerName} winningBid={finalResult.winningBid} />;
     }
-
     if (isFinalSeconds) {
       return <FinalCountdown timeLeft={timeLeft} />;
     }
-
     return (
       <>
         <div>
           <p className="text-sm text-muted-foreground">Current Bid</p>
           <p className="text-2xl font-bold">{auction.current_price} GP</p>
-          <p className="text-xs text-muted-foreground">
-            by {auction.profiles?.full_name || "No bids yet"}
-          </p>
+          <p className="text-xs text-muted-foreground">by {auction.profiles?.full_name || "No bids yet"}</p>
         </div>
         <div>
           <p className="text-sm text-muted-foreground">Time Remaining</p>
@@ -102,48 +84,36 @@ export const AuctionCard = ({ auction }: AuctionCardProps) => {
 
   return (
     <>
-      <PlaceBidDialog
-        open={isBidDialogOpen}
-        onOpenChange={setIsBidDialogOpen}
-        auction={auction}
-        isFinalSeconds={isFinalSeconds}
-      />
+      <PlaceBidDialog open={isBidDialogOpen} onOpenChange={setIsBidDialogOpen} auction={auction} isFinalSeconds={isFinalSeconds} />
       <Card className={cn(
         "transition-all duration-500",
         isVanishing && "opacity-0",
-        isMysteryBox && "bg-gradient-to-br from-vibrant-purple to-vibrant-pink text-white"
+        isMysteryBox && "bg-gradient-to-br from-vibrant-purple to-vibrant-pink text-white",
+        isPowerBox && "bg-gradient-to-br from-vibrant-yellow to-vibrant-orange text-white"
       )}>
         <CardHeader>
-          {isMysteryBox ? (
-            <div className="flex justify-between items-center">
-              <CardTitle>Mystery Box</CardTitle>
-              <Badge variant="secondary">Special Item</Badge>
-            </div>
-          ) : (
-            <>
-              <CardTitle>{auction.auction_items.name}</CardTitle>
-              <CardDescription>
-                {auction.auction_items.description}
-              </CardDescription>
-            </>
-          )}
+          <div className="flex justify-between items-center">
+            <CardTitle>{isMysteryBox ? "Mystery Box" : isPowerBox ? "Power Box" : auction.auction_items.name}</CardTitle>
+            {(isMysteryBox || isPowerBox) && <Badge variant="secondary">Special Item</Badge>}
+          </div>
+          {!isMysteryBox && !isPowerBox && <CardDescription>{auction.auction_items.description}</CardDescription>}
         </CardHeader>
         <CardContent className="space-y-4">
-          {isMysteryBox && !finalResult && (
+          {(isMysteryBox || isPowerBox) && !finalResult && (
             <div className="flex items-center justify-center h-24 bg-black/20 rounded-md">
-              <div className="relative w-20 h-20 bg-purple-300/50 border-2 border-white/80 rounded-lg flex items-center justify-center shadow-inner">
-                  <span className="text-5xl font-bold text-white/90 select-none">?</span>
+              <div className={cn("relative w-20 h-20 border-2 border-white/80 rounded-lg flex items-center justify-center shadow-inner", isMysteryBox ? "bg-purple-300/50" : "bg-yellow-300/50")}>
+                {isMysteryBox && <span className="text-5xl font-bold text-white/90 select-none">?</span>}
+                {isPowerBox && <Zap className="h-12 w-12 text-white/90" />}
               </div>
             </div>
           )}
           {renderCardContent()}
           <Button 
-            className={cn("w-full", isMysteryBox && "bg-white text-vibrant-purple hover:bg-gray-200")}
+            className={cn("w-full", (isMysteryBox || isPowerBox) && "bg-white text-vibrant-purple hover:bg-gray-200")}
             onClick={() => setIsBidDialogOpen(true)} 
             disabled={timeLeft <= 0}
           >
-            <Gavel className="mr-2 h-4 w-4" />
-            Place Bid
+            <Gavel className="mr-2 h-4 w-4" /> Place Bid
           </Button>
         </CardContent>
       </Card>

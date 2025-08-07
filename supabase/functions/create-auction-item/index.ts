@@ -25,7 +25,7 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated.");
 
-    const { name, description, starting_price, is_mystery_box, mystery_box_contents } = await req.json();
+    const { name, description, starting_price, is_mystery_box, mystery_box_contents, is_power_box, power_box_contents } = await req.json();
     if (!name || starting_price === undefined) {
       throw new Error("Name and starting price are required.");
     }
@@ -37,19 +37,28 @@ serve(async (req) => {
       created_by: user.id,
       is_mystery_box: is_mystery_box || false,
       mystery_box_contents: null,
+      is_power_box: is_power_box || false,
+      power_box_contents: null,
     };
 
     if (is_mystery_box) {
       if (!Array.isArray(mystery_box_contents) || mystery_box_contents.length !== 3) {
         throw new Error("Mystery box must have exactly 3 prize options.");
       }
-      // Basic validation for contents
       mystery_box_contents.forEach(item => {
-        if ((item.type !== 'gp' && item.type !== 'xp') || typeof item.amount !== 'number') {
-          throw new Error("Invalid mystery box content. Each item must have a 'type' ('gp' or 'xp') and a numeric 'amount'.");
+        if (!['gp', 'xp', 'nothing'].includes(item.type) || (item.type !== 'nothing' && typeof item.amount !== 'number')) {
+          throw new Error("Invalid mystery box content.");
         }
+        if (item.type === 'nothing') item.amount = 0;
       });
       itemToInsert.mystery_box_contents = mystery_box_contents;
+    }
+
+    if (is_power_box) {
+      if (!Array.isArray(power_box_contents) || power_box_contents.length !== 3) {
+        throw new Error("Power box must have exactly 3 power options.");
+      }
+      itemToInsert.power_box_contents = power_box_contents;
     }
 
     const { error } = await supabase.from('auction_items').insert(itemToInsert);

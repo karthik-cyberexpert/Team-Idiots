@@ -1,7 +1,9 @@
 export interface MysteryBoxContent {
-  type: 'gp' | 'xp';
+  type: 'gp' | 'xp' | 'nothing';
   amount: number;
 }
+
+export type PowerUpType = '2x_boost' | '4x_boost' | 'gp_transfer' | 'attack' | 'shield' | 'nothing';
 
 export interface AuctionItem {
   id: string;
@@ -12,6 +14,8 @@ export interface AuctionItem {
   created_at: string;
   is_mystery_box: boolean;
   mystery_box_contents: MysteryBoxContent[] | null;
+  is_power_box: boolean;
+  power_box_contents: PowerUpType[] | null;
 }
 
 export interface Auction {
@@ -28,6 +32,7 @@ export interface Auction {
     name: string;
     description: string | null;
     is_mystery_box: boolean;
+    is_power_box: boolean;
   };
   profiles: {
     full_name: string | null;
