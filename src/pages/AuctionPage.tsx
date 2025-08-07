@@ -2,11 +2,12 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from '@/components/ui/button';
-import { Trophy } from 'lucide-react';
+import { Trophy, History } from 'lucide-react';
 import { Auction } from "@/types/auction";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MyWinningsDialog } from "@/components/auctions/user/MyWinningsDialog";
 import { AuctionCard } from "@/components/auctions/user/AuctionCard";
+import { AuctionHistoryDialog } from "@/components/auctions/user/AuctionHistoryDialog";
 
 const fetchLiveAuctions = async (): Promise<Auction[]> => {
   const { data, error } = await supabase.functions.invoke("get-live-auctions");
@@ -16,6 +17,7 @@ const fetchLiveAuctions = async (): Promise<Auction[]> => {
 
 const AuctionPage = () => {
   const [isWinningsDialogOpen, setIsWinningsDialogOpen] = React.useState(false);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = React.useState(false);
   const { data: auctions, isLoading } = useQuery<Auction[]>({
     queryKey: ["liveAuctions"],
     queryFn: fetchLiveAuctions,
@@ -25,19 +27,31 @@ const AuctionPage = () => {
   return (
     <>
       <MyWinningsDialog open={isWinningsDialogOpen} onOpenChange={setIsWinningsDialogOpen} />
+      <AuctionHistoryDialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen} />
       
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl sm:text-3xl font-bold">Live Auctions</h1>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => setIsWinningsDialogOpen(true)} 
-            className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
-          >
-            <Trophy className="h-5 w-5" />
-            <span className="sr-only">My Winnings</span>
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setIsHistoryDialogOpen(true)} 
+              className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
+            >
+              <History className="h-5 w-5" />
+              <span className="sr-only">Auction History</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setIsWinningsDialogOpen(true)} 
+              className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95"
+            >
+              <Trophy className="h-5 w-5" />
+              <span className="sr-only">My Winnings</span>
+            </Button>
+          </div>
         </div>
         
         {isLoading ? (
