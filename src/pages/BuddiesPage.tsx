@@ -1,22 +1,66 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthProvider";
+import { Skeleton } from "@/components/ui/skeleton";
+import { FindBuddy } from "@/components/buddies/FindBuddy";
+import { IncomingInvitations } from "@/components/buddies/IncomingInvitations";
+import { OutgoingInvitations } from "@/components/buddies/OutgoingInvitations";
+import { CurrentBuddy } from "@/components/buddies/CurrentBuddy";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Users } from "lucide-react";
 
+const fetchBuddyData = async (userId: string) => {
+  const { data, error } = await supabase.functions.invoke('get-buddy-data');
+  if (error) throw new Error(error.message);
+  return data;
+};
+
 const BuddiesPage = () => {
+  const { user } = useAuth();
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['buddyData', user?.id],
+    queryFn: () => fetchBuddyData(user!.id),
+    enabled: !!user,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-1/3" />
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <Users className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error.message}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  const hasIncoming = data.receivedInvitations && data.receivedInvitations.length > 0;
+  const hasOutgoing = data.sentInvitations && data.sentInvitations.length > 0;
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl sm:text-3xl font-bold">My Buddies</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Buddy System</CardTitle>
-          <CardDescription>This is where you can manage your buddies.</CardDescription>
-        </CardHeader>
-        <CardContent className="text-center py-10 text-muted-foreground">
-          <Users className="mx-auto h-12 w-12 mb-4" />
-          <p>Buddy features are coming soon!</p>
-        </CardContent>
-      </Card>
+      {data.buddyPair ? (
+        <CurrentBuddy buddyPair={data.buddyPair} />
+      ) : (
+        <>
+          {hasIncoming && <IncomingInvitations invitations={data.receivedInvitations} />}
+          {hasOutgoing && <OutgoingInvitations invitations={data.sentInvitations} />}
+          {!hasIncoming && !hasOutgoing && <FindBuddy availableUsers={data.availableUsers} />}
+        </>
+      )}
     </div>
   );
 };
