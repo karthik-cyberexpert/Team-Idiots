@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,9 @@ import { showSuccess, showError } from "@/utils/toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HeartCrack } from "lucide-react";
 import { useAuth } from "@/contexts/AuthProvider";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { DailyCheckin } from "./DailyCheckin";
 
 interface BuddyPair {
   id: string;
@@ -27,9 +30,23 @@ const unpairBuddy = async (pairId: string) => {
   if (error) throw new Error(error.message);
 };
 
+const fetchBuddyRewardData = async (pairId: string) => {
+  const { data, error } = await supabase.functions.invoke('get-buddy-reward-data', {
+      body: { pairId }
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export const CurrentBuddy = ({ buddyPair }: CurrentBuddyProps) => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
+
+  const { data: rewardData, isLoading, error } = useQuery({
+    queryKey: ['buddyRewardData', buddyPair.id],
+    queryFn: () => fetchBuddyRewardData(buddyPair.id),
+    enabled: !!buddyPair.id,
+  });
 
   const mutation = useMutation({
     mutationFn: () => unpairBuddy(buddyPair.id),
@@ -50,24 +67,45 @@ export const CurrentBuddy = ({ buddyPair }: CurrentBuddyProps) => {
     <Card>
       <CardHeader>
         <CardTitle>You are buddies with {buddyPair.buddy.full_name}!</CardTitle>
-        <CardDescription>The daily reward system will be available soon.</CardDescription>
+        <CardDescription>Check in daily to become eligible for rewards.</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col items-center gap-4">
-        <div className="flex items-center gap-4">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback>{getInitials(profile?.full_name || '')}</AvatarFallback>
-          </Avatar>
-          <HeartCrack className="h-8 w-8 text-muted-foreground" />
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={buddyPair.buddy.avatar_url || undefined} />
-            <AvatarFallback>{getInitials(buddyPair.buddy.full_name)}</AvatarFallback>
-          </Avatar>
+      <CardContent className="space-y-6">
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={profile?.avatar_url || undefined} />
+              <AvatarFallback>{getInitials(profile?.full_name || '')}</AvatarFallback>
+            </Avatar>
+            <HeartCrack className="h-8 w-8 text-muted-foreground" />
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={buddyPair.buddy.avatar_url || undefined} />
+              <AvatarFallback>{getInitials(buddyPair.buddy.full_name)}</AvatarFallback>
+            </Avatar>
+          </div>
+          <Button variant="destructive" onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+            <HeartCrack className="mr-2 h-4 w-4" />
+            {mutation.isPending ? "Unpairing..." : "Unpair"}
+          </Button>
         </div>
-        <Button variant="destructive" onClick={() => mutation.mutate()} disabled={mutation.isPending}>
-          <HeartCrack className="mr-2 h-4 w-4" />
-          {mutation.isPending ? "Unpairing..." : "Unpair"}
-        </Button>
+
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-semibold text-center mb-4">Daily Rewards</h3>
+          {isLoading ? (
+            <Skeleton className="h-32 w-full" />
+          ) : error ? (
+            <Alert variant="destructive">
+              <AlertTitle>Could not load daily rewards</AlertTitle>
+              <AlertDescription>{error.message}</AlertDescription>
+            </Alert>
+          ) : rewardData ? (
+            <DailyCheckin
+              pairId={buddyPair.id}
+              myActivity={rewardData.myActivity}
+              buddyActivity={rewardData.buddyActivity}
+            />
+          ) : null}
+          <p className="text-center text-sm text-muted-foreground mt-4">Card selection game coming soon!</p>
+        </div>
       </CardContent>
     </Card>
   );
