@@ -33,7 +33,6 @@ serve(async (req) => {
     weekStartDate.setDate(weekStartDate.getDate() - (weekStartDate.getDay() + 6) % 7);
     const weekStartString = weekStartDate.toISOString().split('T')[0];
 
-    // Get my activity for today
     const { data: myActivity } = await supabase
       .from('buddy_daily_activity')
       .select('*')
@@ -41,7 +40,6 @@ serve(async (req) => {
       .eq('activity_date', today)
       .single();
 
-    // Get buddy's activity for today
     const { data: buddyPair } = await supabase.from('buddies').select('user_one_id, user_two_id').eq('id', pairId).single();
     if (!buddyPair) throw new Error("Buddy pair not found.");
     const buddyId = buddyPair.user_one_id === user.id ? buddyPair.user_two_id : buddyPair.user_one_id;
@@ -53,16 +51,14 @@ serve(async (req) => {
       .eq('activity_date', today)
       .single();
 
-    // Get current week's rewards
-    const { data: rewardWeek } = await supabase.from('buddy_reward_weeks').select('*').eq('week_start_date', weekStartString).single();
+    const { data: dailyRewards } = await supabase.from('buddy_daily_rewards').select('*').eq('buddy_pair_id', pairId).eq('reward_date', today).single();
 
-    // Get pair's progress for the week
     const { data: progress } = await supabase.from('buddy_weekly_progress').select('*').eq('buddy_pair_id', pairId).eq('week_start_date', weekStartString).single();
 
     return new Response(JSON.stringify({
       myActivity: myActivity || null,
       buddyActivity: buddyActivity || null,
-      rewardWeek: rewardWeek || null,
+      dailyRewards: dailyRewards || null,
       progress: progress || null,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 

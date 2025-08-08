@@ -25,7 +25,7 @@ interface RewardCardsProps {
   pairId: string;
   myActivity: Activity | null;
   buddyActivity: Activity | null;
-  rewardWeek: { rewards: Reward[] } | null;
+  dailyRewards: { rewards: Reward[] } | null;
   progress: Progress | null;
 }
 
@@ -54,7 +54,7 @@ const PrizeIcon = ({ reward }: { reward: Reward }) => {
   }
 };
 
-export const RewardCards = ({ pairId, myActivity, buddyActivity, rewardWeek, progress }: RewardCardsProps) => {
+export const RewardCards = ({ pairId, myActivity, buddyActivity, dailyRewards, progress }: RewardCardsProps) => {
   const queryClient = useQueryClient();
   const [isFlipping, setIsFlipping] = React.useState<number | null>(null);
 
@@ -84,7 +84,7 @@ export const RewardCards = ({ pairId, myActivity, buddyActivity, rewardWeek, pro
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-4 gap-2 sm:grid-cols-7 sm:gap-4 [perspective:1000px]">
-        {rewardWeek?.rewards.map((reward, index) => {
+        {dailyRewards?.rewards.map((reward, index) => {
           const cardNumber = index + 1;
           const isMyChoice = myChoice === cardNumber;
           const isBuddyChoice = buddyChoice === cardNumber;

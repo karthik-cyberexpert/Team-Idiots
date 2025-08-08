@@ -91,7 +91,7 @@ export const CurrentBuddy = ({ buddyPair }: CurrentBuddyProps) => {
                 pairId={buddyPair.id}
                 myActivity={rewardData.myActivity}
                 buddyActivity={rewardData.buddyActivity}
-                rewardWeek={rewardData.rewardWeek}
+                dailyRewards={rewardData.dailyRewards}
                 progress={rewardData.progress}
               />
             </div>
