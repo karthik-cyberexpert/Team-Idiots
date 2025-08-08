@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.200.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.0'
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.47.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,15 +7,38 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // This function should be called by a cron job or an admin.
-  const authHeader = req.headers.get('Authorization')
-  const functionSecret = Deno.env.get('FINALIZE_CHALLENGE_SECRET')
-
-  if (!functionSecret || authHeader !== `Bearer ${functionSecret}`) {
-    return new Response("Unauthorized", { status: 401 })
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
+    // Dual authorization check for cron job secret or admin JWT
+    const authHeader = req.headers.get('Authorization')!
+    const functionSecret = Deno.env.get('FINALIZE_CHALLENGE_SECRET')
+    let isAuthorized = false;
+
+    if (authHeader === `Bearer ${functionSecret}`) {
+      isAuthorized = true;
+    } else {
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        { global: { headers: { Authorization: authHeader } } }
+      )
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single()
+        if (profile?.role === 'admin') {
+          isAuthorized = true;
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      return new Response("Unauthorized", { status: 401, headers: corsHeaders })
+    }
+    // End authorization check
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',

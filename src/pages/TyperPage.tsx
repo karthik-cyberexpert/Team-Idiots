@@ -72,6 +72,14 @@ const updateTaskStatus = async (taskId: string) => {
   if (error) throw new Error(error.message);
 };
 
+// Helper to normalize different types of quotes into standard ones
+const normalizeText = (text: string) => {
+  if (!text) return "";
+  return text
+    .replace(/[\u2018\u2019]/g, "'") // Converts curly single quotes to straight
+    .replace(/[\u201C\u201D]/g, '"'); // Converts curly double quotes to straight
+};
+
 const Countdown = ({ targetDate, onEnd }: { targetDate: Date, onEnd: () => void }) => {
   const [remaining, setRemaining] = React.useState("00:00:00");
 
@@ -184,7 +192,8 @@ const TyperPage = () => {
       setEndTime(finalTime);
       const durationInMinutes = (finalTime - startTime) / 60000;
       
-      const originalTextPortion = currentText.content.substring(0, finalInputText.length);
+      const normalizedOriginal = normalizeText(currentText.content);
+      const originalTextPortion = normalizedOriginal.substring(0, finalInputText.length);
       let correctChars = 0;
       for (let i = 0; i < finalInputText.length; i++) {
         if (finalInputText[i] === originalTextPortion[i]) {
@@ -293,13 +302,17 @@ const TyperPage = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (!currentText || endTime || timeState !== 'ACTIVE') return;
-    const value = e.target.value;
+    const value = normalizeText(e.target.value);
     setInputText(value);
     if (!startTime) setStartTime(Date.now());
-    if (value.length >= currentText.content.length) {
+    if (value.length >= normalizeText(currentText.content).length) {
       calculateResults(value);
     }
   };
+
+  const normalizedContent = React.useMemo(() => {
+    return currentText ? normalizeText(currentText.content) : "";
+  }, [currentText]);
 
   const getCharClass = (char: string, index: number) => {
     if (index >= inputText.length) return "text-muted-foreground";
@@ -366,7 +379,7 @@ const TyperPage = () => {
                 onCopy={(e) => e.preventDefault()}
                 onContextMenu={(e) => e.preventDefault()}
               >
-                {currentText.content.split("").map((char, index) => (
+                {normalizedContent.split("").map((char, index) => (
                   <span key={index} className={cn(getCharClass(char, index))}>{char}</span>
                 ))}
               </div>
