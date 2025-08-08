@@ -1,15 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { UserCog, Users } from "lucide-react";
+import { UserCog, Users, Sparkles } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { showSuccess, showError } from "@/utils/toast";
 
 interface BuddyPair {
   id: string;
@@ -20,6 +22,12 @@ interface BuddyPair {
 
 const fetchAllBuddyPairs = async (): Promise<BuddyPair[]> => {
   const { data, error } = await supabase.functions.invoke("get-all-buddy-pairs");
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+const generateDailyRewards = async () => {
+  const { data, error } = await supabase.functions.invoke("generate-daily-buddy-rewards");
   if (error) throw new Error(error.message);
   return data;
 };
@@ -41,14 +49,32 @@ const columns: ColumnDef<BuddyPair>[] = [
 ];
 
 const BuddiesManagementPage = () => {
+  const queryClient = useQueryClient();
   const { data, isLoading, error } = useQuery<BuddyPair[]>({
     queryKey: ["allBuddyPairs"],
     queryFn: fetchAllBuddyPairs,
   });
 
+  const generateRewardsMutation = useMutation({
+    mutationFn: generateDailyRewards,
+    onSuccess: (data) => {
+      showSuccess(data.message || "Daily rewards generated successfully!");
+      queryClient.invalidateQueries({ queryKey: ["buddyRewardData"] });
+    },
+    onError: (err: Error) => {
+      showError(err.message);
+    },
+  });
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl sm:text-3xl font-bold">Buddies Management</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl sm:text-3xl font-bold">Buddies Management</h1>
+        <Button onClick={() => generateRewardsMutation.mutate()} disabled={generateRewardsMutation.isPending}>
+          <Sparkles className="mr-2 h-4 w-4" />
+          {generateRewardsMutation.isPending ? "Generating..." : "Generate Today's Rewards"}
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>All Buddy Pairs</CardTitle>
