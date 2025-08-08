@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DailyCheckin } from "./DailyCheckin";
+import { RewardCards } from "./RewardCards";
 
 interface BuddyPair {
   id: string;
@@ -67,10 +68,36 @@ export const CurrentBuddy = ({ buddyPair }: CurrentBuddyProps) => {
     <Card>
       <CardHeader>
         <CardTitle>You are buddies with {buddyPair.buddy.full_name}!</CardTitle>
-        <CardDescription>Check in daily to become eligible for rewards.</CardDescription>
+        <CardDescription>Check in daily and pick a card. If you both pick the same one, you both win!</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex flex-col items-center gap-4">
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-semibold text-center mb-4">Daily Rewards</h3>
+          {isLoading ? (
+            <Skeleton className="h-48 w-full" />
+          ) : error ? (
+            <Alert variant="destructive">
+              <AlertTitle>Could not load daily rewards</AlertTitle>
+              <AlertDescription>{error.message}</AlertDescription>
+            </Alert>
+          ) : rewardData ? (
+            <div className="space-y-4">
+              <DailyCheckin
+                pairId={buddyPair.id}
+                myActivity={rewardData.myActivity}
+                buddyActivity={rewardData.buddyActivity}
+              />
+              <RewardCards
+                pairId={buddyPair.id}
+                myActivity={rewardData.myActivity}
+                buddyActivity={rewardData.buddyActivity}
+                rewardWeek={rewardData.rewardWeek}
+                progress={rewardData.progress}
+              />
+            </div>
+          ) : null}
+        </div>
+        <div className="flex flex-col items-center gap-4 border-t pt-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
               <AvatarImage src={profile?.avatar_url || undefined} />
@@ -86,25 +113,6 @@ export const CurrentBuddy = ({ buddyPair }: CurrentBuddyProps) => {
             <HeartCrack className="mr-2 h-4 w-4" />
             {mutation.isPending ? "Unpairing..." : "Unpair"}
           </Button>
-        </div>
-
-        <div className="border-t pt-6">
-          <h3 className="text-lg font-semibold text-center mb-4">Daily Rewards</h3>
-          {isLoading ? (
-            <Skeleton className="h-32 w-full" />
-          ) : error ? (
-            <Alert variant="destructive">
-              <AlertTitle>Could not load daily rewards</AlertTitle>
-              <AlertDescription>{error.message}</AlertDescription>
-            </Alert>
-          ) : rewardData ? (
-            <DailyCheckin
-              pairId={buddyPair.id}
-              myActivity={rewardData.myActivity}
-              buddyActivity={rewardData.buddyActivity}
-            />
-          ) : null}
-          <p className="text-center text-sm text-muted-foreground mt-4">Card selection game coming soon!</p>
         </div>
       </CardContent>
     </Card>
