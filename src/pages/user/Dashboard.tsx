@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, MessageSquare, ListTodo, Type, Gamepad2, Zap } from "lucide-react";
+import { FileText, MessageSquare, ListTodo, Type, Gamepad2, Zap, Users } from "lucide-react";
 import { XpBar } from "@/components/dashboard/XpBar";
 
 const UserDashboard = () => {
@@ -40,6 +40,12 @@ const UserDashboard = () => {
       description: "View and use your special abilities.",
       icon: <Zap className="h-8 w-8 text-vibrant-yellow" />,
       link: "/dashboard/power-ups",
+    },
+    {
+      title: "Buddies",
+      description: "Collaborate and connect with your buddy.",
+      icon: <Users className="h-8 w-8 text-vibrant-red" />,
+      link: "/dashboard/buddies",
     },
   ];
 

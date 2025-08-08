@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, ListTodo, Database, Type } from "lucide-react";
+import { Users, ListTodo, Database, Type, UserCog } from "lucide-react";
 
 const AdminDashboard = () => {
   const adminFeatures = [
@@ -27,6 +27,12 @@ const AdminDashboard = () => {
       description: "Manage sample texts and view statistics for the Typer app.",
       icon: <Type className="h-8 w-8 text-vibrant-orange" />,
       link: "/admin/typer-management",
+    },
+    {
+      title: "Buddies Management",
+      description: "Create and manage buddy pairs for users.",
+      icon: <UserCog className="h-8 w-8 text-vibrant-blue" />,
+      link: "/admin/buddies-management",
     },
   ];
 

@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Gamepad2, Gavel, Zap, Pickaxe } from "lucide-react";
+import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Gamepad2, Gavel, Zap, Pickaxe, UserCog } from "lucide-react";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -68,6 +68,11 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       icon: <Zap className="h-4 w-4" />,
     },
     {
+      href: "/dashboard/buddies",
+      label: "Buddies",
+      icon: <Users className="h-4 w-4" />,
+    },
+    {
       href: "/dashboard/gold-mine",
       label: "Gold Mine",
       icon: <Pickaxe className="h-4 w-4" />,
@@ -100,6 +105,12 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       href: "/admin/auction-management",
       label: "Auction Management",
       icon: <Gavel className="h-4 w-4" />,
+      adminOnly: true,
+    },
+    {
+      href: "/admin/buddies-management",
+      label: "Buddies Management",
+      icon: <UserCog className="h-4 w-4" />,
       adminOnly: true,
     },
   ];
