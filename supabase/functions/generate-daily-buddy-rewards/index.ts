@@ -8,16 +8,16 @@ const corsHeaders = {
 
 // --- Reward Generation Logic ---
 const REWARD_POOL = [
-  { type: 'gp', amount: 50 },
-  { type: 'gp', amount: 100 },
-  { type: 'gp', amount: 25 },
-  { type: 'gp', amount: -25 },
-  { type: 'xp', amount: 75 },
-  { type: 'xp', amount: 100 },
-  { type: 'xp', amount: 150 },
+  { type: 'gp', amount: 1000 },
+  { type: 'gp', amount: 2500 },
+  { type: 'gp', amount: 5000 },
+  { type: 'gp', amount: 10000 },
+  { type: 'gp', amount: 25000 },
   { type: 'power_up', power: 'shield' },
   { type: 'power_up', power: '2x_boost' },
   { type: 'power_up', power: 'attack' },
+  { type: 'power_up', power: 'gp_transfer' },
+  { type: 'nothing', amount: 0 },
   { type: 'nothing', amount: 0 },
   { type: 'nothing', amount: 0 },
   { type: 'nothing', amount: 0 },
