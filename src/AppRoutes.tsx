@@ -31,6 +31,7 @@ import GoldMinePage from "./pages/GoldMinePage";
 import BuddiesPage from "./pages/BuddiesPage";
 import BuddiesManagementPage from "./pages/admin/BuddiesManagementPage";
 import QuizManagementPage from "./pages/admin/quiz/QuizManagementPage";
+import QuizPage from "./pages/QuizPage";
 
 export const AppRoutes = () => {
   const { maintenanceMode, loading: settingsLoading } = useSettings();
@@ -73,6 +74,7 @@ export const AppRoutes = () => {
           <Route path="/dashboard/power-ups" element={<ErrorBoundary><PowerUpsPage /></ErrorBoundary>} />
           <Route path="/dashboard/buddies" element={<ErrorBoundary><BuddiesPage /></ErrorBoundary>} />
           <Route path="/dashboard/gold-mine" element={<ErrorBoundary><GoldMinePage /></ErrorBoundary>} />
+          <Route path="/dashboard/quiz" element={<ErrorBoundary><QuizPage /></ErrorBoundary>} />
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<ErrorBoundary><UserManagement /></ErrorBoundary>} />
             <Route path="/admin/tasks" element={<ErrorBoundary><TaskManagement /></ErrorBoundary>} />

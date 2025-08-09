@@ -53,6 +53,11 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       icon: <Type className="h-4 w-4" />,
     },
     {
+      href: "/dashboard/quiz",
+      label: "Quiz Game",
+      icon: <HelpCircle className="h-4 w-4" />,
+    },
+    {
       href: "/dashboard/game-leaderboard",
       label: "Game Leaderboard",
       icon: <Gamepad2 className="h-4 w-4" />,

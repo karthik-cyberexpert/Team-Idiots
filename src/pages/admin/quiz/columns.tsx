@@ -17,12 +17,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { TimePicker } from "@/components/ui/time-picker"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 type QuizSetActions = {
   onShowContent: (set: QuizSet) => void;
   onUpdateStatus: (id: string, status: 'published' | 'inactive') => void;
   onUpdateDate: (id: string, date: Date) => void;
   onUpdateTime: (id: string, type: 'start_time' | 'end_time', time: string) => void;
+  onUpdateReward: (id: string, type: 'gp' | 'xp', amount: number) => void;
   onDelete: (id:string) => void;
 }
 
@@ -96,6 +99,42 @@ export const getColumns = (actions: QuizSetActions): ColumnDef<QuizSet>[] => [
           onChange={(time) => actions.onUpdateTime(set.id, 'end_time', time)}
           disabled={set.status !== 'published'}
         />
+      );
+    }
+  },
+  {
+    id: "rewards",
+    header: "Rewards",
+    cell: ({ row }) => {
+      const set = row.original as any; // Cast to any to access new properties
+      const [amount, setAmount] = React.useState(set.points_per_question || 10);
+
+      const handleBlur = () => {
+        actions.onUpdateReward(set.id, set.reward_type, amount);
+      };
+
+      return (
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(Number(e.target.value))}
+            onBlur={handleBlur}
+            className="w-16 h-8"
+            disabled={set.status === 'published'}
+          />
+          <Select
+            value={set.reward_type || 'gp'}
+            onValueChange={(value) => actions.onUpdateReward(set.id, value as any, amount)}
+            disabled={set.status === 'published'}
+          >
+            <SelectTrigger className="w-20 h-8"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="gp">GP</SelectItem>
+              <SelectItem value="xp">XP</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       );
     }
   },

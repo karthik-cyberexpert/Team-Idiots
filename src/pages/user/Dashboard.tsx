@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, MessageSquare, ListTodo, Type, Gamepad2, Zap, Users } from "lucide-react";
+import { FileText, MessageSquare, ListTodo, Type, Gamepad2, Zap, Users, HelpCircle } from "lucide-react";
 import { XpBar } from "@/components/dashboard/XpBar";
 
 const UserDashboard = () => {
@@ -28,6 +28,12 @@ const UserDashboard = () => {
       description: "Improve your typing speed and accuracy.",
       icon: <Type className="h-8 w-8 text-vibrant-purple" />,
       link: "/dashboard/typer",
+    },
+    {
+      title: "Quiz Game",
+      description: "Test your knowledge with daily quizzes.",
+      icon: <HelpCircle className="h-8 w-8 text-vibrant-yellow" />,
+      link: "/dashboard/quiz",
     },
     {
       title: "Game Leaderboard",

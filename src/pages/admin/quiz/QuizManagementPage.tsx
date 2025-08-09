@@ -42,7 +42,7 @@ const QuizManagementPage = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (variables: { id: string; status?: 'published' | 'inactive'; assign_date?: string; start_time?: string; end_time?: string; }) => {
+    mutationFn: async (variables: { id: string; status?: 'published' | 'inactive'; assign_date?: string; start_time?: string; end_time?: string; reward_type?: 'gp' | 'xp'; points_per_question?: number; }) => {
       const { error } = await supabase.functions.invoke("update-quiz-set", { body: variables });
       if (error) throw new Error(error.message);
     },
@@ -74,6 +74,7 @@ const QuizManagementPage = () => {
     onUpdateStatus: (id, status) => updateMutation.mutate({ id, status }),
     onUpdateDate: (id, date) => updateMutation.mutate({ id, assign_date: date.toISOString() }),
     onUpdateTime: (id, type, time) => updateMutation.mutate({ id, [type]: time }),
+    onUpdateReward: (id, type, amount) => updateMutation.mutate({ id, reward_type: type, points_per_question: amount }),
     onDelete: (id) => setSetToDelete(id),
   }), [updateMutation]);
 
