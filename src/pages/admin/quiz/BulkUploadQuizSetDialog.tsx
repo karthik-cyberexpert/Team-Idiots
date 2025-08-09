@@ -64,6 +64,7 @@ export const BulkUploadQuizSetDialog = ({ open, onOpenChange, suggestedTitle }: 
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const fileName = file.name.toLowerCase();
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
@@ -71,7 +72,6 @@ export const BulkUploadQuizSetDialog = ({ open, onOpenChange, suggestedTitle }: 
         if (!content) throw new Error("Could not read file content.");
         
         let jsonData;
-        const fileName = file.name.toLowerCase();
 
         if (fileName.endsWith('.json')) {
           jsonData = JSON.parse(content as string);
