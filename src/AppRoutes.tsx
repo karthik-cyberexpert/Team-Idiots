@@ -30,6 +30,7 @@ import PowerUpsPage from "./pages/PowerUpsPage";
 import GoldMinePage from "./pages/GoldMinePage";
 import BuddiesPage from "./pages/BuddiesPage";
 import BuddiesManagementPage from "./pages/admin/BuddiesManagementPage";
+import QuizManagementPage from "./pages/admin/quiz/QuizManagementPage";
 
 export const AppRoutes = () => {
   const { maintenanceMode, loading: settingsLoading } = useSettings();
@@ -79,6 +80,7 @@ export const AppRoutes = () => {
             <Route path="/admin/typer-management" element={<ErrorBoundary><TyperSetManagementPage /></ErrorBoundary>} />
             <Route path="/admin/auction-management" element={<ErrorBoundary><AuctionManagementPage /></ErrorBoundary>} />
             <Route path="/admin/buddies-management" element={<ErrorBoundary><BuddiesManagementPage /></ErrorBoundary>} />
+            <Route path="/admin/quiz-management" element={<ErrorBoundary><QuizManagementPage /></ErrorBoundary>} />
           </Route>
         </Route>
       </Route>
