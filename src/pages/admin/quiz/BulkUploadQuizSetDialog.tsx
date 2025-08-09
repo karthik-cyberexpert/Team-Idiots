@@ -73,7 +73,9 @@ export const BulkUploadQuizSetDialog = ({ open, onOpenChange, suggestedTitle }: 
         let jsonData;
         const fileName = file.name.toLowerCase();
 
-        if (fileName.endsWith('.xlsx')) {
+        if (fileName.endsWith('.json')) {
+          jsonData = JSON.parse(content as string);
+        } else if (fileName.endsWith('.xlsx')) {
           const workbook = XLSX.read(content, { type: 'array' });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
@@ -82,7 +84,7 @@ export const BulkUploadQuizSetDialog = ({ open, onOpenChange, suggestedTitle }: 
             options: JSON.parse(row.options) // Assuming options are stored as a JSON string in the sheet
           }));
         } else {
-          throw new Error("Unsupported file type. Please use XLSX.");
+          throw new Error("Unsupported file type. Please use JSON or XLSX.");
         }
 
         const validatedData = bulkUploadSchema.parse(jsonData);
@@ -96,26 +98,40 @@ export const BulkUploadQuizSetDialog = ({ open, onOpenChange, suggestedTitle }: 
     };
     reader.onerror = () => showError("Error reading file.");
 
-    if (file.name.toLowerCase().endsWith('.xlsx')) {
+    if (fileName.endsWith('.json')) {
+      reader.readAsText(file, 'UTF-8');
+    } else if (fileName.endsWith('.xlsx')) {
       reader.readAsArrayBuffer(file);
     }
   };
 
-  const templateData = [
+  const jsonTemplateData = [
     {
       question: "What is the capital of France?",
-      options: JSON.stringify(["Paris", "London", "Berlin", "Madrid"]),
+      options: ["Paris", "London", "Berlin", "Madrid"],
       correct_option_index: 0
     },
     {
       question: "Which planet is known as the Red Planet?",
-      options: JSON.stringify(["Earth", "Mars", "Jupiter", "Saturn"]),
+      options: ["Earth", "Mars", "Jupiter", "Saturn"],
       correct_option_index: 1
     }
   ];
 
+  const xlsxTemplateData = jsonTemplateData.map(item => ({
+    ...item,
+    options: JSON.stringify(item.options)
+  }));
+
+  const handleDownloadJsonTemplate = () => {
+    const jsonString = JSON.stringify(jsonTemplateData, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    saveAs(blob, "quiz_set_template.json");
+    showSuccess("JSON template downloaded!");
+  };
+
   const handleDownloadXlsxTemplate = () => {
-    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const worksheet = XLSX.utils.json_to_sheet(xlsxTemplateData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Quiz Questions");
     worksheet['!cols'] = [{ wch: 50 }, { wch: 50 }, { wch: 20 }];
@@ -131,7 +147,7 @@ export const BulkUploadQuizSetDialog = ({ open, onOpenChange, suggestedTitle }: 
         <DialogHeader>
           <DialogTitle>Upload Quiz Set</DialogTitle>
           <DialogDescription>
-            Upload an XLSX file with questions. The 'options' column must be a JSON string array.
+            Upload a JSON or XLSX file with questions. In XLSX, the 'options' column must be a JSON string array.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -141,15 +157,20 @@ export const BulkUploadQuizSetDialog = ({ open, onOpenChange, suggestedTitle }: 
           </div>
           <div className="space-y-2">
             <Label>Download Template</Label>
-            <Button variant="outline" onClick={handleDownloadXlsxTemplate} className="w-full">
-              <Download className="mr-2 h-4 w-4" /> XLSX Template
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleDownloadJsonTemplate} className="flex-1">
+                <Download className="mr-2 h-4 w-4" /> JSON
+              </Button>
+              <Button variant="outline" onClick={handleDownloadXlsxTemplate} className="flex-1">
+                <Download className="mr-2 h-4 w-4" /> XLSX
+              </Button>
+            </div>
           </div>
           <Button onClick={() => fileInputRef.current?.click()} disabled={bulkCreateMutation.isPending}>
             <FileUp className="mr-2 h-4 w-4" />
             {bulkCreateMutation.isPending ? "Uploading..." : "Select File to Upload"}
           </Button>
-          <input type="file" accept=".xlsx" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+          <input type="file" accept=".json,.xlsx" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
         </div>
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
