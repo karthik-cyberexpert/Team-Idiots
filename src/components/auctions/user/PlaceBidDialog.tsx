@@ -115,10 +115,6 @@ export const PlaceBidDialog = ({ open, onOpenChange, auction, isFinalSeconds }: 
 
   const onSubmit = (values: FormValues) => {
     if (!auction) return;
-    if (!isFinalSeconds && values.bid_amount <= auction.current_price) {
-      form.setError("bid_amount", { message: "Bid must be higher than the current price." });
-      return;
-    }
     if (profile && profile.game_points < values.bid_amount) {
       form.setError("bid_amount", { message: "Insufficient game points." });
       return;
