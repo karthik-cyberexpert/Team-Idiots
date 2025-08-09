@@ -134,6 +134,7 @@ const TyperPage = () => {
   const [pointsAwarded, setPointsAwarded] = React.useState<number | null>(null);
   const [timeState, setTimeState] = React.useState<'PENDING' | 'ACTIVE' | 'EXPIRED'>('PENDING');
   const [nextStartTime, setNextStartTime] = React.useState<Date | null>(null);
+  const [challengeStartTime, setChallengeStartTime] = React.useState<Date | null>(null);
   const [challengeEndTime, setChallengeEndTime] = React.useState<Date | null>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -254,6 +255,7 @@ const TyperPage = () => {
     const set = currentText.typer_sets;
     if (!set || !set.start_time || !set.end_time) {
       setTimeState('ACTIVE');
+      setChallengeStartTime(null);
       setChallengeEndTime(null);
       return;
     }
@@ -271,6 +273,7 @@ const TyperPage = () => {
       if (now < startTimeToday) {
         setTimeState('PENDING');
         setNextStartTime(startTimeToday);
+        setChallengeStartTime(null);
         setChallengeEndTime(null);
       } else if (now > endTimeToday) {
         setTimeState('EXPIRED');
@@ -278,9 +281,11 @@ const TyperPage = () => {
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(startH, startM, 0, 0);
         setNextStartTime(tomorrow);
+        setChallengeStartTime(null);
         setChallengeEndTime(null);
       } else {
         setTimeState('ACTIVE');
+        setChallengeStartTime(startTimeToday);
         setChallengeEndTime(endTimeToday);
         setNextStartTime(null);
       }
@@ -348,8 +353,8 @@ const TyperPage = () => {
                   {currentText ? "Type the text below as fast and accurately as you can." : "Great job! Check back later for new texts."}
                 </CardDescription>
               </div>
-              {timeState === 'ACTIVE' && challengeEndTime && (
-                <ChallengeTimer endTime={challengeEndTime} />
+              {timeState === 'ACTIVE' && challengeStartTime && challengeEndTime && (
+                <ChallengeTimer startTime={challengeStartTime} endTime={challengeEndTime} />
               )}
             </div>
           </CardHeader>
