@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
 import { HandCoins } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const formSchema = z.object({
   bid_amount: z.coerce.number().int().positive("Bid must be a positive number."),
@@ -70,9 +71,6 @@ export const PlaceBidDialog = ({ open, onOpenChange, auction, isFinalSeconds }: 
   const { profile } = useAuth();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      bid_amount: 0,
-    },
   });
 
   const { data: bids, isLoading: bidsLoading } = useQuery<BidWithProfile[]>({
@@ -80,12 +78,6 @@ export const PlaceBidDialog = ({ open, onOpenChange, auction, isFinalSeconds }: 
     queryFn: () => fetchBids(auction!.id),
     enabled: !!auction && open && !isFinalSeconds,
   });
-
-  React.useEffect(() => {
-    if (auction && open) {
-      form.setValue('bid_amount', auction.current_price + 1);
-    }
-  }, [auction, open, form]);
 
   React.useEffect(() => {
     if (!auction) return;
@@ -116,8 +108,7 @@ export const PlaceBidDialog = ({ open, onOpenChange, auction, isFinalSeconds }: 
     mutationFn: placeBid,
     onSuccess: () => {
       showSuccess("Bid placed successfully!");
-      const latestPrice = (queryClient.getQueryData<Auction[]>(['liveAuctions'])?.find(a => a.id === auction?.id)?.current_price) || auction?.current_price || 0;
-      form.reset({ bid_amount: latestPrice + 1 });
+      form.reset();
     },
     onError: (err: Error) => showError(err.message),
   });
@@ -143,7 +134,7 @@ export const PlaceBidDialog = ({ open, onOpenChange, auction, isFinalSeconds }: 
           <DialogDescription>
             {isFinalSeconds
               ? "Bidding is blind for the final moments!"
-              : `Current price is ${auction?.current_price} GP.`}
+              : "Place a bid higher than the current price."}
             {' '}Your balance is {profile?.game_points || 0} GP.
           </DialogDescription>
         </DialogHeader>
@@ -181,13 +172,22 @@ export const PlaceBidDialog = ({ open, onOpenChange, auction, isFinalSeconds }: 
             </div>
           )}
           <div>
+            {!isFinalSeconds && (
+              <Card className="mb-4">
+                <CardHeader className="p-4">
+                  <CardDescription>Current Highest Bid</CardDescription>
+                  <CardTitle className="text-3xl">{auction?.current_price} GP</CardTitle>
+                  <p className="text-sm text-muted-foreground">by {auction?.profiles?.full_name || "No bids yet"}</p>
+                </CardHeader>
+              </Card>
+            )}
             <h3 className="font-semibold mb-2">Your Bid</h3>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField control={form.control} name="bid_amount" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Bid Amount (GP)</FormLabel>
-                    <FormControl><Input type="number" {...field} /></FormControl>
+                    <FormControl><Input type="number" placeholder="Enter your bid" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
