@@ -73,9 +73,7 @@ export const BulkUploadQuizSetDialog = ({ open, onOpenChange, suggestedTitle }: 
         let jsonData;
         const fileName = file.name.toLowerCase();
 
-        if (fileName.endsWith('.json')) {
-          jsonData = JSON.parse(content as string);
-        } else if (fileName.endsWith('.xlsx')) {
+        if (fileName.endsWith('.xlsx')) {
           const workbook = XLSX.read(content, { type: 'array' });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
@@ -84,7 +82,7 @@ export const BulkUploadQuizSetDialog = ({ open, onOpenChange, suggestedTitle }: 
             options: JSON.parse(row.options) // Assuming options are stored as a JSON string in the sheet
           }));
         } else {
-          throw new Error("Unsupported file type. Please use JSON or XLSX.");
+          throw new Error("Unsupported file type. Please use XLSX.");
         }
 
         const validatedData = bulkUploadSchema.parse(jsonData);
@@ -98,9 +96,7 @@ export const BulkUploadQuizSetDialog = ({ open, onOpenChange, suggestedTitle }: 
     };
     reader.onerror = () => showError("Error reading file.");
 
-    if (fileName.endsWith('.json')) {
-      reader.readAsText(file, 'UTF-8');
-    } else if (fileName.endsWith('.xlsx')) {
+    if (file.name.toLowerCase().endsWith('.xlsx')) {
       reader.readAsArrayBuffer(file);
     }
   };
@@ -135,7 +131,7 @@ export const BulkUploadQuizSetDialog = ({ open, onOpenChange, suggestedTitle }: 
         <DialogHeader>
           <DialogTitle>Upload Quiz Set</DialogTitle>
           <DialogDescription>
-            Upload a JSON or XLSX file with questions. In XLSX, the 'options' column must be a JSON string array.
+            Upload an XLSX file with questions. The 'options' column must be a JSON string array.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -153,7 +149,7 @@ export const BulkUploadQuizSetDialog = ({ open, onOpenChange, suggestedTitle }: 
             <FileUp className="mr-2 h-4 w-4" />
             {bulkCreateMutation.isPending ? "Uploading..." : "Select File to Upload"}
           </Button>
-          <input type="file" accept=".json,.xlsx" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+          <input type="file" accept=".xlsx" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
         </div>
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
