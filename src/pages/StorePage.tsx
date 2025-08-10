@@ -118,26 +118,31 @@ const StorePage = () => {
               {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-48 w-full" />)}
             </div>
           </div>
-        ) : data && data.items.length > 0 ? (
+        ) : data && (data.items.length > 0 || data.sections.length > 0) ? (
           <>
-            {data.sections.map(section => (
-              itemsBySection[section.id] && (
+            {data.sections.map(section => {
+              const sectionItems = itemsBySection[section.id] || [];
+              return (
                 <div key={section.id} className="space-y-4">
                   <h2 className="text-xl font-semibold">{section.name}</h2>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {itemsBySection[section.id].map(item => (
-                      <StoreItemCard
-                        key={item.id}
-                        item={item}
-                        onPurchase={setItemToConfirm}
-                        isPurchasing={purchaseMutation.isPending && purchaseMutation.variables === item.id}
-                        userGp={profile?.game_points || 0}
-                      />
-                    ))}
-                  </div>
+                  {sectionItems.length > 0 ? (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {sectionItems.map(item => (
+                        <StoreItemCard
+                          key={item.id}
+                          item={item}
+                          onPurchase={setItemToConfirm}
+                          isPurchasing={purchaseMutation.isPending && purchaseMutation.variables === item.id}
+                          userGp={profile?.game_points || 0}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground italic">No items in this section yet.</p>
+                  )}
                 </div>
-              )
-            ))}
+              );
+            })}
             {uncategorizedItems.length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Other Items</h2>
