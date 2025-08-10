@@ -14,6 +14,7 @@ import Confetti from 'react-dom-confetti';
 import { QuizSet, QuizQuestion } from "@/types/quiz";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
+import { useAuth } from "@/contexts/AuthProvider";
 
 type QuizState = 'idle' | 'playing' | 'results';
 type Answer = { questionId: string; selectedIndex: number };
@@ -32,14 +33,17 @@ const submitQuizResults = async (quizSetId: string, answers: Answer[]): Promise<
   return data;
 };
 
-const leaveQuizWithPenalty = async () => {
-  const { data, error } = await supabase.functions.invoke("leave-quiz-with-penalty");
+const penalizeQuizAttempt = async ({ quizSetId, penaltyAmount }: { quizSetId: string, penaltyAmount: number }) => {
+  const { data, error } = await supabase.functions.invoke("penalize-quiz-attempt", {
+    body: { quizSetId, penaltyAmount },
+  });
   if (error) throw new Error(error.message);
   return data;
 };
 
 const QuizPage = () => {
   const queryClient = useQueryClient();
+  const { session } = useAuth();
   const [quizState, setQuizState] = React.useState<QuizState>('idle');
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = React.useState(false);
   const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = React.useState(false);
@@ -70,7 +74,7 @@ const QuizPage = () => {
   });
 
   const leaveQuizMutation = useMutation({
-    mutationFn: leaveQuizWithPenalty,
+    mutationFn: () => penalizeQuizAttempt({ quizSetId: activeQuiz!.id, penaltyAmount: 250 }),
     onSuccess: (data) => {
       showSuccess(data.message);
       queryClient.invalidateQueries({ queryKey: ["gameLeaderboard"] });
@@ -83,6 +87,32 @@ const QuizPage = () => {
       setIsLeaveConfirmOpen(false);
     },
   });
+
+  React.useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (quizState === 'playing' && activeQuiz && session?.access_token) {
+        const penaltyData = {
+          quizSetId: activeQuiz.id,
+          penaltyAmount: 250,
+        };
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        };
+        fetch(`https://dlzrqqbksdookwdllydp.supabase.co/functions/v1/penalize-quiz-attempt`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(penaltyData),
+          keepalive: true,
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [quizState, activeQuiz, session]);
 
   React.useEffect(() => {
     if (quizState !== 'playing' || timeLeft === null) return;
@@ -288,7 +318,7 @@ const QuizPage = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
             <AlertDialogDescription>
-              Leaving the quiz will incur a penalty of <span className="font-bold text-vibrant-red">500 GP</span>. This action cannot be undone.
+              Leaving the quiz will incur a penalty of <span className="font-bold text-vibrant-red">250 GP</span>. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

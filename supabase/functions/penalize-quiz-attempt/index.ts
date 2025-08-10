@@ -22,6 +22,11 @@ serve(async (req) => {
   }
 
   try {
+    const { quizSetId, penaltyAmount } = await req.json();
+    if (!quizSetId || typeof penaltyAmount !== 'number') {
+      throw new Error("Quiz Set ID and penalty amount are required.");
+    }
+
     const supabase = await getAuthenticatedClient(req);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated.");
@@ -31,7 +36,18 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 1. Get user's current game points
+    // 1. Check if user already has a result for this quiz to prevent double penalty
+    const { count: existingResult } = await supabaseAdmin
+      .from('quiz_results')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('quiz_set_id', quizSetId);
+
+    if (existingResult && existingResult > 0) {
+      return new Response(JSON.stringify({ message: "Quiz already logged. No penalty applied." }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // 2. Get user's current game points
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('game_points')
@@ -41,14 +57,8 @@ serve(async (req) => {
     if (profileError) throw profileError;
     if (!profile) throw new Error("User profile not found.");
 
-    // 2. Check if user has enough points
-    const penalty = 500;
-    if (profile.game_points < penalty) {
-      throw new Error(`Insufficient funds. You need ${penalty} GP to leave the quiz.`);
-    }
-
-    // 3. Deduct points
-    const newGamePoints = profile.game_points - penalty;
+    // 3. Deduct points (ensure it doesn't go below zero)
+    const newGamePoints = Math.max(0, profile.game_points - penaltyAmount);
     const { error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({ game_points: newGamePoints })
@@ -56,7 +66,16 @@ serve(async (req) => {
 
     if (updateError) throw updateError;
 
-    return new Response(JSON.stringify({ message: `You have left the quiz. ${penalty} GP has been deducted.` }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // 4. Log a failed quiz attempt to prevent retaking
+    const { error: resultError } = await supabaseAdmin.from('quiz_results').insert({
+      user_id: user.id,
+      quiz_set_id: quizSetId,
+      score: 0,
+      points_awarded: 0
+    });
+    if (resultError) throw resultError;
+
+    return new Response(JSON.stringify({ message: `Quiz attempt ended. ${penaltyAmount} GP has been deducted.` }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
