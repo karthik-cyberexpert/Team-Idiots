@@ -73,11 +73,6 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       icon: <Gavel className="h-4 w-4" />,
     },
     {
-      href: "/dashboard/store",
-      label: "Store",
-      icon: <Store className="h-4 w-4" />,
-    },
-    {
       href: "/dashboard/power-ups",
       label: "My Power-ups",
       icon: <Zap className="h-4 w-4" />,
@@ -126,12 +121,6 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       href: "/admin/auction-management",
       label: "Auction Management",
       icon: <Gavel className="h-4 w-4" />,
-      adminOnly: true,
-    },
-    {
-      href: "/admin/store-management",
-      label: "Store Management",
-      icon: <Store className="h-4 w-4" />,
       adminOnly: true,
     },
     {
