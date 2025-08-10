@@ -65,16 +65,38 @@ serve(async (req) => {
       }
     }
 
-    // 4. Calculate points and update profile
-    const pointsAwarded = correctCount * quizSet.points_per_question;
+    // 4. Calculate points, apply boosts, and update profile
+    let pointsAwarded = correctCount * quizSet.points_per_question;
+
+    // Check for active boosts
+    const { data: boosts, error: boostError } = await supabaseAdmin
+      .from('user_power_ups')
+      .select('power_type')
+      .eq('user_id', user.id)
+      .eq('is_used', false)
+      .gt('expires_at', new Date().toISOString());
+    
+    if (boostError) throw boostError;
+
+    let boost_multiplier = 1;
+    if (boosts && boosts.some(b => b.power_type === '4x_boost')) {
+      boost_multiplier = 4;
+    } else if (boosts && boosts.some(b => b.power_type === '2x_boost')) {
+      boost_multiplier = 2;
+    }
+
+    pointsAwarded = pointsAwarded * boost_multiplier;
+
     if (pointsAwarded > 0) {
-      const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select(quizSet.reward_type).eq('id', user.id).single();
+      const rewardColumn = quizSet.reward_type === 'gp' ? 'game_points' : 'xp';
+      
+      const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select(rewardColumn).eq('id', user.id).single();
       if (profileError) throw profileError;
 
-      const currentPoints = profile[quizSet.reward_type] || 0;
+      const currentPoints = profile[rewardColumn] || 0;
       const newPoints = currentPoints + pointsAwarded;
 
-      const { error: updateError } = await supabaseAdmin.from('profiles').update({ [quizSet.reward_type]: newPoints }).eq('id', user.id);
+      const { error: updateError } = await supabaseAdmin.from('profiles').update({ [rewardColumn]: newPoints }).eq('id', user.id);
       if (updateError) throw updateError;
 
       if (quizSet.reward_type === 'xp') {
