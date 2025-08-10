@@ -124,6 +124,12 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       adminOnly: true,
     },
     {
+      href: "/admin/store-management",
+      label: "Store Management",
+      icon: <Store className="h-4 w-4" />,
+      adminOnly: true,
+    },
+    {
       href: "/admin/buddies-management",
       label: "Buddies Management",
       icon: <UserCog className="h-4 w-4" />,
