@@ -15,6 +15,7 @@ import { QuizSet, QuizQuestion } from "@/types/quiz";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthProvider";
+import { useQuizState } from "@/contexts/QuizStateProvider";
 
 type QuizState = 'idle' | 'playing' | 'results';
 type Answer = { questionId: string; selectedIndex: number };
@@ -44,6 +45,7 @@ const penalizeQuizAttempt = async ({ quizSetId, penaltyAmount }: { quizSetId: st
 const QuizPage = () => {
   const queryClient = useQueryClient();
   const { session } = useAuth();
+  const { setIsQuizActive } = useQuizState();
   const [quizState, setQuizState] = React.useState<QuizState>('idle');
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = React.useState(false);
   const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = React.useState(false);
@@ -87,6 +89,15 @@ const QuizPage = () => {
       setIsLeaveConfirmOpen(false);
     },
   });
+
+  React.useEffect(() => {
+    if (quizState === 'playing') {
+      setIsQuizActive(true);
+    } else {
+      setIsQuizActive(false);
+    }
+    return () => setIsQuizActive(false);
+  }, [quizState, setIsQuizActive]);
 
   React.useEffect(() => {
     const handleBeforeUnload = () => {

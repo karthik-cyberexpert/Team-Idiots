@@ -14,7 +14,8 @@ import { useAuth } from "@/contexts/AuthProvider";
 import { useSettings } from "@/contexts/SettingsProvider";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Notifications } from "@/components/notifications/Notifications"; // Import Notifications
+import { Notifications } from "@/components/notifications/Notifications";
+import { useQuizState } from "@/contexts/QuizStateProvider";
 
 export function DashboardLayout() {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
@@ -23,6 +24,7 @@ export function DashboardLayout() {
   const { theme, setTheme } = useTheme();
   const { profile } = useAuth();
   const { maintenanceMode, toggleMaintenanceMode, loading: settingsLoading } = useSettings();
+  const { isQuizActive } = useQuizState();
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -35,6 +37,16 @@ export function DashboardLayout() {
   const handleThemeToggle = (checked: boolean) => {
     setTheme(checked ? 'dark' : 'light');
   };
+
+  if (isQuizActive) {
+    return (
+      <div className="min-h-screen w-full bg-background">
+        <main className="flex flex-1 flex-col p-4 lg:p-6 h-screen">
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
 
   const MaintenanceToggle = () => (
     <>
@@ -108,7 +120,7 @@ export function DashboardLayout() {
             {theme === 'dark' ? <Moon className="h-4 w-4 text-white" /> : <Sun className="h-4 w-4 text-gray-800" />}
           </Switch>
           <RefreshButton />
-          <Notifications /> {/* Add Notifications component here */}
+          <Notifications />
           <UserNav />
         </div>
       </header>
@@ -158,7 +170,7 @@ export function DashboardLayout() {
             {theme === 'dark' ? <Moon className="h-4 w-4 text-white" /> : <Sun className="h-4 w-4 text-gray-800" />}
           </Switch>
           <RefreshButton />
-          <Notifications /> {/* Add Notifications component here */}
+          <Notifications />
           <UserNav />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">

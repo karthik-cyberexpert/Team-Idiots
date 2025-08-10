@@ -8,6 +8,7 @@ import { ThemeProvider } from "./contexts/ThemeProvider";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { SettingsProvider } from "./contexts/SettingsProvider";
 import { AppRoutes } from "./AppRoutes";
+import { QuizStateProvider } from "./contexts/QuizStateProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,9 +40,11 @@ const App = () => (
         <HashRouter>
           <AuthProvider>
             <SettingsProvider>
-              <ErrorBoundary>
-                <AppRoutes />
-              </ErrorBoundary>
+              <QuizStateProvider>
+                <ErrorBoundary>
+                  <AppRoutes />
+                </ErrorBoundary>
+              </QuizStateProvider>
             </SettingsProvider>
           </AuthProvider>
         </HashRouter>
