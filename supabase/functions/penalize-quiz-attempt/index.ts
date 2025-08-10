@@ -36,7 +36,7 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 1. Check if user already has a result for this quiz to prevent double penalty
+    // 1. Check if user already has a result for this quiz to prevent applying a penalty after completion.
     const { count: existingResult } = await supabaseAdmin
       .from('quiz_results')
       .select('*', { count: 'exact', head: true })
@@ -44,7 +44,7 @@ serve(async (req) => {
       .eq('quiz_set_id', quizSetId);
 
     if (existingResult && existingResult > 0) {
-      return new Response(JSON.stringify({ message: "Quiz already logged. No penalty applied." }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ message: "Quiz already completed. No penalty applied." }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // 2. Get user's current game points
@@ -66,14 +66,8 @@ serve(async (req) => {
 
     if (updateError) throw updateError;
 
-    // 4. Log a failed quiz attempt to prevent retaking
-    const { error: resultError } = await supabaseAdmin.from('quiz_results').insert({
-      user_id: user.id,
-      quiz_set_id: quizSetId,
-      score: 0,
-      points_awarded: 0
-    });
-    if (resultError) throw resultError;
+    // NOTE: We no longer log a failed attempt, allowing the user to retry.
+    // The penalty is the consequence for leaving early.
 
     return new Response(JSON.stringify({ message: `Quiz attempt ended. ${penaltyAmount} GP has been deducted.` }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
