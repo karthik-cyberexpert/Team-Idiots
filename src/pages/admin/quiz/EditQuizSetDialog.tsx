@@ -32,6 +32,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TimePicker } from "@/components/ui/time-picker";
 
 const formSchema = z.object({
   reward_type: z.enum(["gp", "xp"]),
@@ -165,7 +166,7 @@ export const EditQuizSetDialog = ({ open, onOpenChange, quizSet }: EditQuizSetDi
                 <FormField control={form.control} name="enrollment_deadline_time" render={({ field }) => (
                     <FormItem className="flex flex-col w-1/3">
                         <FormLabel>Time</FormLabel>
-                        <FormControl><Input type="time" {...field} /></FormControl>
+                        <FormControl><TimePicker value={field.value} onChange={field.onChange} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
