@@ -1,0 +1,63 @@
+import { serve } from "https://deno.land/std@0.200.0/http/server.ts"
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.47.0'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+async function getAuthenticatedClient(req: Request): Promise<SupabaseClient> {
+  const authHeader = req.headers.get('Authorization')!
+  if (!authHeader) throw new Error("Missing Authorization header");
+  return createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { global: { headers: { Authorization: authHeader } } }
+  )
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
+  try {
+    const supabase = await getAuthenticatedClient(req);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated.");
+
+    const supabaseAdmin = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // 1. Get user's current game points
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('game_points')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) throw profileError;
+    if (!profile) throw new Error("User profile not found.");
+
+    // 2. Check if user has enough points
+    const penalty = 500;
+    if (profile.game_points < penalty) {
+      throw new Error(`Insufficient funds. You need ${penalty} GP to leave the quiz.`);
+    }
+
+    // 3. Deduct points
+    const newGamePoints = profile.game_points - penalty;
+    const { error: updateError } = await supabaseAdmin
+      .from('profiles')
+      .update({ game_points: newGamePoints })
+      .eq('id', user.id);
+
+    if (updateError) throw updateError;
+
+    return new Response(JSON.stringify({ message: `You have left the quiz. ${penalty} GP has been deducted.` }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+})

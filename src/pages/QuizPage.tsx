@@ -3,11 +3,11 @@
 import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { HelpCircle, Check, X, Trophy, Timer } from "lucide-react";
+import { HelpCircle, Check, X, Trophy, Timer, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { showSuccess, showError } from "@/utils/toast";
 import Confetti from 'react-dom-confetti';
@@ -32,10 +32,17 @@ const submitQuizResults = async (quizSetId: string, answers: Answer[]): Promise<
   return data;
 };
 
+const leaveQuizWithPenalty = async () => {
+  const { data, error } = await supabase.functions.invoke("leave-quiz-with-penalty");
+  if (error) throw new Error(error.message);
+  return data;
+};
+
 const QuizPage = () => {
   const queryClient = useQueryClient();
   const [quizState, setQuizState] = React.useState<QuizState>('idle');
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = React.useState(false);
+  const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = React.useState(false);
   const [shuffledQuestions, setShuffledQuestions] = React.useState<QuizQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
   const [answers, setAnswers] = React.useState<Answer[]>([]);
@@ -60,6 +67,21 @@ const QuizPage = () => {
       queryClient.invalidateQueries({ queryKey: ["activeQuiz"] });
     },
     onError: (err: Error) => showError(err.message),
+  });
+
+  const leaveQuizMutation = useMutation({
+    mutationFn: leaveQuizWithPenalty,
+    onSuccess: (data) => {
+      showSuccess(data.message);
+      queryClient.invalidateQueries({ queryKey: ["gameLeaderboard"] });
+      queryClient.invalidateQueries({ queryKey: ["activeQuiz"] });
+      setQuizState('idle');
+      setIsLeaveConfirmOpen(false);
+    },
+    onError: (err: Error) => {
+      showError(err.message);
+      setIsLeaveConfirmOpen(false);
+    },
   });
 
   React.useEffect(() => {
@@ -116,6 +138,10 @@ const QuizPage = () => {
 
   const handleFinishTest = () => {
     resultsMutation.mutate();
+  };
+
+  const handleLeaveQuiz = () => {
+    leaveQuizMutation.mutate();
   };
 
   if (isLoading) {
@@ -189,6 +215,12 @@ const QuizPage = () => {
             })}
           </div>
         </CardContent>
+        <CardFooter className="flex justify-end">
+          <Button variant="destructive" onClick={() => setIsLeaveConfirmOpen(true)}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Leave Quiz
+          </Button>
+        </CardFooter>
       </Card>
     );
   }
@@ -230,6 +262,23 @@ const QuizPage = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmStart}>Proceed</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isLeaveConfirmOpen} onOpenChange={setIsLeaveConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Leaving the quiz will incur a penalty of <span className="font-bold text-vibrant-red">500 GP</span>. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continue Quiz</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLeaveQuiz} disabled={leaveQuizMutation.isPending}>
+              {leaveQuizMutation.isPending ? "Leaving..." : "Leave & Pay Penalty"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
