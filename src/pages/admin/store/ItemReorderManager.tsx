@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { GripVertical, Edit, Trash2, Save } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
-import { cn } from "@/lib/utils";
 
 interface ItemReorderManagerProps {
   sections: StoreSection[];
@@ -23,7 +22,6 @@ export const ItemReorderManager = ({ sections, items, onEdit, onDelete }: ItemRe
   const [localItems, setLocalItems] = React.useState<Record<string, StoreItem[]>>({});
   const [hasChanges, setHasChanges] = React.useState(false);
   const dragItem = React.useRef<{ item: StoreItem; fromSectionId: string } | null>(null);
-  const dragOverNode = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     const sortedSections = [...sections].sort((a, b) => a.position - b.position);
@@ -65,12 +63,15 @@ export const ItemReorderManager = ({ sections, items, onEdit, onDelete }: ItemRe
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, toSectionId: string, toPosition: number) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, toSectionId: string, toPosition: number) => {
+    e.preventDefault();
     if (!dragItem.current) return;
+
     const { item: draggedItem, fromSectionId } = dragItem.current;
 
     setLocalItems(prev => {
       const newItems = JSON.parse(JSON.stringify(prev));
+      
       const sourceItems = newItems[fromSectionId].filter((i: StoreItem) => i.id !== draggedItem.id);
       newItems[fromSectionId] = sourceItems;
 
@@ -80,8 +81,9 @@ export const ItemReorderManager = ({ sections, items, onEdit, onDelete }: ItemRe
       
       return newItems;
     });
-    dragItem.current.fromSectionId = toSectionId;
+
     setHasChanges(true);
+    dragItem.current = null;
   };
 
   const handleSaveOrder = () => {
@@ -101,21 +103,21 @@ export const ItemReorderManager = ({ sections, items, onEdit, onDelete }: ItemRe
   const renderSection = (sectionId: string, title: string) => {
     const sectionItems = localItems[sectionId] || [];
     return (
-      <div key={sectionId} onDragOver={(e) => e.preventDefault()} onDrop={() => handleDragEnter(dragOverNode.current as any, sectionId, sectionItems.length)}>
+      <div key={sectionId}>
         <h2 className="text-xl font-semibold mb-4">{title}</h2>
-        {sectionItems.length === 0 ? (
-          <div className="h-24 border-2 border-dashed rounded-md flex items-center justify-center text-muted-foreground">
-            Drop items here
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sectionItems.map((item, index) => (
+        <div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => handleDrop(e, sectionId, sectionItems.length)}
+        >
+          {sectionItems.length > 0 ? (
+            sectionItems.map((item, index) => (
               <div
                 key={item.id}
                 draggable
                 onDragStart={(e) => handleDragStart(e, item, sectionId)}
-                onDragEnter={(e) => handleDragEnter(e, sectionId, index)}
-                ref={dragOverNode}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => handleDrop(e, sectionId, index)}
                 className="cursor-grab"
               >
                 <Card className="flex flex-col h-full">
@@ -133,9 +135,13 @@ export const ItemReorderManager = ({ sections, items, onEdit, onDelete }: ItemRe
                   </CardFooter>
                 </Card>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          ) : (
+            <div className="col-span-full h-24 border-2 border-dashed rounded-md flex items-center justify-center text-muted-foreground">
+              Drop items here
+            </div>
+          )}
+        </div>
       </div>
     );
   };
