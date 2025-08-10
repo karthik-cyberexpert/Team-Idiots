@@ -28,13 +28,11 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated.");
 
-    // Use admin client to bypass RLS for the update
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Fetch the power-up to verify ownership and status
     const { data: powerUp, error: fetchError } = await supabaseAdmin
       .from('user_power_ups')
       .select('*')
@@ -49,7 +47,20 @@ serve(async (req) => {
       throw new Error("This is not a boost power-up.");
     }
 
-    // Activate the boost: set expires_at to 24 hours from now
+    // Check if another boost is already active for this user.
+    const { data: activeBoosts, error: activeBoostError } = await supabaseAdmin
+      .from('user_power_ups')
+      .select('id')
+      .eq('user_id', user.id)
+      .in('power_type', ['2x_boost', '4x_boost'])
+      .gt('expires_at', new Date().toISOString());
+
+    if (activeBoostError) throw activeBoostError;
+
+    if (activeBoosts && activeBoosts.length > 0) {
+      throw new Error("You already have an active boost. Please wait for it to expire.");
+    }
+
     const expires = new Date();
     expires.setHours(expires.getHours() + 24);
     
