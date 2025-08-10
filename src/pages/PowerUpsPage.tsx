@@ -44,7 +44,7 @@ const PowerUpsPage = () => {
   const { data: powerUps, isLoading } = useQuery<UserPowerUp[]>({
     queryKey: ["myPowerUps"],
     queryFn: fetchMyPowerUps,
-    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchInterval: 1000, // Refetch every 1 second
   });
 
   const [transferDialogOpen, setTransferDialogOpen] = React.useState(false);

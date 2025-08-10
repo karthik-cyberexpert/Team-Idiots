@@ -39,7 +39,7 @@ const TyperSetManagementPage = () => {
   const { data: typerSets, isLoading, error } = useQuery<TyperSet[]>({
     queryKey: ["typerSets"],
     queryFn: fetchTyperSets,
-    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchInterval: 1000, // Refetch every 1 second
   });
 
   const updateMutation = useMutation({

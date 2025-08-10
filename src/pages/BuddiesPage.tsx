@@ -24,7 +24,7 @@ const BuddiesPage = () => {
     queryKey: ['buddyData', user?.id],
     queryFn: () => fetchBuddyData(user!.id),
     enabled: !!user,
-    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchInterval: 1000, // Refetch every 1 second
   });
 
   if (isLoading) {
