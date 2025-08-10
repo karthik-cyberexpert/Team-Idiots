@@ -319,7 +319,7 @@ const QuizPage = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmStart}>Proceed</AlertDialogAction>
+            <Button onClick={handleConfirmStart}>Proceed</Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
