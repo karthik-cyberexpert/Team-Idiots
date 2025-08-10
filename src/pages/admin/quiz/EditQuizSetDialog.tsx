@@ -27,10 +27,17 @@ import { Input } from "@/components/ui/input";
 import { showSuccess, showError } from "@/utils/toast";
 import { QuizSet } from "@/types/quiz";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   reward_type: z.enum(["gp", "xp"]),
   points_per_question: z.coerce.number().int().min(0),
+  time_limit_minutes: z.coerce.number().int().min(1).nullable(),
+  enrollment_deadline: z.date().nullable(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -38,8 +45,8 @@ type FormValues = z.infer<typeof formSchema>;
 const updateQuizSet = async (id: string, values: FormValues) => {
     const body = {
         id,
-        reward_type: values.reward_type,
-        points_per_question: values.points_per_question,
+        ...values,
+        enrollment_deadline: values.enrollment_deadline ? values.enrollment_deadline.toISOString() : null,
     };
     const { error } = await supabase.functions.invoke("update-quiz-set", { body });
     if (error) throw new Error(error.message);
@@ -53,6 +60,7 @@ interface EditQuizSetDialogProps {
 
 export const EditQuizSetDialog = ({ open, onOpenChange, quizSet }: EditQuizSetDialogProps) => {
   const queryClient = useQueryClient();
+  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -63,6 +71,8 @@ export const EditQuizSetDialog = ({ open, onOpenChange, quizSet }: EditQuizSetDi
       form.reset({
         reward_type: quizSet.reward_type || 'gp',
         points_per_question: quizSet.points_per_question || 10,
+        time_limit_minutes: quizSet.time_limit_minutes || null,
+        enrollment_deadline: quizSet.enrollment_deadline ? new Date(quizSet.enrollment_deadline) : null,
       });
     }
   }, [quizSet, form]);
@@ -106,6 +116,31 @@ export const EditQuizSetDialog = ({ open, onOpenChange, quizSet }: EditQuizSetDi
                     </FormItem>
                 )} />
             </div>
+            <FormField control={form.control} name="time_limit_minutes" render={({ field }) => (
+                <FormItem><FormLabel>Time Limit (minutes)</FormLabel>
+                    <FormControl><Input type="number" placeholder="e.g., 30" {...field} value={field.value ?? ""} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+            )} />
+            <FormField control={form.control} name="enrollment_deadline" render={({ field }) => (
+                <FormItem className="flex flex-col">
+                    <FormLabel>Enrollment Deadline</FormLabel>
+                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                                <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={field.value || undefined} onSelect={(date) => { field.onChange(date); setIsDatePickerOpen(false); }} initialFocus />
+                        </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                </FormItem>
+            )} />
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
               <Button type="submit" disabled={mutation.isPending}>

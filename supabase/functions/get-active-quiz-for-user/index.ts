@@ -25,42 +25,34 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated.");
 
-    // 1. Fetch all published quiz sets with their question IDs
+    const now = new Date().toISOString();
+
+    // 1. Fetch all published quiz sets that haven't expired
     const { data: sets, error: setError } = await supabase
       .from('quiz_sets')
-      .select('*, quiz_questions(id)')
+      .select('id, title, reward_type, points_per_question, time_limit_minutes, enrollment_deadline, quiz_questions(id)')
       .eq('status', 'published')
-      .order('created_at', { ascending: false }); // Get newest first
+      .or(`enrollment_deadline.is.null,enrollment_deadline.gte.${now}`)
+      .order('created_at', { ascending: false });
 
     if (setError) throw setError;
     if (!sets || sets.length === 0) {
       return new Response(JSON.stringify(null), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // 2. Fetch all of the user's answered question IDs
+    // 2. Fetch all of the user's completed quiz set IDs
     const { data: results, error: resultsError } = await supabase
       .from('quiz_results')
-      .select('question_id')
+      .select('quiz_set_id')
       .eq('user_id', user.id);
     
     if (resultsError) throw resultsError;
-    const answeredQuestionIds = new Set(results.map(r => r.question_id));
+    const completedSetIds = new Set(results.map(r => r.quiz_set_id));
 
-    // 3. Find the first set that is not fully completed by the user
-    let activeSet = null;
-    for (const set of sets) {
-      const totalQuestions = set.quiz_questions.length;
-      if (totalQuestions === 0) continue; // Skip empty sets
+    // 3. Find the first set that is not completed by the user
+    const activeSetInfo = sets.find(set => !completedSetIds.has(set.id));
 
-      const answeredInSet = set.quiz_questions.filter(q => answeredQuestionIds.has(q.id)).length;
-      
-      if (answeredInSet < totalQuestions) {
-        activeSet = set;
-        break; // Found the most recent, incomplete set
-      }
-    }
-
-    if (!activeSet) {
+    if (!activeSetInfo) {
       return new Response(JSON.stringify(null), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -68,26 +60,12 @@ serve(async (req) => {
     const { data: fullSetData, error: fullSetError } = await supabase
       .from('quiz_sets')
       .select('*, quiz_questions(*)')
-      .eq('id', activeSet.id)
+      .eq('id', activeSetInfo.id)
       .single();
 
     if (fullSetError) throw fullSetError;
 
-    // 5. Filter out questions the user has already answered in this set
-    const remainingQuestions = fullSetData.quiz_questions.filter(q => !answeredQuestionIds.has(q.id));
-    
-    // Shuffle the remaining questions
-    for (let i = remainingQuestions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [remainingQuestions[i], remainingQuestions[j]] = [remainingQuestions[j], remainingQuestions[i]];
-    }
-
-    const response = {
-      ...fullSetData,
-      quiz_questions: remainingQuestions,
-    };
-
-    return new Response(JSON.stringify(response), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify(fullSetData), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }

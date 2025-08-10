@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { id, status, reward_type, points_per_question } = await req.json()
+    const { id, status, reward_type, points_per_question, time_limit_minutes, enrollment_deadline } = await req.json()
     if (!id) {
       throw new Error("ID is required.")
     }
@@ -21,10 +21,14 @@ serve(async (req) => {
         status?: string; 
         reward_type?: 'gp' | 'xp';
         points_per_question?: number;
+        time_limit_minutes?: number | null;
+        enrollment_deadline?: string | null;
     } = {};
     if (status) updatePayload.status = status;
     if (reward_type) updatePayload.reward_type = reward_type;
     if (points_per_question !== undefined) updatePayload.points_per_question = points_per_question;
+    if (time_limit_minutes !== undefined) updatePayload.time_limit_minutes = time_limit_minutes;
+    if (enrollment_deadline !== undefined) updatePayload.enrollment_deadline = enrollment_deadline;
 
 
     if (Object.keys(updatePayload).length === 0) {
