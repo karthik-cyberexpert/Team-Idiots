@@ -38,20 +38,20 @@ const AuctionPage = () => {
   const { data: auctions, isLoading } = useQuery<Auction[]>({
     queryKey: ["liveAuctions"],
     queryFn: fetchLiveAuctions,
-    refetchInterval: 3000,
+    refetchInterval: 5000,
   });
 
   const { data: myWinnings } = useQuery<Auction[]>({
     queryKey: ["myWinnings"],
     queryFn: fetchMyWinnings,
     enabled: !!user,
-    refetchInterval: 3000,
+    refetchInterval: 5000,
   });
 
   const { data: endedAuctions } = useQuery<Auction[]>({
     queryKey: ["endedAuctions"],
     queryFn: fetchEndedAuctions,
-    refetchInterval: 3000,
+    refetchInterval: 5000,
   });
 
   React.useEffect(() => {

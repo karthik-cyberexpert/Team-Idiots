@@ -52,6 +52,7 @@ const AuctionManagementPage = () => {
   const { data, isLoading } = useQuery<AuctionData>({
     queryKey: ["auctionData"],
     queryFn: fetchAuctionData,
+    refetchInterval: 5000, // Refetch every 5 seconds
   });
 
   const availableItems = React.useMemo(() => {

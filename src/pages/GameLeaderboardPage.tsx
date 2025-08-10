@@ -46,7 +46,7 @@ const GameLeaderboardPage = () => {
   const { data: profiles, isLoading, error } = useQuery<GameProfile[]>({
     queryKey: ["gameLeaderboard"],
     queryFn: fetchGameLeaderboard,
-    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchInterval: 5000, // Refetch every 5 seconds
   });
 
   const getRankIcon = (rank: number) => {

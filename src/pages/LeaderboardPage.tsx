@@ -50,7 +50,7 @@ const LeaderboardPage = () => {
   const { data: profiles, isLoading, error } = useQuery<Profile[]>({
     queryKey: ["leaderboard"],
     queryFn: fetchLeaderboard,
-    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchInterval: 5000, // Refetch every 5 seconds
   });
 
   const sortedProfiles = React.useMemo(() => {

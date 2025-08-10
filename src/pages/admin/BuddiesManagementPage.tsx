@@ -70,6 +70,7 @@ const BuddiesManagementPage = () => {
   const { data, isLoading, error } = useQuery<BuddyPair[]>({
     queryKey: ["allBuddyPairs"],
     queryFn: fetchAllBuddyPairs,
+    refetchInterval: 5000, // Refetch every 5 seconds
   });
 
   const generateRewardsMutation = useMutation({

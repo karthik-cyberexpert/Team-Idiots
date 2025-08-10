@@ -30,52 +30,15 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated.");
 
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const { data, error } = await supabase.rpc('submit_and_award_quiz_answer', {
+      p_user_id: user.id,
+      p_question_id: questionId,
+      p_selected_index: selectedIndex
+    }).single();
 
-    const { data: question, error: qError } = await supabaseAdmin
-      .from('quiz_questions')
-      .select('correct_option_index, set_id')
-      .eq('id', questionId)
-      .single();
-    if (qError) throw qError;
+    if (error) throw error;
 
-    const { data: set, error: sError } = await supabaseAdmin
-      .from('quiz_sets')
-      .select('reward_type, points_per_question')
-      .eq('id', question.set_id)
-      .single();
-    if (sError) throw sError;
-
-    const isCorrect = question.correct_option_index === selectedIndex;
-    let pointsAwarded = 0;
-
-    if (isCorrect) {
-      pointsAwarded = set.points_per_question;
-      
-      // Map reward_type to the actual column name in the profiles table
-      const rewardColumn = set.reward_type === 'gp' ? 'game_points' : 'xp';
-
-      const { data: profile, error: pError } = await supabaseAdmin.from('profiles').select(rewardColumn).eq('id', user.id).single();
-      if (pError) throw pError;
-
-      const currentPoints = profile[rewardColumn] || 0;
-      await supabaseAdmin.from('profiles').update({ [rewardColumn]: currentPoints + pointsAwarded }).eq('id', user.id);
-
-      if (set.reward_type === 'xp') {
-        await supabaseAdmin.from('xp_history').insert({ user_id: user.id, xp_change: pointsAwarded, reason: `Quiz question correct` });
-      }
-    }
-
-    await supabaseAdmin.from('quiz_results').insert({
-      user_id: user.id,
-      question_id: questionId,
-      points_awarded: pointsAwarded
-    });
-
-    return new Response(JSON.stringify({ correct: isCorrect, pointsAwarded }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ correct: data.correct, pointsAwarded: data.points_awarded }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
