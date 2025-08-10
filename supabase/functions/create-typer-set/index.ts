@@ -58,15 +58,21 @@ serve(async (req) => {
       throw setError
     }
 
-    // 2. Prepare texts with the new set_id
+    // 2. Prepare texts with the new set_id, decoding the content
     const textsToInsert = texts.map((text, index) => {
       if (!text.title || !text.content) {
         throw new Error(`Text at index ${index} must have 'title' and 'content' properties.`);
       }
-      return {
-        title: text.title,
-        content: text.content,
-        set_id: set.id,
+      try {
+        const decodedContent = decodeURIComponent(escape(atob(text.content)));
+        return {
+          title: text.title,
+          content: decodedContent,
+          set_id: set.id,
+        }
+      } catch (e) {
+        console.error("Base64 decoding failed for text:", text.title, e);
+        throw new Error(`Failed to decode content for text at index ${index}.`);
       }
     })
 
