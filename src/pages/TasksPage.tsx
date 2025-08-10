@@ -104,18 +104,25 @@ const TasksPage = () => {
                   <CardTitle className="text-lg">{task.title}</CardTitle>
                   <CardDescription>Assigned by: {task.assigner_profile?.full_name || 'Admin'}</CardDescription>
                 </CardHeader>
-                <CardContent className="flex-grow space-y-2">
-                  <div className="flex items-center gap-2">
-                    {statusInfo.icon}
-                    <span className={statusInfo.color}>{statusInfo.text}</span>
-                  </div>
-                  {task.due_date && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      <span>Due: {format(new Date(task.due_date), "PPP p")}</span>
-                    </div>
+                <CardContent className="flex-grow space-y-4">
+                  {task.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-3 border-l-2 pl-2 italic">
+                      {task.description}
+                    </p>
                   )}
-                  {isTyperTask && <Badge variant="outline"><Type className="mr-1 h-3 w-3" />Typer Challenge</Badge>}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      {statusInfo.icon}
+                      <span className={statusInfo.color}>{statusInfo.text}</span>
+                    </div>
+                    {task.due_date && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span>Due: {format(new Date(task.due_date), "PPP p")}</span>
+                      </div>
+                    )}
+                    {isTyperTask && <Badge variant="outline"><Type className="mr-1 h-3 w-3" />Typer Challenge</Badge>}
+                  </div>
                 </CardContent>
                 <CardFooter>
                   {isTyperTask ? (
