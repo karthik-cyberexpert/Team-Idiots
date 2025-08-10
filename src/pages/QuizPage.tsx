@@ -36,6 +36,7 @@ const QuizPage = () => {
   const [isCorrect, setIsCorrect] = React.useState<boolean | null>(null);
   const [isFinished, setIsFinished] = React.useState(false);
   const [score, setScore] = React.useState(0);
+  const [finalScoreData, setFinalScoreData] = React.useState<{ score: number; rewardType: string } | null>(null);
   const [confettiActive, setConfettiActive] = React.useState(false);
   const [startDateTime, setStartDateTime] = React.useState<Date | null>(null);
   const [isUpcoming, setIsUpcoming] = React.useState(false);
@@ -43,6 +44,7 @@ const QuizPage = () => {
   const { data, isLoading, error, refetch } = useQuery<QuizSet | null>({
     queryKey: ["activeQuiz"],
     queryFn: fetchActiveQuiz,
+    refetchInterval: 1000, // Fetch every second
   });
 
   React.useEffect(() => {
@@ -58,9 +60,11 @@ const QuizPage = () => {
         setQuizSet(null);
       } else {
         setIsUpcoming(false);
-        setQuizSet(data);
-        if (data.quiz_questions.length === 0) {
-          setIsFinished(true);
+        if (!isFinished) {
+          setQuizSet(data);
+          if (data.quiz_questions.length === 0) {
+            setIsFinished(true);
+          }
         }
       }
     } else {
@@ -68,14 +72,16 @@ const QuizPage = () => {
       setStartDateTime(null);
       setIsUpcoming(false);
     }
-  }, [data]);
+  }, [data, isFinished]);
 
   const answerMutation = useMutation({
     mutationFn: ({ questionId, selectedIndex }: { questionId: string; selectedIndex: number }) => submitAnswer(questionId, selectedIndex),
     onSuccess: (data) => {
       setIsCorrect(data.correct);
+      let newScore = score;
       if (data.correct) {
-        setScore(prev => prev + data.pointsAwarded);
+        newScore = score + data.pointsAwarded;
+        setScore(newScore);
         setConfettiActive(true);
         setTimeout(() => setConfettiActive(false), 100);
       }
@@ -85,6 +91,7 @@ const QuizPage = () => {
           setSelectedAnswer(null);
           setIsCorrect(null);
         } else {
+          setFinalScoreData({ score: newScore, rewardType: quizSet!.reward_type });
           setIsFinished(true);
         }
       }, 1500);
@@ -137,6 +144,27 @@ const QuizPage = () => {
     );
   }
 
+  if (isFinished) {
+    return (
+      <Card className="text-center">
+        <CardHeader>
+          <CardTitle>Quiz Time!</CardTitle>
+        </CardHeader>
+        <CardContent className="py-10">
+          <Trophy className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <p className="text-lg text-muted-foreground">
+            You've completed today's quiz!
+          </p>
+          {finalScoreData ? (
+            <p className="text-2xl font-bold mt-2">You scored {finalScoreData.score} {finalScoreData.rewardType.toUpperCase()}!</p>
+          ) : (
+            <p className="text-muted-foreground mt-2">Your results have been recorded.</p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!quizSet || quizSet.quiz_questions.length === 0) {
     return (
       <Card className="text-center">
@@ -146,9 +174,8 @@ const QuizPage = () => {
         <CardContent className="py-10">
           <Trophy className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <p className="text-lg text-muted-foreground">
-            {isFinished ? "You've completed today's quiz!" : "There is no active quiz right now. Check back later!"}
+            There is no active quiz right now. Check back later!
           </p>
-          {isFinished && <p className="text-2xl font-bold mt-2">You scored {score} {quizSet?.reward_type.toUpperCase()}!</p>}
         </CardContent>
       </Card>
     );
