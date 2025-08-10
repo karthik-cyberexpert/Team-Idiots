@@ -162,94 +162,111 @@ const QuizPage = () => {
     );
   }
 
-  if (!activeQuiz) {
-    return (
-      <Card className="text-center max-w-2xl mx-auto">
-        <CardHeader><CardTitle>Quiz Time!</CardTitle></CardHeader>
-        <CardContent className="py-10">
-          <Trophy className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-lg text-muted-foreground">You've completed all available quizzes. Great job!</p>
-          <p className="text-sm text-muted-foreground">Check back later for more.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const renderContent = () => {
+    if (!activeQuiz) {
+      return (
+        <Card className="text-center max-w-2xl mx-auto">
+          <CardHeader><CardTitle>Quiz Time!</CardTitle></CardHeader>
+          <CardContent className="py-10">
+            <Trophy className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-lg text-muted-foreground">You've completed all available quizzes. Great job!</p>
+            <p className="text-sm text-muted-foreground">Check back later for more.</p>
+          </CardContent>
+        </Card>
+      );
+    }
 
-  if (quizState === 'playing') {
-    const currentQuestion = shuffledQuestions[currentQuestionIndex];
-    const minutes = timeLeft !== null ? Math.floor(timeLeft / 60) : 0;
-    const seconds = timeLeft !== null ? timeLeft % 60 : 0;
-
-    return (
-      <Card className="max-w-3xl mx-auto">
-        <CardHeader className="flex flex-row justify-between items-center">
-          <div>
-            <CardTitle>{activeQuiz.title}</CardTitle>
-            <CardDescription>Question {currentQuestionIndex + 1} of {shuffledQuestions.length}</CardDescription>
-          </div>
-          {timeLeft !== null && (
-            <div className="flex items-center gap-2 font-semibold text-lg">
-              <Timer className="h-5 w-5" />
-              <span>{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</span>
+    if (quizState === 'playing') {
+      const currentQuestion = shuffledQuestions[currentQuestionIndex];
+      const minutes = timeLeft !== null ? Math.floor(timeLeft / 60) : 0;
+      const seconds = timeLeft !== null ? timeLeft % 60 : 0;
+  
+      return (
+        <Card className="max-w-3xl mx-auto">
+          <CardHeader className="flex flex-row justify-between items-center">
+            <div>
+              <CardTitle>{activeQuiz.title}</CardTitle>
+              <CardDescription>Question {currentQuestionIndex + 1} of {shuffledQuestions.length}</CardDescription>
             </div>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <p className="text-xl font-semibold text-center min-h-[3em]">{currentQuestion.question}</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"><Confetti active={confettiActive} /></div>
-            {currentQuestion.options.map((option, index) => {
-              const isSelected = selectedAnswer === index;
-              const isCorrectAnswer = isCorrect !== null && index === currentQuestion.correct_option_index;
-              return (
-                <Button key={index} variant="outline" className={cn("h-auto py-4 text-base whitespace-normal justify-start text-left", isSelected && isCorrect === false && "bg-destructive/80 text-destructive-foreground animate-shake", isCorrectAnswer && "bg-vibrant-green/80 text-white")} onClick={() => handleAnswerClick(index)} disabled={selectedAnswer !== null}>
-                  <div className="flex items-center">
-                    <div className="mr-4 h-8 w-8 rounded-full border flex items-center justify-center flex-shrink-0">
-                      {isSelected && isCorrect === false && <X className="h-5 w-5" />}
-                      {isCorrectAnswer && <Check className="h-5 w-5" />}
+            {timeLeft !== null && (
+              <div className="flex items-center gap-2 font-semibold text-lg">
+                <Timer className="h-5 w-5" />
+                <span>{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</span>
+              </div>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <p className="text-xl font-semibold text-center min-h-[3em]">{currentQuestion.question}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"><Confetti active={confettiActive} /></div>
+              {currentQuestion.options.map((option, index) => {
+                const isSelected = selectedAnswer === index;
+                const isCorrectAnswer = isCorrect !== null && index === currentQuestion.correct_option_index;
+                return (
+                  <Button key={index} variant="outline" className={cn("h-auto py-4 text-base whitespace-normal justify-start text-left", isSelected && isCorrect === false && "bg-destructive/80 text-destructive-foreground animate-shake", isCorrectAnswer && "bg-vibrant-green/80 text-white")} onClick={() => handleAnswerClick(index)} disabled={selectedAnswer !== null}>
+                    <div className="flex items-center">
+                      <div className="mr-4 h-8 w-8 rounded-full border flex items-center justify-center flex-shrink-0">
+                        {isSelected && isCorrect === false && <X className="h-5 w-5" />}
+                        {isCorrectAnswer && <Check className="h-5 w-5" />}
+                      </div>
+                      <span>{option}</span>
                     </div>
-                    <span>{option}</span>
-                  </div>
-                </Button>
-              );
-            })}
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-end">
-          <Button variant="destructive" onClick={() => setIsLeaveConfirmOpen(true)}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Leave Quiz
-          </Button>
-        </CardFooter>
-      </Card>
-    );
-  }
-
-  if (quizState === 'results') {
-    const correctCount = answers.filter((ans, i) => ans.selectedIndex === shuffledQuestions[i].correct_option_index).length;
-    return (
-      <Card className="text-center max-w-2xl mx-auto">
-        <CardHeader><CardTitle>Quiz Complete!</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-xl">You answered <span className="font-bold text-vibrant-green">{correctCount}</span> correctly out of {answers.length}.</p>
-          {resultsMutation.isPending && <p>Calculating your rewards...</p>}
-          {resultsMutation.isError && <p className="text-vibrant-red">Could not save results. Please try again.</p>}
-          {finalResult && <p className="text-2xl font-bold">You earned {finalResult.pointsAwarded} {activeQuiz.reward_type.toUpperCase()}!</p>}
-          
-          {!finalResult && (
-            <Button onClick={handleFinishTest} disabled={resultsMutation.isPending}>
-              {resultsMutation.isPending ? "Calculating..." : "Finish & Claim Rewards"}
+                  </Button>
+                );
+              })}
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-end">
+            <Button variant="destructive" onClick={() => setIsLeaveConfirmOpen(true)}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Leave Quiz
             </Button>
-          )}
-          {finalResult && (
-             <Button onClick={() => { setQuizState('idle'); queryClient.invalidateQueries({ queryKey: ['activeQuiz'] }); }}>Back to Quizzes</Button>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
+          </CardFooter>
+        </Card>
+      );
+    }
+  
+    if (quizState === 'results') {
+      const correctCount = answers.filter((ans, i) => ans.selectedIndex === shuffledQuestions[i].correct_option_index).length;
+      return (
+        <Card className="text-center max-w-2xl mx-auto">
+          <CardHeader><CardTitle>Quiz Complete!</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-xl">You answered <span className="font-bold text-vibrant-green">{correctCount}</span> correctly out of {answers.length}.</p>
+            {resultsMutation.isPending && <p>Calculating your rewards...</p>}
+            {resultsMutation.isError && <p className="text-vibrant-red">Could not save results. Please try again.</p>}
+            {finalResult && <p className="text-2xl font-bold">You earned {finalResult.pointsAwarded} {activeQuiz.reward_type.toUpperCase()}!</p>}
+            
+            {!finalResult && (
+              <Button onClick={handleFinishTest} disabled={resultsMutation.isPending}>
+                {resultsMutation.isPending ? "Calculating..." : "Finish & Claim Rewards"}
+              </Button>
+            )}
+            {finalResult && (
+               <Button onClick={() => { setQuizState('idle'); queryClient.invalidateQueries({ queryKey: ['activeQuiz'] }); }}>Back to Quizzes</Button>
+            )}
+          </CardContent>
+        </Card>
+      );
+    }
 
-  // Default to 'idle' state
+    // idle state
+    return (
+        <Card className="max-w-2xl mx-auto text-center">
+            <CardHeader><CardTitle>{activeQuiz.title}</CardTitle><CardDescription>Are you ready to test your knowledge?</CardDescription></CardHeader>
+            <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-left p-4 border rounded-md">
+                <p><strong>Questions:</strong> {activeQuiz.quiz_questions.length}</p>
+                <p><strong>Reward:</strong> {activeQuiz.points_per_question} {activeQuiz.reward_type.toUpperCase()} per correct answer</p>
+                <p><strong>Time Limit:</strong> {activeQuiz.time_limit_minutes ? `${activeQuiz.time_limit_minutes} minutes` : 'None'}</p>
+                <p><strong>Enroll Before:</strong> {activeQuiz.enrollment_deadline ? format(new Date(activeQuiz.enrollment_deadline), "PPP p") : 'No deadline'}</p>
+            </div>
+            <Button size="lg" onClick={() => setIsConfirmDialogOpen(true)}>Start Quiz</Button>
+            </CardContent>
+        </Card>
+    );
+  };
+
   return (
     <>
       <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
@@ -283,18 +300,7 @@ const QuizPage = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Card className="max-w-2xl mx-auto text-center">
-        <CardHeader><CardTitle>{activeQuiz.title}</CardTitle><CardDescription>Are you ready to test your knowledge?</CardDescription></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-left p-4 border rounded-md">
-            <p><strong>Questions:</strong> {activeQuiz.quiz_questions.length}</p>
-            <p><strong>Reward:</strong> {activeQuiz.points_per_question} {activeQuiz.reward_type.toUpperCase()} per correct answer</p>
-            <p><strong>Time Limit:</strong> {activeQuiz.time_limit_minutes ? `${activeQuiz.time_limit_minutes} minutes` : 'None'}</p>
-            <p><strong>Enroll Before:</strong> {activeQuiz.enrollment_deadline ? format(new Date(activeQuiz.enrollment_deadline), "PPP p") : 'No deadline'}</p>
-          </div>
-          <Button size="lg" onClick={() => setIsConfirmDialogOpen(true)}>Start Quiz</Button>
-        </CardContent>
-      </Card>
+      {renderContent()}
     </>
   );
 };
