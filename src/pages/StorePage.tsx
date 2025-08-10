@@ -28,7 +28,7 @@ const fetchActiveStoreData = async (): Promise<StoreData> => {
     .from("store_items")
     .select("*")
     .eq("is_active", true)
-    .order("price", { ascending: true });
+    .order("position", { ascending: true }); // Sort by custom position
   if (itemsError) throw new Error(itemsError.message);
 
   return { sections: sections || [], items: items || [] };
