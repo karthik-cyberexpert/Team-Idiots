@@ -18,15 +18,20 @@ serve(async (_req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const { data, error } = await supabaseAdmin
+    const { data: items, error: itemsError } = await supabaseAdmin
       .from('store_items')
       .select('*')
       .order('created_at', { ascending: false });
+    if (itemsError) throw itemsError;
 
-    if (error) throw error;
+    const { data: sections, error: sectionsError } = await supabaseAdmin
+      .from('store_sections')
+      .select('*')
+      .order('position', { ascending: true });
+    if (sectionsError) throw sectionsError;
 
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify({ items, sections }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {

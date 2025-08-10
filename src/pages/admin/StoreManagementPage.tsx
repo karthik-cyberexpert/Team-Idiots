@@ -6,17 +6,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StoreItem } from "@/types/store";
+import { StoreItem, StoreSection } from "@/types/store";
 import { DataTable } from "@/components/ui/data-table";
 import { getColumns } from "./store/columns";
 import { CreateEditItemDialog } from "./store/CreateEditItemDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { showSuccess, showError } from "@/utils/toast";
+import { SectionManager } from "./store/SectionManager";
 
-const fetchStoreItems = async (): Promise<StoreItem[]> => {
-  const { data, error } = await supabase.functions.invoke("get-store-items");
+interface StoreManagementData {
+  items: StoreItem[];
+  sections: StoreSection[];
+}
+
+const fetchStoreManagementData = async (): Promise<StoreManagementData> => {
+  const { data, error } = await supabase.functions.invoke("get-store-management-data");
   if (error) throw new Error(error.message);
-  return data || [];
+  return data;
 };
 
 const StoreManagementPage = () => {
@@ -25,9 +31,9 @@ const StoreManagementPage = () => {
   const [itemToEdit, setItemToEdit] = React.useState<StoreItem | null>(null);
   const [itemToDelete, setItemToDelete] = React.useState<StoreItem | null>(null);
 
-  const { data: items, isLoading } = useQuery<StoreItem[]>({
-    queryKey: ["storeItems"],
-    queryFn: fetchStoreItems,
+  const { data, isLoading } = useQuery<StoreManagementData>({
+    queryKey: ["storeManagementData"],
+    queryFn: fetchStoreManagementData,
   });
 
   const updateMutation = useMutation({
@@ -39,7 +45,7 @@ const StoreManagementPage = () => {
     },
     onSuccess: () => {
       showSuccess("Item status updated.");
-      queryClient.invalidateQueries({ queryKey: ["storeItems"] });
+      queryClient.invalidateQueries({ queryKey: ["storeManagementData"] });
     },
     onError: (err: Error) => showError(err.message),
   });
@@ -51,7 +57,7 @@ const StoreManagementPage = () => {
     },
     onSuccess: () => {
       showSuccess("Item deleted successfully.");
-      queryClient.invalidateQueries({ queryKey: ["storeItems"] });
+      queryClient.invalidateQueries({ queryKey: ["storeManagementData"] });
       setItemToDelete(null);
     },
     onError: (err: Error) => {
@@ -82,6 +88,7 @@ const StoreManagementPage = () => {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         item={itemToEdit}
+        sections={data?.sections || []}
       />
       <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
         <AlertDialogContent>
@@ -98,24 +105,33 @@ const StoreManagementPage = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl sm:text-3xl font-bold">Store Management</h1>
-          <Button onClick={handleCreate}>Create New Item</Button>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl sm:text-3xl font-bold">Store Management</h1>
+            <Button onClick={handleCreate}>Create New Item</Button>
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Store Items</CardTitle>
+              <CardDescription>Add, edit, or remove items available for purchase.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-64 w-full" />
+              ) : (
+                <DataTable columns={columns} data={data?.items || []} />
+              )}
+            </CardContent>
+          </Card>
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Store Items</CardTitle>
-            <CardDescription>Add, edit, or remove items available for purchase.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-64 w-full" />
-            ) : (
-              <DataTable columns={columns} data={items || []} />
-            )}
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          {isLoading ? (
+            <Skeleton className="h-64 w-full" />
+          ) : (
+            <SectionManager sections={data?.sections || []} />
+          )}
+        </div>
       </div>
     </>
   );

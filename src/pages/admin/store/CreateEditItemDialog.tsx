@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { showSuccess, showError } from "@/utils/toast";
-import { StoreItem, StoreItemType } from "@/types/store";
+import { StoreItem, StoreSection } from "@/types/store";
 import { PowerUpType } from "@/types/auction";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -43,6 +43,7 @@ const formSchema = z.object({
   power_up_type: z.string().optional(),
   xp_amount: z.coerce.number().optional(),
   box_contents: z.array(boxContentSchema).optional(),
+  section_id: z.string().uuid().nullable(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -51,9 +52,10 @@ interface CreateEditItemDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item?: StoreItem | null;
+  sections: StoreSection[];
 }
 
-export const CreateEditItemDialog = ({ open, onOpenChange, item }: CreateEditItemDialogProps) => {
+export const CreateEditItemDialog = ({ open, onOpenChange, item, sections }: CreateEditItemDialogProps) => {
   const queryClient = useQueryClient();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -83,6 +85,7 @@ export const CreateEditItemDialog = ({ open, onOpenChange, item }: CreateEditIte
         power_up_type: "2x_boost",
         xp_amount: 100,
         box_contents: [],
+        section_id: null,
       });
     }
   }, [item, open, form]);
@@ -96,7 +99,7 @@ export const CreateEditItemDialog = ({ open, onOpenChange, item }: CreateEditIte
     },
     onSuccess: () => {
       showSuccess(`Item ${item ? 'updated' : 'created'} successfully.`);
-      queryClient.invalidateQueries({ queryKey: ["storeItems"] });
+      queryClient.invalidateQueries({ queryKey: ["storeManagementData"] });
       onOpenChange(false);
     },
     onError: (err: Error) => showError(err.message),
@@ -115,6 +118,17 @@ export const CreateEditItemDialog = ({ open, onOpenChange, item }: CreateEditIte
               <FormField control={form.control} name="name" render={({ field }) => <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>} />
               <FormField control={form.control} name="description" render={({ field }) => <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>} />
               <FormField control={form.control} name="price" render={({ field }) => <FormItem><FormLabel>Price (GP)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>} />
+              <FormField control={form.control} name="section_id" render={({ field }) => (
+                <FormItem><FormLabel>Section</FormLabel>
+                  <Select onValueChange={(value) => field.onChange(value === 'null' ? null : value)} value={field.value || 'null'}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select a section..." /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="null">Uncategorized</SelectItem>
+                      {sections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select><FormMessage />
+                </FormItem>
+              )} />
               <FormField control={form.control} name="item_type" render={({ field }) => (
                 <FormItem><FormLabel>Item Type</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>

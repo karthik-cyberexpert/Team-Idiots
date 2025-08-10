@@ -9,6 +9,12 @@ export interface BoxContent {
   weight: number;
 }
 
+export interface StoreSection {
+  id: string;
+  name: string;
+  position: number;
+}
+
 export interface StoreItem {
   id: string;
   name: string;
@@ -20,4 +26,5 @@ export interface StoreItem {
   xp_amount: number | null;
   box_contents: BoxContent[] | null;
   created_at: string;
+  section_id: string | null;
 }
