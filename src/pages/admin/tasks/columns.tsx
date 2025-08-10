@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, ArrowUpDown, Check, X, Eye } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, Check, X, Eye, Undo2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -19,7 +19,8 @@ export const getColumns = (
   onEdit: (task: Task) => void,
   onApprove: (task: Task) => void,
   onReject: (taskId: string) => void,
-  onViewSubmission: (taskId: string) => void
+  onViewSubmission: (taskId: string) => void,
+  onReturn: (taskId: string) => void
 ): ColumnDef<Task>[] => [
   {
     accessorKey: "title",
@@ -116,6 +117,10 @@ export const getColumns = (
                 <DropdownMenuItem onClick={() => onApprove(task)}>
                   <Check className="mr-2 h-4 w-4 text-vibrant-green" />
                   Approve
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onReturn(task.id)}>
+                  <Undo2 className="mr-2 h-4 w-4 text-vibrant-orange" />
+                  Return for Revision
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onReject(task.id)}>
                   <X className="mr-2 h-4 w-4 text-vibrant-red" />

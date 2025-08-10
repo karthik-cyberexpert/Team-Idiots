@@ -51,6 +51,15 @@ const deleteTask = async (taskId: string) => {
   }
 };
 
+const returnTask = async (taskId: string) => {
+  const { error } = await supabase.functions.invoke("return-task", {
+    body: { taskId },
+  });
+  if (error) {
+    throw new Error(`Failed to return task: ${error.message}`);
+  }
+};
+
 const TaskManagement = () => {
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth(); // Get current user for assignedByUserId
@@ -58,6 +67,7 @@ const TaskManagement = () => {
   const [taskToEdit, setTaskToEdit] = React.useState<Task | null>(null);
   const [taskToAward, setTaskToAward] = React.useState<Task | null>(null);
   const [taskToViewSubmission, setTaskToViewSubmission] = React.useState<string | null>(null);
+  const [taskToReturn, setTaskToReturn] = React.useState<string | null>(null);
   const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = React.useState(false);
   const [isAddCommonTaskDialogOpen, setIsAddCommonTaskDialogOpen] = React.useState(false);
   const [isBulkUploadTasksDialogOpen, setIsBulkUploadTasksDialogOpen] = React.useState(false); // New state for bulk upload dialog
@@ -140,6 +150,20 @@ const TaskManagement = () => {
     },
   });
 
+  const returnTaskMutation = useMutation({
+    mutationFn: returnTask,
+    onSuccess: () => {
+      showSuccess("Task returned to user.");
+      queryClient.invalidateQueries({ queryKey: ["adminTasks"] });
+      queryClient.invalidateQueries({ queryKey: ["userTasks"] });
+      setTaskToReturn(null);
+    },
+    onError: (err: Error) => {
+      showError(err.message);
+      setTaskToReturn(null);
+    },
+  });
+
   const handleDeleteRequest = React.useCallback((taskId: string) => setTaskToDelete(taskId), []);
   const handleEditRequest = React.useCallback((task: Task) => setTaskToEdit(task), []);
   const handleApproveRequest = React.useCallback((task: Task) => {
@@ -147,10 +171,11 @@ const TaskManagement = () => {
   }, []);
   const handleRejectRequest = React.useCallback((taskId: string) => setApprovalAction({ type: 'reject', taskId }), []);
   const handleViewSubmissionRequest = React.useCallback((taskId: string) => setTaskToViewSubmission(taskId), []);
+  const handleReturnRequest = React.useCallback((taskId: string) => setTaskToReturn(taskId), []);
 
   const columns = React.useMemo(
-    () => getColumns(handleDeleteRequest, handleEditRequest, handleApproveRequest, handleRejectRequest, handleViewSubmissionRequest),
-    [handleDeleteRequest, handleEditRequest, handleApproveRequest, handleRejectRequest, handleViewSubmissionRequest]
+    () => getColumns(handleDeleteRequest, handleEditRequest, handleApproveRequest, handleRejectRequest, handleViewSubmissionRequest, handleReturnRequest),
+    [handleDeleteRequest, handleEditRequest, handleApproveRequest, handleRejectRequest, handleViewSubmissionRequest, handleReturnRequest]
   );
 
   const handleDownloadTemplate = () => {
@@ -263,7 +288,7 @@ const TaskManagement = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Action</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to reject this task submission?
+              Are you sure you want to reject this task submission? This is a final action and will apply a penalty.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -273,6 +298,26 @@ const TaskManagement = () => {
               disabled={rejectTaskMutation.isPending}
             >
               {rejectTaskMutation.isPending ? "Processing..." : "Confirm Rejection"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!taskToReturn} onOpenChange={() => setTaskToReturn(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Return Task for Revision?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will delete the current submission and change the task status back to "Pending", allowing the user to resubmit. Are you sure?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => taskToReturn && returnTaskMutation.mutate(taskToReturn)}
+              disabled={returnTaskMutation.isPending}
+            >
+              {returnTaskMutation.isPending ? "Returning..." : "Confirm & Return"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
