@@ -29,6 +29,20 @@ type QuizSetActions = {
   onDelete: (id:string) => void;
 }
 
+const TimeDisplay = ({ value, onChange, disabled }: { value: string | null, onChange: (time: string) => void, disabled: boolean }) => {
+  const localTime = React.useMemo(() => {
+    if (!value) return "";
+    const [utcHours, utcMinutes] = value.split(':').map(Number);
+    const date = new Date();
+    date.setUTCHours(utcHours, utcMinutes, 0, 0);
+    const localHours = String(date.getHours()).padStart(2, '0');
+    const localMinutes = String(date.getMinutes()).padStart(2, '0');
+    return `${localHours}:${localMinutes}`;
+  }, [value]);
+
+  return <TimePicker value={localTime} onChange={onChange} disabled={disabled} />;
+};
+
 export const getColumns = (actions: QuizSetActions): ColumnDef<QuizSet>[] => [
   {
     accessorKey: "title",
@@ -45,7 +59,7 @@ export const getColumns = (actions: QuizSetActions): ColumnDef<QuizSet>[] => [
   },
   {
     accessorKey: "assign_date",
-    header: "Assign Date",
+    header: "Assign Date (UTC)",
     cell: ({ row }) => {
       const [isOpen, setIsOpen] = React.useState(false);
       const set = row.original;
@@ -76,12 +90,12 @@ export const getColumns = (actions: QuizSetActions): ColumnDef<QuizSet>[] => [
   },
   {
     accessorKey: "start_time",
-    header: "Start Time",
+    header: "Start Time (Local)",
     cell: ({ row }) => {
       const set = row.original;
       return (
-        <TimePicker
-          value={set.start_time || ""}
+        <TimeDisplay
+          value={set.start_time}
           onChange={(time) => actions.onUpdateTime(set.id, 'start_time', time)}
           disabled={set.status !== 'published'}
         />
@@ -90,12 +104,12 @@ export const getColumns = (actions: QuizSetActions): ColumnDef<QuizSet>[] => [
   },
   {
     accessorKey: "end_time",
-    header: "End Time",
+    header: "End Time (Local)",
     cell: ({ row }) => {
       const set = row.original;
       return (
-        <TimePicker
-          value={set.end_time || ""}
+        <TimeDisplay
+          value={set.end_time}
           onChange={(time) => actions.onUpdateTime(set.id, 'end_time', time)}
           disabled={set.status !== 'published'}
         />

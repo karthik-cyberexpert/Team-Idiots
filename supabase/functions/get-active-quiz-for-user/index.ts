@@ -25,20 +25,34 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated.");
 
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    const currentTimeStr = `${String(today.getUTCHours()).padStart(2, '0')}:${String(today.getUTCMinutes()).padStart(2, '0')}`;
-
-    const { data: activeSet, error: setError } = await supabase
+    const { data: sets, error: setError } = await supabase
       .from('quiz_sets')
       .select('*, quiz_questions(*)')
       .eq('status', 'published')
-      .eq('assign_date', todayStr)
-      .lte('start_time', currentTimeStr)
-      .gte('end_time', currentTimeStr)
-      .single();
+      .not('assign_date', 'is', null)
+      .not('start_time', 'is', null)
+      .not('end_time', 'is', null);
 
-    if (setError || !activeSet) {
+    if (setError) throw setError;
+    if (!sets || sets.length === 0) {
+      return new Response(JSON.stringify(null), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const now = new Date(); // Current UTC time
+
+    const activeSet = sets.find(set => {
+      const [startH, startM] = set.start_time.split(':').map(Number);
+      const startDateTime = new Date(set.assign_date);
+      startDateTime.setUTCHours(startH, startM, 0, 0);
+
+      const [endH, endM] = set.end_time.split(':').map(Number);
+      const endDateTime = new Date(set.assign_date);
+      endDateTime.setUTCHours(endH, endM, 0, 0);
+
+      return now >= startDateTime && now <= endDateTime;
+    });
+
+    if (!activeSet) {
       return new Response(JSON.stringify(null), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 

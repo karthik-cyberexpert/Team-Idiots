@@ -79,7 +79,17 @@ const QuizManagementPage = () => {
       const dateString = `${year}-${month}-${day}`;
       updateMutation.mutate({ id, assign_date: dateString });
     },
-    onUpdateTime: (id, type, time) => updateMutation.mutate({ id, [type]: time }),
+    onUpdateTime: (id, type, time) => {
+      if (!time) {
+        updateMutation.mutate({ id, [type]: null });
+        return;
+      }
+      const [hours, minutes] = time.split(':').map(Number);
+      const date = new Date();
+      date.setHours(hours, minutes, 0, 0);
+      const utcTime = `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`;
+      updateMutation.mutate({ id, [type]: utcTime });
+    },
     onUpdateReward: (id, type, amount) => updateMutation.mutate({ id, reward_type: type, points_per_question: amount }),
     onDelete: (id) => setSetToDelete(id),
   }), [updateMutation]);
