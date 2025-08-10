@@ -68,7 +68,7 @@ serve(async (req) => {
         awardedMessage = `You won ${awardedPrize.amount} XP!`;
       }
       if (awardedPrize.type === 'power_up' && awardedPrize.power && awardedPrize.power !== 'nothing') {
-        const basePayload = { user_id: user.id, uses_left: 1 };
+        const basePayload = { user_id: user.id, uses_left: 1, expires_at: null };
         let finalPayload;
         switch (awardedPrize.power) {
           case 'attack':
@@ -82,9 +82,7 @@ serve(async (req) => {
             break;
           case '2x_boost':
           case '4x_boost':
-            const expires = new Date();
-            expires.setHours(expires.getHours() + 24);
-            finalPayload = { ...basePayload, power_type: awardedPrize.power, expires_at: expires.toISOString() };
+            finalPayload = { ...basePayload, power_type: awardedPrize.power };
             break;
           default:
             finalPayload = null;

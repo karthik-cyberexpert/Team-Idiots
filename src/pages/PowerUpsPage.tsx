@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { PowerUpType } from "@/types/auction";
@@ -12,6 +12,7 @@ import { Zap, Shield, Handshake, Swords, Sparkles, Timer, Repeat } from "lucide-
 import { formatDistanceToNow } from "date-fns";
 import { TransferGpDialog } from "@/components/powerups/TransferGpDialog";
 import { AttackPlayerDialog } from "@/components/powerups/AttackPlayerDialog";
+import { showSuccess, showError } from "@/utils/toast";
 
 interface UserPowerUp {
   id: string;
@@ -34,8 +35,8 @@ const fetchMyPowerUps = async (): Promise<UserPowerUp[]> => {
 };
 
 const powerUpDetails: Record<PowerUpType, { icon: React.ElementType; title: string; description: string; interactive: boolean }> = {
-  '2x_boost': { icon: Zap, title: "2X Boost", description: "Doubles all XP and GP gains.", interactive: false },
-  '4x_boost': { icon: Zap, title: "4X Boost", description: "Quadruples all XP and GP gains.", interactive: false },
+  '2x_boost': { icon: Zap, title: "2X Boost", description: "Doubles all XP and GP gains.", interactive: true },
+  '4x_boost': { icon: Zap, title: "4X Boost", description: "Quadruples all XP and GP gains.", interactive: true },
   'shield': { icon: Shield, title: "Shield", description: "Protects you from Attacks and Siphons.", interactive: false },
   'gp_transfer': { icon: Handshake, title: "GP Siphon", description: "Siphon a percentage of another user's GP.", interactive: true },
   'attack': { icon: Swords, title: "Attack", description: "Deduct a percentage of another user's GP.", interactive: true },
@@ -43,6 +44,7 @@ const powerUpDetails: Record<PowerUpType, { icon: React.ElementType; title: stri
 };
 
 const PowerUpsPage = () => {
+  const queryClient = useQueryClient();
   const { data: powerUps, isLoading } = useQuery<UserPowerUp[]>({
     queryKey: ["myPowerUps"],
     queryFn: fetchMyPowerUps,
@@ -53,12 +55,31 @@ const PowerUpsPage = () => {
   const [attackDialogOpen, setAttackDialogOpen] = React.useState(false);
   const [selectedPowerUp, setSelectedPowerUp] = React.useState<UserPowerUp | null>(null);
 
+  const activateBoostMutation = useMutation({
+    mutationFn: async (powerUpId: string) => {
+      const { data, error } = await supabase.functions.invoke("activate-boost", {
+        body: { powerUpId },
+      });
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: (data) => {
+      showSuccess(data.message);
+      queryClient.invalidateQueries({ queryKey: ["myPowerUps"] });
+    },
+    onError: (err: Error) => showError(err.message),
+  });
+
   const handleUseClick = (powerUp: UserPowerUp) => {
-    setSelectedPowerUp(powerUp);
-    if (powerUp.power_type === 'gp_transfer') {
-      setTransferDialogOpen(true);
-    } else if (powerUp.power_type === 'attack') {
-      setAttackDialogOpen(true);
+    if (powerUp.power_type === '2x_boost' || powerUp.power_type === '4x_boost') {
+      activateBoostMutation.mutate(powerUp.id);
+    } else {
+      setSelectedPowerUp(powerUp);
+      if (powerUp.power_type === 'gp_transfer') {
+        setTransferDialogOpen(true);
+      } else if (powerUp.power_type === 'attack') {
+        setAttackDialogOpen(true);
+      }
     }
   };
 
@@ -84,6 +105,9 @@ const PowerUpsPage = () => {
             {powerUps.map(powerUp => {
               const details = powerUpDetails[powerUp.power_type];
               const Icon = details.icon;
+              const isBoost = powerUp.power_type === '2x_boost' || powerUp.power_type === '4x_boost';
+              const isActiveBoost = isBoost && powerUp.expires_at && new Date(powerUp.expires_at) > new Date();
+
               return (
                 <Card key={powerUp.id}>
                   <CardHeader>
@@ -92,8 +116,8 @@ const PowerUpsPage = () => {
                   </CardHeader>
                   <CardContent className="flex justify-between items-end">
                     <div className="text-xs text-muted-foreground space-y-1">
-                      {powerUp.expires_at && (
-                        <p className="flex items-center gap-1"><Timer className="h-3 w-3" /> Expires {formatDistanceToNow(new Date(powerUp.expires_at), { addSuffix: true })}</p>
+                      {isActiveBoost && (
+                        <p className="flex items-center gap-1 text-vibrant-green font-semibold"><Timer className="h-3 w-3" /> Active! Expires {formatDistanceToNow(new Date(powerUp.expires_at!), { addSuffix: true })}</p>
                       )}
                       {powerUp.uses_left > 0 && (
                         <p className="flex items-center gap-1"><Repeat className="h-3 w-3" /> {powerUp.uses_left} use(s) left</p>
@@ -102,8 +126,14 @@ const PowerUpsPage = () => {
                         <p className="flex items-center gap-1"><Zap className="h-3 w-3" /> {powerUp.effect_value}% effect</p>
                       )}
                     </div>
-                    {details.interactive && (
-                      <Button size="sm" onClick={() => handleUseClick(powerUp)}>Use Power</Button>
+                    {details.interactive && !isActiveBoost && (
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleUseClick(powerUp)}
+                        disabled={activateBoostMutation.isPending && activateBoostMutation.variables === powerUp.id}
+                      >
+                        {activateBoostMutation.isPending && activateBoostMutation.variables === powerUp.id ? "Activating..." : "Use Power"}
+                      </Button>
                     )}
                   </CardContent>
                 </Card>

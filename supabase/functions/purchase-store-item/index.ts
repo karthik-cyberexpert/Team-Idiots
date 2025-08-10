@@ -75,12 +75,8 @@ serve(async (req) => {
             power_type: item.power_up_type,
             effect_value: item.effect_value,
             uses_left: item.uses,
+            expires_at: null,
           };
-          if ((item.power_up_type === '2x_boost' || item.power_up_type === '4x_boost') && item.duration_hours) {
-            const expires = new Date();
-            expires.setHours(expires.getHours() + item.duration_hours);
-            powerUpPayload.expires_at = expires.toISOString();
-          }
           powerUpsToAdd.push(powerUpPayload);
         }
         message = `Successfully purchased ${quantity} x ${item.name}!`;
@@ -95,7 +91,7 @@ serve(async (req) => {
             case 'xp': totalXpChange += prize.amount; break;
             case 'power_up':
               if (prize.power && prize.power !== 'nothing') {
-                const basePayload = { user_id: user.id, uses_left: 1 };
+                const basePayload = { user_id: user.id, uses_left: 1, expires_at: null };
                 let finalPayload;
                 switch (prize.power) {
                   case 'attack':
@@ -109,9 +105,7 @@ serve(async (req) => {
                     break;
                   case '2x_boost':
                   case '4x_boost':
-                    const expires = new Date();
-                    expires.setHours(expires.getHours() + 24);
-                    finalPayload = { ...basePayload, power_type: prize.power, expires_at: expires.toISOString() };
+                    finalPayload = { ...basePayload, power_type: prize.power };
                     break;
                   default:
                     continue;
