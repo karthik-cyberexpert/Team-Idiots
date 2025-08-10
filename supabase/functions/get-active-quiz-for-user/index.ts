@@ -40,23 +40,38 @@ serve(async (req) => {
 
     const now = new Date(); // Current UTC time
 
-    const activeSet = sets.find(set => {
-      const [startH, startM] = set.start_time.split(':').map(Number);
-      const startDateTime = new Date(set.assign_date);
-      startDateTime.setUTCHours(startH, startM, 0, 0);
+    const relevantSet = sets.find(set => {
+      const assignDate = new Date(set.assign_date);
+      const today = new Date();
+      
+      if (
+        assignDate.getUTCFullYear() !== today.getUTCFullYear() ||
+        assignDate.getUTCMonth() !== today.getUTCMonth() ||
+        assignDate.getUTCDate() !== today.getUTCDate()
+      ) {
+        return false;
+      }
 
       const [endH, endM] = set.end_time.split(':').map(Number);
       const endDateTime = new Date(set.assign_date);
       endDateTime.setUTCHours(endH, endM, 0, 0);
 
-      return now >= startDateTime && now <= endDateTime;
+      return now <= endDateTime;
     });
 
-    if (!activeSet) {
+    if (!relevantSet) {
       return new Response(JSON.stringify(null), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const questionIds = activeSet.quiz_questions.map(q => q.id);
+    const [startH, startM] = relevantSet.start_time.split(':').map(Number);
+    const startDateTime = new Date(relevantSet.assign_date);
+    startDateTime.setUTCHours(startH, startM, 0, 0);
+
+    if (now < startDateTime) {
+      return new Response(JSON.stringify(relevantSet), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const questionIds = relevantSet.quiz_questions.map(q => q.id);
     const { data: results, error: resultsError } = await supabase
       .from('quiz_results')
       .select('question_id')
@@ -66,16 +81,15 @@ serve(async (req) => {
     if (resultsError) throw resultsError;
 
     const answeredQuestionIds = new Set(results.map(r => r.question_id));
-    const remainingQuestions = activeSet.quiz_questions.filter(q => !answeredQuestionIds.has(q.id));
+    const remainingQuestions = relevantSet.quiz_questions.filter(q => !answeredQuestionIds.has(q.id));
 
-    // Shuffle remaining questions
     for (let i = remainingQuestions.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [remainingQuestions[i], remainingQuestions[j]] = [remainingQuestions[j], remainingQuestions[i]];
     }
 
     const response = {
-      ...activeSet,
+      ...relevantSet,
       quiz_questions: remainingQuestions,
     };
 

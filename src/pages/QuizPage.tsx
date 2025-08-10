@@ -7,11 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { HelpCircle, Check, X, Trophy, PartyPopper } from "lucide-react";
+import { HelpCircle, Check, X, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { showSuccess, showError } from "@/utils/toast";
 import Confetti from 'react-dom-confetti';
 import { QuizSet } from "@/types/quiz";
+import { EventCountdown } from "@/components/game/EventCountdown";
 
 const fetchActiveQuiz = async (): Promise<QuizSet | null> => {
   const { data, error } = await supabase.functions.invoke("get-active-quiz-for-user");
@@ -36,18 +37,36 @@ const QuizPage = () => {
   const [isFinished, setIsFinished] = React.useState(false);
   const [score, setScore] = React.useState(0);
   const [confettiActive, setConfettiActive] = React.useState(false);
+  const [startDateTime, setStartDateTime] = React.useState<Date | null>(null);
+  const [isUpcoming, setIsUpcoming] = React.useState(false);
 
-  const { data, isLoading, error } = useQuery<QuizSet | null>({
+  const { data, isLoading, error, refetch } = useQuery<QuizSet | null>({
     queryKey: ["activeQuiz"],
     queryFn: fetchActiveQuiz,
   });
 
   React.useEffect(() => {
     if (data) {
-      setQuizSet(data);
-      if (data.quiz_questions.length === 0) {
-        setIsFinished(true);
+      const now = new Date();
+      const [startH, startM] = data.start_time.split(':').map(Number);
+      const sdt = new Date(data.assign_date);
+      sdt.setUTCHours(startH, startM, 0, 0);
+      setStartDateTime(sdt);
+
+      if (now < sdt) {
+        setIsUpcoming(true);
+        setQuizSet(null);
+      } else {
+        setIsUpcoming(false);
+        setQuizSet(data);
+        if (data.quiz_questions.length === 0) {
+          setIsFinished(true);
+        }
       }
+    } else {
+      setQuizSet(null);
+      setStartDateTime(null);
+      setIsUpcoming(false);
     }
   }, [data]);
 
@@ -96,6 +115,25 @@ const QuizPage = () => {
         <AlertTitle>Error</AlertTitle>
         <AlertDescription>{error.message}</AlertDescription>
       </Alert>
+    );
+  }
+
+  if (isUpcoming && startDateTime) {
+    return (
+      <Card className="max-w-3xl mx-auto">
+        <CardHeader>
+          <CardTitle>{data?.title}</CardTitle>
+          <CardDescription>The quiz will begin soon. Get ready!</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <EventCountdown
+            startTime={startDateTime}
+            onEnd={() => refetch()}
+            title="Quiz Starting Soon!"
+            description="The quiz will begin in:"
+          />
+        </CardContent>
+      </Card>
     );
   }
 
