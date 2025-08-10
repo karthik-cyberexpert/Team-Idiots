@@ -54,11 +54,15 @@ serve(async (req) => {
 
     if (isCorrect) {
       pointsAwarded = set.points_per_question;
-      const { data: profile, error: pError } = await supabaseAdmin.from('profiles').select(`${set.reward_type}`).eq('id', user.id).single();
+      
+      // Map reward_type to the actual column name in the profiles table
+      const rewardColumn = set.reward_type === 'gp' ? 'game_points' : 'xp';
+
+      const { data: profile, error: pError } = await supabaseAdmin.from('profiles').select(rewardColumn).eq('id', user.id).single();
       if (pError) throw pError;
 
-      const currentPoints = profile[set.reward_type] || 0;
-      await supabaseAdmin.from('profiles').update({ [set.reward_type]: currentPoints + pointsAwarded }).eq('id', user.id);
+      const currentPoints = profile[rewardColumn] || 0;
+      await supabaseAdmin.from('profiles').update({ [rewardColumn]: currentPoints + pointsAwarded }).eq('id', user.id);
 
       if (set.reward_type === 'xp') {
         await supabaseAdmin.from('xp_history').insert({ user_id: user.id, xp_change: pointsAwarded, reason: `Quiz question correct` });
