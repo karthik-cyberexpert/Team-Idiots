@@ -37,18 +37,21 @@ const formSchema = z.object({
   reward_type: z.enum(["gp", "xp"]),
   points_per_question: z.coerce.number().int().min(0),
   time_limit_minutes: z.coerce.number().int().min(1).nullable(),
-  enrollment_deadline: z.date().nullable(),
+  enrollment_deadline_date: z.date().nullable(),
+  enrollment_deadline_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid time format." }).optional().or(z.literal('')),
+}).refine(data => {
+    if (data.enrollment_deadline_date && !data.enrollment_deadline_time) return false;
+    if (!data.enrollment_deadline_date && data.enrollment_deadline_time) return false;
+    return true;
+}, {
+    message: "Both date and time must be set for the deadline.",
+    path: ["enrollment_deadline_time"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-const updateQuizSet = async (id: string, values: FormValues) => {
-    const body = {
-        id,
-        ...values,
-        enrollment_deadline: values.enrollment_deadline ? values.enrollment_deadline.toISOString() : null,
-    };
-    const { error } = await supabase.functions.invoke("update-quiz-set", { body });
+const updateQuizSet = async (id: string, values: Omit<FormValues, 'enrollment_deadline_date' | 'enrollment_deadline_time'> & { enrollment_deadline: string | null }) => {
+    const { error } = await supabase.functions.invoke("update-quiz-set", { body: { id, ...values } });
     if (error) throw new Error(error.message);
 };
 
@@ -68,17 +71,34 @@ export const EditQuizSetDialog = ({ open, onOpenChange, quizSet }: EditQuizSetDi
 
   React.useEffect(() => {
     if (quizSet) {
+      const deadline = quizSet.enrollment_deadline ? new Date(quizSet.enrollment_deadline) : null;
       form.reset({
         reward_type: quizSet.reward_type || 'gp',
         points_per_question: quizSet.points_per_question || 10,
         time_limit_minutes: quizSet.time_limit_minutes || null,
-        enrollment_deadline: quizSet.enrollment_deadline ? new Date(quizSet.enrollment_deadline) : null,
+        enrollment_deadline_date: deadline,
+        enrollment_deadline_time: deadline ? format(deadline, "HH:mm") : "",
       });
     }
   }, [quizSet, form]);
 
   const mutation = useMutation({
-    mutationFn: (values: FormValues) => updateQuizSet(quizSet!.id, values),
+    mutationFn: (values: FormValues) => {
+        let deadline: string | null = null;
+        if (values.enrollment_deadline_date && values.enrollment_deadline_time) {
+            const date = values.enrollment_deadline_date;
+            const [hours, minutes] = values.enrollment_deadline_time.split(':').map(Number);
+            const combined = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes));
+            deadline = combined.toISOString();
+        }
+        const submissionValues = {
+            reward_type: values.reward_type,
+            points_per_question: values.points_per_question,
+            time_limit_minutes: values.time_limit_minutes,
+            enrollment_deadline: deadline,
+        };
+        return updateQuizSet(quizSet!.id, submissionValues);
+    },
     onSuccess: () => {
       showSuccess("Quiz set updated successfully.");
       queryClient.invalidateQueries({ queryKey: ["quizSets"] });
@@ -122,25 +142,34 @@ export const EditQuizSetDialog = ({ open, onOpenChange, quizSet }: EditQuizSetDi
                     <FormMessage />
                 </FormItem>
             )} />
-            <FormField control={form.control} name="enrollment_deadline" render={({ field }) => (
-                <FormItem className="flex flex-col">
-                    <FormLabel>Enrollment Deadline</FormLabel>
-                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                        <PopoverTrigger asChild>
-                            <FormControl>
-                                <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                            </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={field.value || undefined} onSelect={(date) => { field.onChange(date); setIsDatePickerOpen(false); }} initialFocus />
-                        </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                </FormItem>
-            )} />
+            <div className="flex gap-2">
+                <FormField control={form.control} name="enrollment_deadline_date" render={({ field }) => (
+                    <FormItem className="flex flex-col flex-1">
+                        <FormLabel>Enrollment Deadline</FormLabel>
+                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                            <PopoverTrigger asChild>
+                                <FormControl>
+                                    <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                        {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar mode="single" selected={field.value || undefined} onSelect={(date) => { field.onChange(date); setIsDatePickerOpen(false); }} initialFocus />
+                            </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+                <FormField control={form.control} name="enrollment_deadline_time" render={({ field }) => (
+                    <FormItem className="flex flex-col w-1/3">
+                        <FormLabel>Time</FormLabel>
+                        <FormControl><Input type="time" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+            </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
               <Button type="submit" disabled={mutation.isPending}>

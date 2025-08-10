@@ -141,7 +141,7 @@ const QuizPage = () => {
             <p><strong>Questions:</strong> {Math.min(50, activeQuiz.quiz_questions.length)}</p>
             <p><strong>Reward:</strong> {activeQuiz.points_per_question} {activeQuiz.reward_type.toUpperCase()} per correct answer</p>
             <p><strong>Time Limit:</strong> {activeQuiz.time_limit_minutes ? `${activeQuiz.time_limit_minutes} minutes` : 'None'}</p>
-            <p><strong>Enroll Before:</strong> {activeQuiz.enrollment_deadline ? format(new Date(activeQuiz.enrollment_deadline), "PPP") : 'No deadline'}</p>
+            <p><strong>Enroll Before:</strong> {activeQuiz.enrollment_deadline ? format(new Date(activeQuiz.enrollment_deadline), "PPP p") : 'No deadline'}</p>
           </div>
           <Button size="lg" onClick={() => setQuizState('confirming')}>Start Quiz</Button>
         </CardContent>
