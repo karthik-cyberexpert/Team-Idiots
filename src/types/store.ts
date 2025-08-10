@@ -28,4 +28,7 @@ export interface StoreItem {
   box_contents: BoxContent[] | null;
   created_at: string;
   section_id: string | null;
+  duration_hours: number | null;
+  effect_value: number | null;
+  uses: number | null;
 }

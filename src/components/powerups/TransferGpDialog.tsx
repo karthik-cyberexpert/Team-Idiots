@@ -9,10 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { showSuccess, showError } from "@/utils/toast";
-import { useAuth } from "@/contexts/AuthProvider";
 
 interface UserPowerUp {
   id: string;
@@ -24,8 +22,7 @@ interface OtherUser {
 }
 
 const formSchema = z.object({
-  targetUserId: z.string().uuid({ message: "Please select a user." }),
-  percentage: z.coerce.number().int().min(1, "Percentage must be at least 1%.").max(15, "Percentage cannot exceed 15%."),
+  targetUserId: z.string().uuid({ message: "Please select a user to siphon from." }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -50,12 +47,8 @@ interface TransferGpDialogProps {
 
 export const TransferGpDialog = ({ open, onOpenChange, powerUp }: TransferGpDialogProps) => {
   const queryClient = useQueryClient();
-  const { profile } = useAuth();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      percentage: 15,
-    },
   });
 
   const { data: users, isLoading: usersLoading } = useQuery<OtherUser[]>({
@@ -69,7 +62,7 @@ export const TransferGpDialog = ({ open, onOpenChange, powerUp }: TransferGpDial
     onSuccess: (data) => {
       showSuccess(data.message);
       queryClient.invalidateQueries({ queryKey: ["myPowerUps"] });
-      queryClient.invalidateQueries({ queryKey: ["users"] }); // To update GP in admin list
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["gameLeaderboard"] });
       onOpenChange(false);
     },
@@ -86,7 +79,7 @@ export const TransferGpDialog = ({ open, onOpenChange, powerUp }: TransferGpDial
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Siphon Game Points</DialogTitle>
-          <DialogDescription>Choose a target and a percentage of their GP to siphon. Max 15%.</DialogDescription>
+          <DialogDescription>Choose a target to siphon GP from. This action is final.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -94,20 +87,13 @@ export const TransferGpDialog = ({ open, onOpenChange, powerUp }: TransferGpDial
               <FormItem>
                 <FormLabel>Target</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Select a user to siphon GP from" /></SelectTrigger></FormControl>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Select a user to siphon from" /></SelectTrigger></FormControl>
                   <SelectContent>
                     {usersLoading ? <SelectItem value="loading" disabled>Loading...</SelectItem> : users?.map(user => (
                       <SelectItem key={user.id} value={user.id}>{user.full_name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="percentage" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Percentage to Siphon (1-15%)</FormLabel>
-                <FormControl><Input type="number" min="1" max="15" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />

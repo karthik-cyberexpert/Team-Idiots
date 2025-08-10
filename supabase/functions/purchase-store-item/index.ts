@@ -70,10 +70,15 @@ serve(async (req) => {
         break;
       case 'power_up':
         for (let i = 0; i < quantity; i++) {
-          const powerUpPayload: any = { user_id: user.id, power_type: item.power_up_type };
-          if (item.power_up_type === '2x_boost' || item.power_up_type === '4x_boost') {
+          const powerUpPayload: any = { 
+            user_id: user.id, 
+            power_type: item.power_up_type,
+            effect_value: item.effect_value,
+            uses_left: item.uses,
+          };
+          if ((item.power_up_type === '2x_boost' || item.power_up_type === '4x_boost') && item.duration_hours) {
             const expires = new Date();
-            expires.setHours(expires.getHours() + 24);
+            expires.setHours(expires.getHours() + item.duration_hours);
             powerUpPayload.expires_at = expires.toISOString();
           }
           powerUpsToAdd.push(powerUpPayload);
@@ -90,7 +95,8 @@ serve(async (req) => {
             case 'xp': totalXpChange += prize.amount; break;
             case 'power_up':
               if (prize.power && prize.power !== 'nothing') {
-                const prizePowerUpPayload: any = { user_id: user.id, power_type: prize.power };
+                // Note: Prizes from boxes are not customizable at the moment.
+                const prizePowerUpPayload: any = { user_id: user.id, power_type: prize.power, uses_left: 1 };
                 if (prize.power === '2x_boost' || prize.power === '4x_boost') {
                   const expires = new Date();
                   expires.setHours(expires.getHours() + 24);

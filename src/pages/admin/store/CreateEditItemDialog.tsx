@@ -45,6 +45,9 @@ const formSchema = z.object({
   xp_amount: z.coerce.number().optional(),
   box_contents: z.array(boxContentSchema).optional(),
   section_id: z.string().uuid().nullable(),
+  duration_hours: z.coerce.number().int().min(1).optional().nullable(),
+  effect_value: z.coerce.number().int().min(1).optional().nullable(),
+  uses: z.coerce.number().int().min(1).optional().nullable(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -68,6 +71,7 @@ export const CreateEditItemDialog = ({ open, onOpenChange, item, sections }: Cre
   });
 
   const itemType = form.watch("item_type");
+  const powerUpType = form.watch("power_up_type");
 
   React.useEffect(() => {
     if (item) {
@@ -88,6 +92,9 @@ export const CreateEditItemDialog = ({ open, onOpenChange, item, sections }: Cre
         xp_amount: 100,
         box_contents: [],
         section_id: null,
+        duration_hours: 24,
+        effect_value: 10,
+        uses: 1,
       });
     }
   }, [item, open, form]);
@@ -148,14 +155,27 @@ export const CreateEditItemDialog = ({ open, onOpenChange, item, sections }: Cre
                 </FormItem>
               )} />
 
-              {itemType === 'power_up' && <FormField control={form.control} name="power_up_type" render={({ field }) => (
-                <FormItem><FormLabel>Power-up Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>{powerUpTypes.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent>
-                  </Select><FormMessage />
-                </FormItem>
-              )} />}
+              {itemType === 'power_up' && (
+                <div className="p-4 border rounded-md space-y-4">
+                  <FormField control={form.control} name="power_up_type" render={({ field }) => (
+                    <FormItem><FormLabel>Power-up Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>{powerUpTypes.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent>
+                      </Select><FormMessage />
+                    </FormItem>
+                  )} />
+                  {(powerUpType === '2x_boost' || powerUpType === '4x_boost') && (
+                    <FormField control={form.control} name="duration_hours" render={({ field }) => <FormItem><FormLabel>Duration (hours)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>} />
+                  )}
+                  {(powerUpType === 'attack' || powerUpType === 'gp_transfer') && (
+                    <FormField control={form.control} name="effect_value" render={({ field }) => <FormItem><FormLabel>Effect Value (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>} />
+                  )}
+                  {powerUpType === 'shield' && (
+                    <FormField control={form.control} name="uses" render={({ field }) => <FormItem><FormLabel>Uses</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>} />
+                  )}
+                </div>
+              )}
 
               {itemType === 'xp_pack' && <FormField control={form.control} name="xp_amount" render={({ field }) => <FormItem><FormLabel>XP Amount</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>} />}
 

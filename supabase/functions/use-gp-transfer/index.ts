@@ -22,16 +22,15 @@ serve(async (req) => {
 
   try {
     const supabase = await getAuthenticatedClient(req);
-    const { powerUpId, targetUserId, percentage } = await req.json();
+    const { powerUpId, targetUserId } = await req.json();
 
-    if (!powerUpId || !targetUserId || !percentage) {
-      throw new Error("Power-up ID, target user ID, and percentage are required.");
+    if (!powerUpId || !targetUserId) {
+      throw new Error("Power-up ID and target user ID are required.");
     }
 
     const { data: message, error } = await supabase.rpc('execute_gp_transfer', {
       p_power_up_id: powerUpId,
       p_target_user_id: targetUserId,
-      p_siphon_percentage: percentage,
     });
 
     if (error) throw error;
