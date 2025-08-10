@@ -119,7 +119,7 @@ export function DashboardLayout() {
       </header>
       <main className={cn(
         "flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8",
-        isQuizActive && "p-0 md:p-0 h-screen"
+        isQuizActive && "p-0 md:p-0 h-screen items-center justify-center"
       )}>
         <Outlet />
       </main>
@@ -175,7 +175,7 @@ export function DashboardLayout() {
         </header>
         <main className={cn(
           "flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6",
-          isQuizActive && "p-0 lg:p-0 h-screen"
+          isQuizActive && "p-0 lg:p-0 h-screen items-center justify-center"
         )}>
           <Outlet />
         </main>
