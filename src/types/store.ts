@@ -20,6 +20,7 @@ export interface StoreItem {
   name: string;
   description: string | null;
   price: number;
+  quantity: number;
   item_type: StoreItemType;
   is_active: boolean;
   power_up_type: PowerUpType | null;

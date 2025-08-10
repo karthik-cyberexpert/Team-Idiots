@@ -34,7 +34,7 @@ const fetchActiveStoreData = async (): Promise<StoreData> => {
   return { sections: sections || [], items: items || [] };
 };
 
-const purchaseItem = async (itemId: string): Promise<{ message: string; prize: BoxContent | null }> => {
+const purchaseItem = async (itemId: string): Promise<{ message: string; prizes: BoxContent[] | null }> => {
   const { data, error } = await supabase.functions.invoke("purchase-store-item", {
     body: { itemId },
   });
@@ -46,7 +46,7 @@ const StorePage = () => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const [itemToConfirm, setItemToConfirm] = React.useState<StoreItem | null>(null);
-  const [revealedPrize, setRevealedPrize] = React.useState<BoxContent | null>(null);
+  const [revealedPrizes, setRevealedPrizes] = React.useState<BoxContent[] | null>(null);
 
   const { data, isLoading } = useQuery<StoreData>({
     queryKey: ["activeStoreData"],
@@ -57,8 +57,8 @@ const StorePage = () => {
     mutationFn: (itemId: string) => purchaseItem(itemId),
     onSuccess: (data) => {
       showSuccess(data.message);
-      if (data.prize) {
-        setRevealedPrize(data.prize);
+      if (data.prizes && data.prizes.length > 0) {
+        setRevealedPrizes(data.prizes);
       }
       queryClient.invalidateQueries({ queryKey: ["myPowerUps"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -91,7 +91,7 @@ const StorePage = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Purchase</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to buy "{itemToConfirm?.name}" for {itemToConfirm?.price} GP?
+              Are you sure you want to buy "{itemToConfirm?.name}" (x{itemToConfirm?.quantity || 1}) for {itemToConfirm?.price} GP?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -104,9 +104,9 @@ const StorePage = () => {
       </AlertDialog>
 
       <PrizeRevealDialog
-        open={!!revealedPrize}
-        onOpenChange={() => setRevealedPrize(null)}
-        prize={revealedPrize}
+        open={!!revealedPrizes}
+        onOpenChange={() => setRevealedPrizes(null)}
+        prizes={revealedPrizes}
       />
 
       <div className="space-y-8">

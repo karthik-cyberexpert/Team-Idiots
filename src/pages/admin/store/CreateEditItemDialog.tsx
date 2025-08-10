@@ -38,6 +38,7 @@ const formSchema = z.object({
   name: z.string().min(1, "Name is required."),
   description: z.string().optional(),
   price: z.coerce.number().int().min(0, "Price must be non-negative."),
+  quantity: z.coerce.number().int().min(1, "Quantity must be at least 1.").default(1),
   item_type: z.enum(["power_up", "xp_pack", "mystery_box", "power_box"]),
   is_active: z.boolean().default(true),
   power_up_type: z.string().optional(),
@@ -80,6 +81,7 @@ export const CreateEditItemDialog = ({ open, onOpenChange, item, sections }: Cre
         name: "",
         description: "",
         price: 0,
+        quantity: 1,
         item_type: "power_up",
         is_active: true,
         power_up_type: "2x_boost",
@@ -117,7 +119,10 @@ export const CreateEditItemDialog = ({ open, onOpenChange, item, sections }: Cre
             <form id="item-form" onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
               <FormField control={form.control} name="name" render={({ field }) => <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>} />
               <FormField control={form.control} name="description" render={({ field }) => <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>} />
-              <FormField control={form.control} name="price" render={({ field }) => <FormItem><FormLabel>Price (GP)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>} />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="price" render={({ field }) => <FormItem><FormLabel>Price (GP)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>} />
+                <FormField control={form.control} name="quantity" render={({ field }) => <FormItem><FormLabel>Quantity</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>} />
+              </div>
               <FormField control={form.control} name="section_id" render={({ field }) => (
                 <FormItem><FormLabel>Section</FormLabel>
                   <Select onValueChange={(value) => field.onChange(value === 'null' ? null : value)} value={field.value || 'null'}>

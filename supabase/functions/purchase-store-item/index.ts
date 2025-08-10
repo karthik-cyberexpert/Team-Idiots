@@ -55,63 +55,69 @@ serve(async (req) => {
     if (!item.is_active) throw new Error("This item is not available for purchase.");
     if (profile.game_points < item.price) throw new Error("Insufficient game points.");
 
-    const newGamePoints = profile.game_points - item.price;
-    const { error: gpUpdateError } = await supabaseAdmin.from('profiles').update({ game_points: newGamePoints }).eq('id', user.id);
-    if (gpUpdateError) throw new Error("Failed to process payment.");
-
-    let awardedPrize = null;
+    let awardedPrizes: any[] = [];
     let message = "Purchase successful!";
+    let totalGpChange = -item.price;
+    let totalXpChange = 0;
+    let powerUpsToAdd: any[] = [];
+
+    const quantity = item.quantity || 1;
 
     switch (item.item_type) {
       case 'xp_pack':
-        const newXp = profile.xp + item.xp_amount;
-        await supabaseAdmin.from('profiles').update({ xp: newXp }).eq('id', user.id);
-        await supabaseAdmin.from('xp_history').insert({ user_id: user.id, xp_change: item.xp_amount, reason: `Purchased: ${item.name}` });
-        message = `Successfully purchased ${item.xp_amount} XP!`;
+        totalXpChange = (item.xp_amount || 0) * quantity;
+        message = `Successfully purchased ${totalXpChange} XP!`;
         break;
       case 'power_up':
-        const powerUpPayload: any = { user_id: user.id, power_type: item.power_up_type };
-        if (item.power_up_type === '2x_boost' || item.power_up_type === '4x_boost') {
-          const expires = new Date();
-          expires.setHours(expires.getHours() + 24);
-          powerUpPayload.expires_at = expires.toISOString();
+        for (let i = 0; i < quantity; i++) {
+          const powerUpPayload: any = { user_id: user.id, power_type: item.power_up_type };
+          if (item.power_up_type === '2x_boost' || item.power_up_type === '4x_boost') {
+            const expires = new Date();
+            expires.setHours(expires.getHours() + 24);
+            powerUpPayload.expires_at = expires.toISOString();
+          }
+          powerUpsToAdd.push(powerUpPayload);
         }
-        await supabaseAdmin.from('user_power_ups').insert(powerUpPayload);
-        message = `Successfully purchased ${item.name}!`;
+        message = `Successfully purchased ${quantity} x ${item.name}!`;
         break;
       case 'mystery_box':
       case 'power_box':
-        awardedPrize = selectPrize(item.box_contents);
-        message = `You opened the box and received: `;
-        switch (awardedPrize.type) {
-          case 'gp':
-            await supabaseAdmin.from('profiles').update({ game_points: newGamePoints + awardedPrize.amount }).eq('id', user.id);
-            message += `${awardedPrize.amount} GP!`;
-            break;
-          case 'xp':
-            const currentXp = (await supabaseAdmin.from('profiles').select('xp').eq('id', user.id).single()).data!.xp;
-            await supabaseAdmin.from('profiles').update({ xp: currentXp + awardedPrize.amount }).eq('id', user.id);
-            await supabaseAdmin.from('xp_history').insert({ user_id: user.id, xp_change: awardedPrize.amount, reason: `Prize from ${item.name}` });
-            message += `${awardedPrize.amount} XP!`;
-            break;
-          case 'power_up':
-            const prizePowerUpPayload: any = { user_id: user.id, power_type: awardedPrize.power };
-            if (awardedPrize.power === '2x_boost' || awardedPrize.power === '4x_boost') {
-              const expires = new Date();
-              expires.setHours(expires.getHours() + 24);
-              prizePowerUpPayload.expires_at = expires.toISOString();
-            }
-            await supabaseAdmin.from('user_power_ups').insert(prizePowerUpPayload);
-            message += `a ${awardedPrize.power.replace(/_/g, ' ')} power-up!`;
-            break;
-          case 'nothing':
-            message += `nothing. Better luck next time!`;
-            break;
+        for (let i = 0; i < quantity; i++) {
+          const prize = selectPrize(item.box_contents);
+          awardedPrizes.push(prize);
+          switch (prize.type) {
+            case 'gp': totalGpChange += prize.amount; break;
+            case 'xp': totalXpChange += prize.amount; break;
+            case 'power_up':
+              if (prize.power && prize.power !== 'nothing') {
+                const prizePowerUpPayload: any = { user_id: user.id, power_type: prize.power };
+                if (prize.power === '2x_boost' || prize.power === '4x_boost') {
+                  const expires = new Date();
+                  expires.setHours(expires.getHours() + 24);
+                  prizePowerUpPayload.expires_at = expires.toISOString();
+                }
+                powerUpsToAdd.push(prizePowerUpPayload);
+              }
+              break;
+          }
         }
+        message = `You opened ${quantity} box(es)!`;
         break;
     }
 
-    return new Response(JSON.stringify({ message, prize: awardedPrize }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // Apply all database changes
+    const finalGp = Math.max(0, profile.game_points + totalGpChange);
+    const finalXp = Math.max(0, profile.xp + totalXpChange);
+    await supabaseAdmin.from('profiles').update({ game_points: finalGp, xp: finalXp }).eq('id', user.id);
+
+    if (totalXpChange > 0) {
+      await supabaseAdmin.from('xp_history').insert({ user_id: user.id, xp_change: totalXpChange, reason: `Purchased: ${item.name}` });
+    }
+    if (powerUpsToAdd.length > 0) {
+      await supabaseAdmin.from('user_power_ups').insert(powerUpsToAdd);
+    }
+
+    return new Response(JSON.stringify({ message, prizes: awardedPrizes }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }

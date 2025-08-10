@@ -1,20 +1,21 @@
 "use client";
 
 import * as React from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { BoxContent } from "@/types/store";
 import { Coins, Star, X, Zap, Shield, Swords, Handshake } from "lucide-react";
 import Confetti from 'react-dom-confetti';
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface PrizeRevealDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  prize: BoxContent | null;
+  prizes: BoxContent[] | null;
 }
 
 const PrizeIcon = ({ prize }: { prize: BoxContent }) => {
-  const iconProps = { className: "h-12 w-12" };
+  const iconProps = { className: "h-8 w-8" };
   switch (prize.type) {
     case 'gp': return <Coins {...iconProps} className="text-vibrant-gold" />;
     case 'xp': return <Star {...iconProps} className="text-vibrant-yellow" />;
@@ -32,44 +33,50 @@ const PrizeIcon = ({ prize }: { prize: BoxContent }) => {
 
 const PrizeText = ({ prize }: { prize: BoxContent }) => {
   if (prize.type === 'gp' || prize.type === 'xp') {
-    return <p className="text-2xl font-bold mt-2">{prize.amount} {prize.type.toUpperCase()}</p>;
+    return <p className="text-lg font-semibold">{prize.amount} {prize.type.toUpperCase()}</p>;
   }
   if (prize.type === 'nothing') {
-    return <p className="text-lg font-semibold mt-2">Nothing this time!</p>;
+    return <p className="text-lg font-semibold">Nothing!</p>;
   }
   if (prize.type === 'power_up') {
     const powerLabel = prize.power?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    return <p className="text-lg font-semibold mt-2">{powerLabel}</p>;
+    return <p className="text-lg font-semibold">{powerLabel}</p>;
   }
   return null;
 };
 
-export const PrizeRevealDialog = ({ open, onOpenChange, prize }: PrizeRevealDialogProps) => {
+export const PrizeRevealDialog = ({ open, onOpenChange, prizes }: PrizeRevealDialogProps) => {
   const [confettiActive, setConfettiActive] = React.useState(false);
 
   React.useEffect(() => {
-    if (open && prize && prize.type !== 'nothing') {
+    if (open && prizes && prizes.some(p => p.type !== 'nothing')) {
       const timer = setTimeout(() => setConfettiActive(true), 300);
       return () => clearTimeout(timer);
     } else {
       setConfettiActive(false);
     }
-  }, [open, prize]);
+  }, [open, prizes]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>You got...</DialogTitle>
-          <DialogDescription>Here's what was inside the box!</DialogDescription>
+          <DialogDescription>Here's what was inside the box(es)!</DialogDescription>
         </DialogHeader>
         <div className="py-8 flex flex-col items-center justify-center relative">
           <Confetti active={confettiActive} />
-          {prize ? (
-            <>
-              <PrizeIcon prize={prize} />
-              <PrizeText prize={prize} />
-            </>
+          {prizes && prizes.length > 0 ? (
+            <ScrollArea className="h-48 w-full">
+              <div className="space-y-4 pr-4">
+                {prizes.map((prize, index) => (
+                  <div key={index} className="flex items-center gap-4 p-2 border rounded-md">
+                    <PrizeIcon prize={prize} />
+                    <PrizeText prize={prize} />
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           ) : (
             <p>Revealing prize...</p>
           )}
