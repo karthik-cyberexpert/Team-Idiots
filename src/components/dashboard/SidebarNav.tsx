@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Gamepad2, Gavel, Zap, Pickaxe, UserCog, HelpCircle } from "lucide-react";
+import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Gamepad2, Gavel, Zap, Pickaxe, UserCog, HelpCircle, Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -41,6 +41,11 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       href: "/dashboard/tasks",
       label: "Tasks",
       icon: <ListTodo className="h-4 w-4" />,
+    },
+    {
+      href: "/dashboard/submissions",
+      label: "My Submissions",
+      icon: <Send className="h-4 w-4" />,
     },
     {
       href: "/dashboard/leaderboard",

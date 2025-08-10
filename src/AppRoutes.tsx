@@ -14,6 +14,7 @@ import AdminRoute from "./components/AdminRoute";
 import NotesPage from "./pages/NotesPage";
 import ChatPage from "./pages/ChatPage";
 import TasksPage from "./pages/TasksPage";
+import SubmissionsPage from "./pages/SubmissionsPage";
 import TaskManagement from "./pages/admin/TaskManagement";
 import DataManagementPage from "./pages/admin/DataManagementPage";
 import EditProfilePage from "./pages/EditProfilePage";
@@ -64,6 +65,7 @@ export const AppRoutes = () => {
           <Route path="/dashboard/notes" element={<ErrorBoundary><NotesPage /></ErrorBoundary>} />
           <Route path="/dashboard/chat" element={<ErrorBoundary><ChatPage /></ErrorBoundary>} />
           <Route path="/dashboard/tasks" element={<ErrorBoundary><TasksPage /></ErrorBoundary>} />
+          <Route path="/dashboard/submissions" element={<ErrorBoundary><SubmissionsPage /></ErrorBoundary>} />
           <Route path="/dashboard/leaderboard" element={<ErrorBoundary><LeaderboardPage /></ErrorBoundary>} />
           <Route path="/dashboard/profile" element={<ErrorBoundary><EditProfilePage /></ErrorBoundary>} />
           <Route path="/dashboard/settings" element={<ErrorBoundary><SettingsPage /></ErrorBoundary>} />

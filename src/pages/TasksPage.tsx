@@ -1,134 +1,146 @@
 "use client";
 
 import * as React from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Submission } from "@/types/task";
-import { PlusCircle, ChevronLeft, ChevronRight, FileText } from "lucide-react";
-import { SubmissionCard } from "@/components/tasks/SubmissionCard";
-import { CreateSubmissionDialog } from "@/components/tasks/CreateSubmissionDialog";
-import { ViewSubmissionDialog } from "@/components/tasks/ViewSubmissionDialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ListTodo, CheckCircle, Clock, AlertCircle, XCircle, Hourglass, ThumbsUp, Type } from "lucide-react";
+import { Task } from "@/types/task";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { format, isPast } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
-const fetchUserSubmissions = async (): Promise<Submission[]> => {
-  const { data, error } = await supabase.functions.invoke("get-user-submissions");
+interface TaskWithSubmission extends Task {
+  task_submissions: { id: string }[];
+}
+
+const fetchUserTasks = async (): Promise<TaskWithSubmission[]> => {
+  const { data, error } = await supabase.functions.invoke("get-user-tasks");
   if (error) throw new Error(error.message);
   return data || [];
 };
 
+const getStatusInfo = (task: TaskWithSubmission) => {
+  const status = task.status;
+  const dueDate = task.due_date ? new Date(task.due_date) : null;
+  const isOverdue = dueDate && isPast(dueDate) && status === 'pending';
+
+  if (isOverdue) {
+    return { icon: <AlertCircle className="h-5 w-5 text-vibrant-red" />, text: "Overdue", color: "text-vibrant-red" };
+  }
+
+  switch (status) {
+    case 'pending': return { icon: <Hourglass className="h-5 w-5 text-vibrant-orange" />, text: "Pending", color: "text-vibrant-orange" };
+    case 'waiting_for_approval': return { icon: <ThumbsUp className="h-5 w-5 text-vibrant-blue" />, text: "Waiting for Approval", color: "text-vibrant-blue" };
+    case 'completed': return { icon: <CheckCircle className="h-5 w-5 text-vibrant-green" />, text: "Completed", color: "text-vibrant-green" };
+    case 'late_completed': return { icon: <CheckCircle className="h-5 w-5 text-vibrant-brown" />, text: "Completed (Late)", color: "text-vibrant-brown" };
+    case 'rejected': return { icon: <XCircle className="h-5 w-5 text-vibrant-red" />, text: "Rejected", color: "text-vibrant-red" };
+    default: return { icon: <Clock className="h-5 w-5 text-muted-foreground" />, text: status, color: "text-muted-foreground" };
+  }
+};
+
 const TasksPage = () => {
   const { user, loading: authLoading } = useAuth();
-  const queryClient = useQueryClient();
-  const [currentPage, setCurrentPage] = React.useState(0);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
-  const [submissionToEdit, setSubmissionToEdit] = React.useState<Submission | null>(null);
-  const [submissionToView, setSubmissionToView] = React.useState<string | null>(null);
-  const SUBMISSIONS_PER_PAGE = 6;
+  const navigate = useNavigate();
 
-  const { data: submissions, isLoading, error } = useQuery<Submission[]>({
-    queryKey: ["userSubmissions", user?.id],
-    queryFn: fetchUserSubmissions,
+  const { data: tasks, isLoading, error } = useQuery<TaskWithSubmission[]>({
+    queryKey: ["userTasks", user?.id],
+    queryFn: fetchUserTasks,
     enabled: !!user && !authLoading,
   });
 
-  React.useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel(`user-submissions-realtime-${user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'task_submissions', filter: `user_id=eq.${user.id}` },
-        () => queryClient.invalidateQueries({ queryKey: ['userSubmissions', user.id] })
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user, queryClient]);
-
-  const paginatedSubmissions = React.useMemo(() => {
-    if (!submissions) return [];
-    const startIndex = currentPage * SUBMISSIONS_PER_PAGE;
-    return submissions.slice(startIndex, startIndex + SUBMISSIONS_PER_PAGE);
-  }, [submissions, currentPage]);
-
-  const totalPages = submissions ? Math.ceil(submissions.length / SUBMISSIONS_PER_PAGE) : 0;
-
-  const handleEdit = (submission: Submission) => {
-    setSubmissionToEdit(submission);
-    setIsCreateDialogOpen(true);
-  };
-
-  const handleCreate = () => {
-    setSubmissionToEdit(null);
-    setIsCreateDialogOpen(true);
-  };
+  const sortedTasks = React.useMemo(() => {
+    if (!tasks) return [];
+    const statusOrder: Record<Task['status'], number> = { 'pending': 1, 'rejected': 2, 'waiting_for_approval': 3, 'completed': 4, 'late_completed': 5, 'failed': 6 };
+    return [...tasks].sort((a, b) => {
+      const aIsOverdue = a.due_date && isPast(new Date(a.due_date)) && a.status === 'pending';
+      const bIsOverdue = b.due_date && isPast(new Date(b.due_date)) && b.status === 'pending';
+      if (aIsOverdue && !bIsOverdue) return -1;
+      if (!aIsOverdue && bIsOverdue) return 1;
+      return (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99);
+    });
+  }, [tasks]);
 
   if (authLoading || isLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-10 w-1/3" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-48 w-full" />)}
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-48 w-full" />)}
         </div>
       </div>
     );
   }
 
   if (error) {
-    return <div className="text-vibrant-red">Error loading submissions: {error.message}</div>;
+    return <div className="text-vibrant-red">Error loading tasks: {error.message}</div>;
   }
 
   return (
-    <>
-      <CreateSubmissionDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        submissionToEdit={submissionToEdit}
-      />
-      <ViewSubmissionDialog
-        open={!!submissionToView}
-        onOpenChange={() => setSubmissionToView(null)}
-        taskId={submissionToView}
-      />
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl sm:text-3xl font-bold">My Submissions</h1>
-          <Button onClick={handleCreate}>
-            <PlusCircle className="mr-2 h-4 w-4" /> New Submission
-          </Button>
-        </div>
-        {submissions && submissions.length > 0 ? (
-          <>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {paginatedSubmissions.map((submission) => (
-                <SubmissionCard
-                  key={submission.id}
-                  submission={submission}
-                  onView={setSubmissionToView}
-                  onEdit={handleEdit}
-                />
-              ))}
-            </div>
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center space-x-4 pt-4">
-                <Button variant="outline" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 0}>
-                  <ChevronLeft className="h-4 w-4 mr-2" /> Previous
-                </Button>
-                <span className="text-sm text-muted-foreground">Page {currentPage + 1} of {totalPages}</span>
-                <Button variant="outline" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage >= totalPages - 1}>
-                  Next <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-10 border-2 border-dashed rounded-lg">
-            <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg text-muted-foreground">You haven't made any submissions yet.</p>
-            <Button onClick={handleCreate} className="mt-4">Make Your First Submission</Button>
-          </div>
-        )}
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl sm:text-3xl font-bold">My Tasks</h1>
+        <Button onClick={() => navigate('/dashboard/submissions')}>
+          View My Submissions
+        </Button>
       </div>
-    </>
+      {sortedTasks && sortedTasks.length > 0 ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {sortedTasks.map(task => {
+            const statusInfo = getStatusInfo(task);
+            const hasSubmission = task.task_submissions && task.task_submissions.length > 0;
+            const canSubmit = (task.status === 'pending' || task.status === 'rejected') && !hasSubmission;
+            const isTyperTask = task.task_type === 'typer';
+
+            return (
+              <Card key={task.id} className="flex flex-col">
+                <CardHeader>
+                  <CardTitle className="text-lg">{task.title}</CardTitle>
+                  <CardDescription>Assigned by: {task.assigner_profile?.full_name || 'Admin'}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow space-y-2">
+                  <div className="flex items-center gap-2">
+                    {statusInfo.icon}
+                    <span className={statusInfo.color}>{statusInfo.text}</span>
+                  </div>
+                  {task.due_date && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      <span>Due: {format(new Date(task.due_date), "PPP p")}</span>
+                    </div>
+                  )}
+                  {isTyperTask && <Badge variant="outline"><Type className="mr-1 h-3 w-3" />Typer Challenge</Badge>}
+                </CardContent>
+                <CardFooter>
+                  {isTyperTask ? (
+                    <Button className="w-full" onClick={() => navigate(`/dashboard/typer?taskId=${task.id}&textId=${task.related_typing_text_id}`)} disabled={task.status !== 'pending'}>
+                      Start Challenge
+                    </Button>
+                  ) : canSubmit ? (
+                    <Button className="w-full" onClick={() => navigate('/dashboard/submissions')}>
+                      Submit Work
+                    </Button>
+                  ) : (
+                    <Button className="w-full" variant="outline" disabled>
+                      {hasSubmission ? "Submitted" : "Completed"}
+                    </Button>
+                  )}
+                </CardFooter>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="text-center py-10 border-2 border-dashed rounded-lg">
+          <ListTodo className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <p className="text-lg text-muted-foreground">You have no assigned tasks. Great job!</p>
+        </div>
+      )}
+    </div>
   );
 };
 
