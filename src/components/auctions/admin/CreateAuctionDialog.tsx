@@ -13,7 +13,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { AuctionItem } from "@/types/auction";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, setHours, setMinutes } from "date-fns";
+import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TimePicker } from "@/components/ui/time-picker";
@@ -28,12 +28,12 @@ const formSchema = z.object({
     return false;
   }
   const [startHours, startMinutes] = data.startTime.split(':').map(Number);
-  let startDateTime = setHours(data.startDate, startHours);
-  startDateTime = setMinutes(startDateTime, startMinutes);
+  const startDateTime = new Date(data.startDate);
+  startDateTime.setHours(startHours, startMinutes);
 
   const [endHours, endMinutes] = data.endTime.split(':').map(Number);
-  let endDateTime = setHours(data.endDate, endHours);
-  endDateTime = setMinutes(endDateTime, endMinutes);
+  const endDateTime = new Date(data.endDate);
+  endDateTime.setHours(endHours, endMinutes);
   
   return endDateTime > startDateTime;
 }, {
@@ -90,12 +90,12 @@ export const CreateAuctionDialog = ({ open, onOpenChange, item }: CreateAuctionD
     if (!item) return;
 
     const [startHours, startMinutes] = values.startTime.split(':').map(Number);
-    let startDateTime = setHours(values.startDate, startHours);
-    startDateTime = setMinutes(startDateTime, startMinutes);
+    const startDate = values.startDate;
+    const startDateTime = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), startHours, startMinutes));
 
     const [endHours, endMinutes] = values.endTime.split(':').map(Number);
-    let endDateTime = setHours(values.endDate, endHours);
-    endDateTime = setMinutes(endDateTime, endMinutes);
+    const endDate = values.endDate;
+    const endDateTime = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), endHours, endMinutes));
 
     mutation.mutate({
       item_id: item.id,

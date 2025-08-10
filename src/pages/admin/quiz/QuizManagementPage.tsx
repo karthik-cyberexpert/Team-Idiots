@@ -72,7 +72,13 @@ const QuizManagementPage = () => {
   const columns = React.useMemo(() => getColumns({
     onShowContent: (set) => setSetToShow(set),
     onUpdateStatus: (id, status) => updateMutation.mutate({ id, status }),
-    onUpdateDate: (id, date) => updateMutation.mutate({ id, assign_date: date.toISOString() }),
+    onUpdateDate: (id, date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`;
+      updateMutation.mutate({ id, assign_date: dateString });
+    },
     onUpdateTime: (id, type, time) => updateMutation.mutate({ id, [type]: time }),
     onUpdateReward: (id, type, amount) => updateMutation.mutate({ id, reward_type: type, points_per_question: amount }),
     onDelete: (id) => setSetToDelete(id),

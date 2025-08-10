@@ -27,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns"; // Removed addDays
+import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { showSuccess, showError } from "@/utils/toast";
@@ -46,7 +46,9 @@ const createCommonTask = async (values: AddCommonTaskFormValues, assignedBy: str
     body: {
       title: values.title,
       description: values.description,
-      dueDate: values.dueDate ? values.dueDate.toISOString() : null,
+      dueDate: values.dueDate
+        ? new Date(Date.UTC(values.dueDate.getFullYear(), values.dueDate.getMonth(), values.dueDate.getDate(), 23, 59, 59, 999)).toISOString()
+        : null,
       assignedBy,
     },
   });

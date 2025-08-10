@@ -27,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, setHours, setMinutes } from "date-fns"; // Import setHours and setMinutes
+import { format, setHours, setMinutes } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { showSuccess, showError } from "@/utils/toast";
@@ -46,7 +46,7 @@ const formSchema = z.object({
   description: z.string().optional(),
   assignedTo: z.string().uuid({ message: "Please select a user." }),
   dueDate: z.date().optional().nullable(),
-  dueTime: z.string().optional(), // New field for time
+  dueTime: z.string().optional(),
 });
 
 type EditTaskFormValues = z.infer<typeof formSchema>;
@@ -62,17 +62,16 @@ const fetchAllUsers = async (): Promise<User[]> => {
 const updateTask = async (values: EditTaskFormValues & { taskId: string }) => {
   const { taskId, ...updateData } = values;
 
-  let combinedDueDate = null;
+  let combinedDueDate: Date | null = null;
   if (updateData.dueDate) {
-    combinedDueDate = updateData.dueDate;
+    const date = updateData.dueDate;
+    combinedDueDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    
     if (updateData.dueTime) {
       const [hours, minutes] = updateData.dueTime.split(':').map(Number);
-      combinedDueDate = setHours(combinedDueDate, hours);
-      combinedDueDate = setMinutes(combinedDueDate, minutes);
+      combinedDueDate.setUTCHours(hours, minutes);
     } else {
-      // If no time is specified, default to end of day for consistency
-      combinedDueDate = setHours(combinedDueDate, 23);
-      combinedDueDate = setMinutes(combinedDueDate, 59);
+      combinedDueDate.setUTCHours(23, 59);
     }
   }
 
