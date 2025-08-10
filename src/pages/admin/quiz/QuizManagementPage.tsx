@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
 import { ShowQuestionsDialog } from "./ShowQuestionsDialog";
 import { BulkUploadQuizSetDialog } from "./BulkUploadQuizSetDialog";
+import { EditQuizSetDialog } from "./EditQuizSetDialog"; // Import new dialog
 
 const fetchQuizSets = async (): Promise<QuizSet[]> => {
   const { data, error } = await supabase.functions.invoke("get-quiz-sets");
@@ -34,6 +35,7 @@ const QuizManagementPage = () => {
   const queryClient = useQueryClient();
   const [setToDelete, setSetToDelete] = React.useState<string | null>(null);
   const [setToShow, setSetToShow] = React.useState<QuizSet | null>(null);
+  const [setToEdit, setSetToEdit] = React.useState<QuizSet | null>(null); // State for editing
   const [isUploadOpen, setIsUploadOpen] = React.useState(false);
 
   const { data: quizSets, isLoading, error } = useQuery<QuizSet[]>({
@@ -41,13 +43,13 @@ const QuizManagementPage = () => {
     queryFn: fetchQuizSets,
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async (variables: { id: string; status?: 'published' | 'inactive'; assign_date?: string; start_time?: string; end_time?: string; reward_type?: 'gp' | 'xp'; points_per_question?: number; }) => {
+  const updateStatusMutation = useMutation({
+    mutationFn: async (variables: { id: string; status: 'published' | 'inactive' }) => {
       const { error } = await supabase.functions.invoke("update-quiz-set", { body: variables });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      showSuccess("Set updated successfully.");
+      showSuccess("Set status updated successfully.");
       queryClient.invalidateQueries({ queryKey: ["quizSets"] });
     },
     onError: (err: Error) => showError(err.message),
@@ -71,28 +73,10 @@ const QuizManagementPage = () => {
 
   const columns = React.useMemo(() => getColumns({
     onShowContent: (set) => setSetToShow(set),
-    onUpdateStatus: (id, status) => updateMutation.mutate({ id, status }),
-    onUpdateDate: (id, date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const dateString = `${year}-${month}-${day}`;
-      updateMutation.mutate({ id, assign_date: dateString });
-    },
-    onUpdateTime: (id, type, time) => {
-      if (!time) {
-        updateMutation.mutate({ id, [type]: null });
-        return;
-      }
-      const [hours, minutes] = time.split(':').map(Number);
-      const date = new Date();
-      date.setHours(hours, minutes, 0, 0);
-      const utcTime = `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`;
-      updateMutation.mutate({ id, [type]: utcTime });
-    },
-    onUpdateReward: (id, type, amount) => updateMutation.mutate({ id, reward_type: type, points_per_question: amount }),
+    onUpdateStatus: (id, status) => updateStatusMutation.mutate({ id, status }),
     onDelete: (id) => setSetToDelete(id),
-  }), [updateMutation]);
+    onEdit: (set) => setSetToEdit(set), // Add onEdit handler
+  }), [updateStatusMutation]);
 
   const suggestedTitle = `Quiz Week ${ (quizSets?.length || 0) + 1 }`;
 
@@ -125,6 +109,7 @@ const QuizManagementPage = () => {
     <>
       <ShowQuestionsDialog open={!!setToShow} onOpenChange={() => setSetToShow(null)} quizSet={setToShow} />
       <BulkUploadQuizSetDialog open={isUploadOpen} onOpenChange={setIsUploadOpen} suggestedTitle={suggestedTitle} />
+      <EditQuizSetDialog open={!!setToEdit} onOpenChange={() => setSetToEdit(null)} quizSet={setToEdit} />
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-blue dark:text-vibrant-pink">Quiz Management</h1>

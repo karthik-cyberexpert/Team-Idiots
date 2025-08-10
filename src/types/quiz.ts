@@ -14,4 +14,6 @@ export interface QuizSet {
   quiz_questions: QuizQuestion[];
   start_time: string | null;
   end_time: string | null;
+  reward_type: 'gp' | 'xp';
+  points_per_question: number;
 }
