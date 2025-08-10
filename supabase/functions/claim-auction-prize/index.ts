@@ -87,6 +87,12 @@ serve(async (req) => {
           expires.setHours(expires.getHours() + 24);
           powerUpPayload.expires_at = expires.toISOString();
         }
+        if (awardedPrize.power === 'attack') {
+          powerUpPayload.effect_value = 10; // Default 10% attack
+        }
+        if (awardedPrize.power === 'gp_transfer') {
+          powerUpPayload.effect_value = 10; // Default 10% siphon
+        }
         await supabaseAdmin.from('user_power_ups').insert(powerUpPayload);
         awardedMessage = `You received the power: ${awardedPrize.power.replace(/_/g, ' ')}!`;
       }
