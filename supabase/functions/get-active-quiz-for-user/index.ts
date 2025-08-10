@@ -25,71 +25,65 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated.");
 
+    // 1. Fetch all published quiz sets with their question IDs
     const { data: sets, error: setError } = await supabase
       .from('quiz_sets')
-      .select('*, quiz_questions(*)')
+      .select('*, quiz_questions(id)')
       .eq('status', 'published')
-      .not('assign_date', 'is', null)
-      .not('start_time', 'is', null)
-      .not('end_time', 'is', null);
+      .order('created_at', { ascending: false }); // Get newest first
 
     if (setError) throw setError;
     if (!sets || sets.length === 0) {
       return new Response(JSON.stringify(null), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const now = new Date(); // Current UTC time
-
-    const relevantSet = sets.find(set => {
-      const assignDate = new Date(set.assign_date);
-      const today = new Date();
-      
-      if (
-        assignDate.getUTCFullYear() !== today.getUTCFullYear() ||
-        assignDate.getUTCMonth() !== today.getUTCMonth() ||
-        assignDate.getUTCDate() !== today.getUTCDate()
-      ) {
-        return false;
-      }
-
-      const [endH, endM] = set.end_time.split(':').map(Number);
-      const endDateTime = new Date(set.assign_date);
-      endDateTime.setUTCHours(endH, endM, 0, 0);
-
-      return now <= endDateTime;
-    });
-
-    if (!relevantSet) {
-      return new Response(JSON.stringify(null), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const [startH, startM] = relevantSet.start_time.split(':').map(Number);
-    const startDateTime = new Date(relevantSet.assign_date);
-    startDateTime.setUTCHours(startH, startM, 0, 0);
-
-    if (now < startDateTime) {
-      return new Response(JSON.stringify(relevantSet), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const questionIds = relevantSet.quiz_questions.map(q => q.id);
+    // 2. Fetch all of the user's answered question IDs
     const { data: results, error: resultsError } = await supabase
       .from('quiz_results')
       .select('question_id')
-      .eq('user_id', user.id)
-      .in('question_id', questionIds);
-
+      .eq('user_id', user.id);
+    
     if (resultsError) throw resultsError;
-
     const answeredQuestionIds = new Set(results.map(r => r.question_id));
-    const remainingQuestions = relevantSet.quiz_questions.filter(q => !answeredQuestionIds.has(q.id));
 
+    // 3. Find the first set that is not fully completed by the user
+    let activeSet = null;
+    for (const set of sets) {
+      const totalQuestions = set.quiz_questions.length;
+      if (totalQuestions === 0) continue; // Skip empty sets
+
+      const answeredInSet = set.quiz_questions.filter(q => answeredQuestionIds.has(q.id)).length;
+      
+      if (answeredInSet < totalQuestions) {
+        activeSet = set;
+        break; // Found the most recent, incomplete set
+      }
+    }
+
+    if (!activeSet) {
+      return new Response(JSON.stringify(null), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // 4. Fetch the full data for the active set, including questions and options
+    const { data: fullSetData, error: fullSetError } = await supabase
+      .from('quiz_sets')
+      .select('*, quiz_questions(*)')
+      .eq('id', activeSet.id)
+      .single();
+
+    if (fullSetError) throw fullSetError;
+
+    // 5. Filter out questions the user has already answered in this set
+    const remainingQuestions = fullSetData.quiz_questions.filter(q => !answeredQuestionIds.has(q.id));
+    
+    // Shuffle the remaining questions
     for (let i = remainingQuestions.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [remainingQuestions[i], remainingQuestions[j]] = [remainingQuestions[j], remainingQuestions[i]];
     }
 
     const response = {
-      ...relevantSet,
+      ...fullSetData,
       quiz_questions: remainingQuestions,
     };
 

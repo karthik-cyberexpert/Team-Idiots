@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
 import { showSuccess, showError } from "@/utils/toast";
 import Confetti from 'react-dom-confetti';
 import { QuizSet } from "@/types/quiz";
-import { EventCountdown } from "@/components/game/EventCountdown";
 
 const fetchActiveQuiz = async (): Promise<QuizSet | null> => {
   const { data, error } = await supabase.functions.invoke("get-active-quiz-for-user");
@@ -30,7 +29,6 @@ const submitAnswer = async (questionId: string, selectedIndex: number): Promise<
 
 const QuizPage = () => {
   const queryClient = useQueryClient();
-  const [quizSet, setQuizSet] = React.useState<QuizSet | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
   const [selectedAnswer, setSelectedAnswer] = React.useState<number | null>(null);
   const [isCorrect, setIsCorrect] = React.useState<boolean | null>(null);
@@ -38,41 +36,24 @@ const QuizPage = () => {
   const [score, setScore] = React.useState(0);
   const [finalScoreData, setFinalScoreData] = React.useState<{ score: number; rewardType: string } | null>(null);
   const [confettiActive, setConfettiActive] = React.useState(false);
-  const [startDateTime, setStartDateTime] = React.useState<Date | null>(null);
-  const [isUpcoming, setIsUpcoming] = React.useState(false);
 
-  const { data, isLoading, error, refetch } = useQuery<QuizSet | null>({
+  const { data: quizSet, isLoading, error, refetch } = useQuery<QuizSet | null>({
     queryKey: ["activeQuiz"],
     queryFn: fetchActiveQuiz,
-    refetchInterval: 1000, // Fetch every second
+    refetchOnWindowFocus: false, // Prevent refetching on focus, let logic handle it
   });
 
   React.useEffect(() => {
-    if (data) {
-      const now = new Date();
-      const [startH, startM] = data.start_time.split(':').map(Number);
-      const sdt = new Date(data.assign_date);
-      sdt.setUTCHours(startH, startM, 0, 0);
-      setStartDateTime(sdt);
-
-      if (now < sdt) {
-        setIsUpcoming(true);
-        setQuizSet(null);
-      } else {
-        setIsUpcoming(false);
-        if (!isFinished) {
-          setQuizSet(data);
-          if (data.quiz_questions.length === 0) {
-            setIsFinished(true);
-          }
-        }
-      }
-    } else {
-      setQuizSet(null);
-      setStartDateTime(null);
-      setIsUpcoming(false);
+    // When a new quiz set is loaded, reset the state
+    if (quizSet) {
+      setCurrentQuestionIndex(0);
+      setSelectedAnswer(null);
+      setIsCorrect(null);
+      setIsFinished(false);
+      setScore(0);
+      setFinalScoreData(null);
     }
-  }, [data, isFinished]);
+  }, [quizSet]);
 
   const answerMutation = useMutation({
     mutationFn: ({ questionId, selectedIndex }: { questionId: string; selectedIndex: number }) => submitAnswer(questionId, selectedIndex),
@@ -93,6 +74,10 @@ const QuizPage = () => {
         } else {
           setFinalScoreData({ score: newScore, rewardType: quizSet!.reward_type });
           setIsFinished(true);
+          // After 5 seconds, try to fetch the next quiz
+          setTimeout(() => {
+            refetch();
+          }, 5000);
         }
       }, 1500);
     },
@@ -125,46 +110,6 @@ const QuizPage = () => {
     );
   }
 
-  if (isUpcoming && startDateTime) {
-    return (
-      <Card className="max-w-3xl mx-auto">
-        <CardHeader>
-          <CardTitle>{data?.title}</CardTitle>
-          <CardDescription>The quiz will begin soon. Get ready!</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <EventCountdown
-            startTime={startDateTime}
-            onEnd={() => refetch()}
-            title="Quiz Starting Soon!"
-            description="The quiz will begin in:"
-          />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (isFinished) {
-    return (
-      <Card className="text-center">
-        <CardHeader>
-          <CardTitle>Quiz Time!</CardTitle>
-        </CardHeader>
-        <CardContent className="py-10">
-          <Trophy className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-lg text-muted-foreground">
-            You've completed today's quiz!
-          </p>
-          {finalScoreData ? (
-            <p className="text-2xl font-bold mt-2">You scored {finalScoreData.score} {finalScoreData.rewardType.toUpperCase()}!</p>
-          ) : (
-            <p className="text-muted-foreground mt-2">Your results have been recorded.</p>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-
   if (!quizSet || quizSet.quiz_questions.length === 0) {
     return (
       <Card className="text-center">
@@ -174,8 +119,11 @@ const QuizPage = () => {
         <CardContent className="py-10">
           <Trophy className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <p className="text-lg text-muted-foreground">
-            There is no active quiz right now. Check back later!
+            {isFinished ? "You've completed the quiz!" : "You've completed all available quizzes. Great job!"}
           </p>
+          {finalScoreData && (
+            <p className="text-2xl font-bold mt-2">You scored {finalScoreData.score} {finalScoreData.rewardType.toUpperCase()}!</p>
+          )}
         </CardContent>
       </Card>
     );
