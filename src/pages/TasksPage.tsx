@@ -6,13 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, CircleDashed, CalendarDays, Send, ShieldQuestion, RefreshCw, XCircle, Star, Clock, Type } from "lucide-react"; // Import Type icon
+import { CheckCircle, CircleDashed, CalendarDays, Send, ShieldQuestion, RefreshCw, XCircle, Star, Clock, Type, ChevronLeft, ChevronRight } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Task } from "@/types/task";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 
 const fetchUserTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
@@ -23,7 +23,7 @@ const fetchUserTasks = async (userId: string): Promise<Task[]> => {
       assigner_profile:profiles!tasks_assigned_by_profile_fkey(full_name)
     `)
     .eq("assigned_to", userId)
-    .order("due_date", { ascending: true, nullsFirst: false });
+    .order("created_at", { ascending: false }); // Sort by newest first
   if (error) throw new Error(error.message);
   return data as Task[];
 };
@@ -47,7 +47,9 @@ const updateTaskStatus = async (taskId: string, status: 'waiting_for_approval' |
 const TasksPage = () => {
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = React.useState(0);
+  const TASKS_PER_PAGE = 6;
 
   const { data: tasks, isLoading, error } = useQuery<Task[]>({
     queryKey: ["userTasks", user?.id],
@@ -107,6 +109,22 @@ const TasksPage = () => {
       showSuccess(message);
     },
   });
+
+  const paginatedTasks = React.useMemo(() => {
+    if (!tasks) return [];
+    const startIndex = currentPage * TASKS_PER_PAGE;
+    return tasks.slice(startIndex, startIndex + TASKS_PER_PAGE);
+  }, [tasks, currentPage]);
+
+  const totalPages = tasks ? Math.ceil(tasks.length / TASKS_PER_PAGE) : 0;
+
+  const goToNextPage = () => {
+    setCurrentPage((page) => Math.min(page + 1, totalPages - 1));
+  };
+
+  const goToPreviousPage = () => {
+    setCurrentPage((page) => Math.max(page - 1, 0));
+  };
 
   const getStatusBadge = (status: Task['status']) => {
     const statusText = status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -220,44 +238,69 @@ const TasksPage = () => {
     <div className="space-y-6">
       <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-pink dark:text-vibrant-blue">Your Tasks</h1>
       {tasks && tasks.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {tasks.map((task) => (
-            <Card key={task.id} className="flex flex-col group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:rotate-x-1 hover:rotate-y-1 shadow-md">
-              <CardHeader>
-                <CardTitle className="text-lg">{task.title}</CardTitle>
-                <CardDescription className="text-sm text-muted-foreground">
-                  Assigned by: <span className="text-vibrant-purple dark:text-vibrant-yellow">{task.assigner_profile?.full_name || "System"}</span>
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow space-y-2">
-                <p className="text-sm text-foreground">{task.description || "No description provided."}</p>
+        <>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {paginatedTasks.map((task) => (
+              <Card key={task.id} className="flex flex-col group transform transition-transform-shadow duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:rotate-x-1 hover:rotate-y-1 shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-lg">{task.title}</CardTitle>
+                  <CardDescription className="text-sm text-muted-foreground">
+                    Assigned by: <span className="text-vibrant-purple dark:text-vibrant-yellow">{task.assigner_profile?.full_name || "System"}</span>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow space-y-2">
+                  <p className="text-sm text-foreground">{task.description || "No description provided."}</p>
 
-                {task.due_date && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <CalendarDays className="h-4 w-4 mr-1" />
-                    Due: {format(new Date(task.due_date), "PPP")}
-                  </div>
-                )}
-                {task.due_date && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4 mr-1" />
-                    Time: {format(new Date(task.due_date), "p")}
-                  </div>
-                )}
-                {getStatusBadge(task.status)}
-                {task.status === 'completed' && typeof task.marks_awarded === 'number' && (
-                  <div className="flex items-center text-sm text-vibrant-gold font-semibold">
-                    <Star className="h-4 w-4 mr-1" />
-                    Marks Awarded: {task.marks_awarded}/10
-                  </div>
-                )}
-              </CardContent>
-              <div className="p-4 border-t flex justify-end">
-                {getTaskAction(task)}
-              </div>
-            </Card>
-          ))}
-        </div>
+                  {task.due_date && (
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <CalendarDays className="h-4 w-4 mr-1" />
+                      Due: {format(new Date(task.due_date), "PPP")}
+                    </div>
+                  )}
+                  {task.due_date && (
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4 mr-1" />
+                      Time: {format(new Date(task.due_date), "p")}
+                    </div>
+                  )}
+                  {getStatusBadge(task.status)}
+                  {task.status === 'completed' && typeof task.marks_awarded === 'number' && (
+                    <div className="flex items-center text-sm text-vibrant-gold font-semibold">
+                      <Star className="h-4 w-4 mr-1" />
+                      Marks Awarded: {task.marks_awarded}/10
+                    </div>
+                  )}
+                </CardContent>
+                <div className="p-4 border-t flex justify-end">
+                  {getTaskAction(task)}
+                </div>
+              </Card>
+            ))}
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center space-x-4 pt-4">
+              <Button
+                variant="outline"
+                onClick={goToPreviousPage}
+                disabled={currentPage === 0}
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage + 1} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                onClick={goToNextPage}
+                disabled={currentPage >= totalPages - 1}
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="text-center py-10">
           <CheckCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
