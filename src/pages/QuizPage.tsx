@@ -7,15 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { HelpCircle, Check, X, Trophy, Timer, Info } from "lucide-react";
+import { HelpCircle, Check, X, Trophy, Timer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { showSuccess, showError } from "@/utils/toast";
 import Confetti from 'react-dom-confetti';
 import { QuizSet, QuizQuestion } from "@/types/quiz";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 
-type QuizState = 'loading' | 'idle' | 'confirming' | 'playing' | 'results' | 'finished';
+type QuizState = 'idle' | 'confirming' | 'playing' | 'results';
 type Answer = { questionId: string; selectedIndex: number };
 
 const fetchActiveQuiz = async (): Promise<QuizSet | null> => {
@@ -34,8 +34,7 @@ const submitQuizResults = async (quizSetId: string, answers: Answer[]): Promise<
 
 const QuizPage = () => {
   const queryClient = useQueryClient();
-  const [quizState, setQuizState] = React.useState<QuizState>('loading');
-  const [activeQuiz, setActiveQuiz] = React.useState<QuizSet | null>(null);
+  const [quizState, setQuizState] = React.useState<QuizState>('idle');
   const [shuffledQuestions, setShuffledQuestions] = React.useState<QuizQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
   const [answers, setAnswers] = React.useState<Answer[]>([]);
@@ -45,15 +44,10 @@ const QuizPage = () => {
   const [finalResult, setFinalResult] = React.useState<{ correctCount: number; pointsAwarded: number } | null>(null);
   const [confettiActive, setConfettiActive] = React.useState(false);
 
-  const { error, refetch } = useQuery<QuizSet | null>({
+  const { data: activeQuiz, isLoading, error } = useQuery<QuizSet | null>({
     queryKey: ["activeQuiz"],
     queryFn: fetchActiveQuiz,
     refetchOnWindowFocus: false,
-    onSuccess: (data) => {
-      setActiveQuiz(data);
-      setQuizState(data ? 'idle' : 'finished');
-    },
-    onError: () => setQuizState('finished'),
   });
 
   const resultsMutation = useMutation({
@@ -62,6 +56,7 @@ const QuizPage = () => {
       setFinalResult(data);
       queryClient.invalidateQueries({ queryKey: ["gameLeaderboard"] });
       queryClient.invalidateQueries({ queryKey: ["xpHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["activeQuiz"] });
     },
     onError: (err: Error) => showError(err.message),
   });
@@ -78,7 +73,7 @@ const QuizPage = () => {
 
   const startQuiz = () => {
     if (!activeQuiz) return;
-    const questions = [...activeQuiz.quiz_questions].sort(() => 0.5 - Math.random()).slice(0, 50);
+    const questions = [...activeQuiz.quiz_questions].sort(() => 0.5 - Math.random());
     setShuffledQuestions(questions);
     setAnswers([]);
     setCurrentQuestionIndex(0);
@@ -117,16 +112,32 @@ const QuizPage = () => {
     resultsMutation.mutate();
   };
 
-  if (quizState === 'loading') return <Skeleton className="h-96 w-full" />;
-  if (error) return <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error.message}</AlertDescription></Alert>;
-
-  if (!activeQuiz || quizState === 'finished') {
+  if (isLoading) {
     return (
-      <Card className="text-center"><CardHeader><CardTitle>Quiz Time!</CardTitle></CardHeader>
+      <Card>
+        <CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader>
+        <CardContent><Skeleton className="h-48 w-full" /></CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertTitle>Error Loading Quiz</AlertTitle>
+        <AlertDescription>{error.message}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (!activeQuiz) {
+    return (
+      <Card className="text-center max-w-2xl mx-auto">
+        <CardHeader><CardTitle>Quiz Time!</CardTitle></CardHeader>
         <CardContent className="py-10">
           <Trophy className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <p className="text-lg text-muted-foreground">You've completed all available quizzes. Great job!</p>
-          {finalResult && <p className="text-2xl font-bold mt-2">You scored {finalResult.correctCount}/{shuffledQuestions.length} and earned {finalResult.pointsAwarded} {activeQuiz?.reward_type.toUpperCase()}!</p>}
+          <p className="text-sm text-muted-foreground">Check back later for more.</p>
         </CardContent>
       </Card>
     );
@@ -137,8 +148,8 @@ const QuizPage = () => {
       <Card className="max-w-2xl mx-auto text-center">
         <CardHeader><CardTitle>{activeQuiz.title}</CardTitle><CardDescription>Are you ready to test your knowledge?</CardDescription></CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-left">
-            <p><strong>Questions:</strong> {Math.min(50, activeQuiz.quiz_questions.length)}</p>
+          <div className="grid grid-cols-2 gap-4 text-left p-4 border rounded-md">
+            <p><strong>Questions:</strong> {activeQuiz.quiz_questions.length}</p>
             <p><strong>Reward:</strong> {activeQuiz.points_per_question} {activeQuiz.reward_type.toUpperCase()} per correct answer</p>
             <p><strong>Time Limit:</strong> {activeQuiz.time_limit_minutes ? `${activeQuiz.time_limit_minutes} minutes` : 'None'}</p>
             <p><strong>Enroll Before:</strong> {activeQuiz.enrollment_deadline ? format(new Date(activeQuiz.enrollment_deadline), "PPP p") : 'No deadline'}</p>
@@ -155,7 +166,7 @@ const QuizPage = () => {
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Quiz Rules</AlertDialogTitle>
             <AlertDialogDescription>
-              Once you start, the timer will begin. If you refresh, close the tab, or switch tabs, your progress will be lost and you will have to start over.
+              Once you start, the timer will begin. If you refresh or close the tab, your progress will be lost and you will have to start over. Are you sure you want to proceed?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -173,13 +184,18 @@ const QuizPage = () => {
       <Card className="text-center max-w-2xl mx-auto">
         <CardHeader><CardTitle>Quiz Complete!</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-xl">You answered <span className="font-bold text-vibrant-green">{correctCount}</span> correctly and <span className="font-bold text-vibrant-red">{answers.length - correctCount}</span> incorrectly.</p>
-          {finalResult ? (
-            <p className="text-2xl font-bold">You earned {finalResult.pointsAwarded} {activeQuiz.reward_type.toUpperCase()}!</p>
-          ) : (
+          <p className="text-xl">You answered <span className="font-bold text-vibrant-green">{correctCount}</span> correctly out of {answers.length}.</p>
+          {resultsMutation.isPending && <p>Calculating your rewards...</p>}
+          {resultsMutation.isError && <p className="text-vibrant-red">Could not save results. Please try again.</p>}
+          {finalResult && <p className="text-2xl font-bold">You earned {finalResult.pointsAwarded} {activeQuiz.reward_type.toUpperCase()}!</p>}
+          
+          {!finalResult && (
             <Button onClick={handleFinishTest} disabled={resultsMutation.isPending}>
-              {resultsMutation.isPending ? "Calculating..." : "Finish Test & Claim Rewards"}
+              {resultsMutation.isPending ? "Calculating..." : "Finish & Claim Rewards"}
             </Button>
+          )}
+          {finalResult && (
+             <Button onClick={() => { setQuizState('idle'); queryClient.invalidateQueries({ queryKey: ['activeQuiz'] }); }}>Back to Quizzes</Button>
           )}
         </CardContent>
       </Card>
@@ -205,7 +221,7 @@ const QuizPage = () => {
         )}
       </CardHeader>
       <CardContent className="space-y-6">
-        <p className="text-xl font-semibold text-center">{currentQuestion.question}</p>
+        <p className="text-xl font-semibold text-center min-h-[3em]">{currentQuestion.question}</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"><Confetti active={confettiActive} /></div>
           {currentQuestion.options.map((option, index) => {
