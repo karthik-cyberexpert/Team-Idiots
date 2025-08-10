@@ -38,16 +38,6 @@ export function DashboardLayout() {
     setTheme(checked ? 'dark' : 'light');
   };
 
-  if (isQuizActive) {
-    return (
-      <div className="min-h-screen w-full bg-background">
-        <main className="flex flex-1 flex-col p-4 lg:p-6 h-screen">
-          <Outlet />
-        </main>
-      </div>
-    );
-  }
-
   const MaintenanceToggle = () => (
     <>
       {profile?.role === 'admin' && (
@@ -91,7 +81,10 @@ export function DashboardLayout() {
 
   const mobileLayout = (
     <div className="flex min-h-screen w-full flex-col">
-      <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
+      <header className={cn(
+        "sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50",
+        isQuizActive && "hidden"
+      )}>
         <Sheet open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="shrink-0 md:hidden">
@@ -124,7 +117,10 @@ export function DashboardLayout() {
           <UserNav />
         </div>
       </header>
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <main className={cn(
+        "flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8",
+        isQuizActive && "p-0 md:p-0 h-screen"
+      )}>
         <Outlet />
       </main>
     </div>
@@ -136,7 +132,8 @@ export function DashboardLayout() {
         data-collapsed={isCollapsed}
         className={cn(
           "hidden border-r bg-muted/40 md:flex md:flex-col justify-between transition-all duration-300 ease-in-out",
-          isCollapsed ? "w-14" : "w-64"
+          isCollapsed ? "w-14" : "w-64",
+          isQuizActive && "md:hidden"
         )}
       >
         <div className="flex flex-col h-full">
@@ -160,7 +157,10 @@ export function DashboardLayout() {
         </div>
       </div>
       <div className="flex flex-col">
-        <header className="flex h-14 items-center justify-end gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+        <header className={cn(
+          "flex h-14 items-center justify-end gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6",
+          isQuizActive && "hidden"
+        )}>
           <Switch
             checked={theme === 'dark'}
             onCheckedChange={handleThemeToggle}
@@ -173,7 +173,10 @@ export function DashboardLayout() {
           <Notifications />
           <UserNav />
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+        <main className={cn(
+          "flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6",
+          isQuizActive && "p-0 lg:p-0 h-screen"
+        )}>
           <Outlet />
         </main>
       </div>
