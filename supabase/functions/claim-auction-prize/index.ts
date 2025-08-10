@@ -81,19 +81,19 @@ serve(async (req) => {
         awardedMessage = `You won ${boostedAmount} XP!`;
       }
       if (awardedPrize.type === 'power_up' && awardedPrize.power && awardedPrize.power !== 'nothing') {
-        const powerUpPayload: any = { user_id: user.id, power_type: awardedPrize.power, uses_left: 1 };
+        const prizePowerUpPayload: any = { user_id: user.id, power_type: awardedPrize.power, uses_left: 1 };
         if (awardedPrize.power === '2x_boost' || awardedPrize.power === '4x_boost') {
           const expires = new Date();
           expires.setHours(expires.getHours() + 24);
-          powerUpPayload.expires_at = expires.toISOString();
+          prizePowerUpPayload.expires_at = expires.toISOString();
         }
         if (awardedPrize.power === 'attack') {
-          powerUpPayload.effect_value = 10; // Default 10% attack
+          prizePowerUpPayload.effect_value = 10; // Default 10% attack
         }
         if (awardedPrize.power === 'gp_transfer') {
-          powerUpPayload.effect_value = 10; // Default 10% siphon
+          prizePowerUpPayload.effect_value = 10; // Default 10% siphon
         }
-        await supabaseAdmin.from('user_power_ups').insert(powerUpPayload);
+        await supabaseAdmin.from('user_power_ups').insert(prizePowerUpPayload);
         awardedMessage = `You received the power: ${awardedPrize.power.replace(/_/g, ' ')}!`;
       }
       
