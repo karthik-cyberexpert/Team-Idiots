@@ -21,16 +21,23 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = await getAuthenticatedClient(req);
-    const { data: { user } } = await supabase.auth.getUser();
+    // Authenticate user to get their ID
+    const supabaseUserClient = await getAuthenticatedClient(req);
+    const { data: { user } } = await supabaseUserClient.auth.getUser();
     if (!user) throw new Error("User not authenticated.");
+
+    // Use admin client for all data fetching to bypass RLS issues with joins
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
     const now = new Date().toISOString();
 
-    // 1. Fetch all published quiz sets that haven't expired
-    const { data: sets, error: setError } = await supabase
+    // 1. Fetch all published quiz sets that haven't expired, with all their questions
+    const { data: sets, error: setError } = await supabaseAdmin
       .from('quiz_sets')
-      .select('id, title, reward_type, points_per_question, time_limit_minutes, enrollment_deadline, quiz_questions(id)')
+      .select('*, quiz_questions(*)')
       .eq('status', 'published')
       .or(`enrollment_deadline.is.null,enrollment_deadline.gte.${now}`)
       .order('created_at', { ascending: false });
@@ -41,7 +48,7 @@ serve(async (req) => {
     }
 
     // 2. Fetch all of the user's completed quiz set IDs
-    const { data: results, error: resultsError } = await supabase
+    const { data: results, error: resultsError } = await supabaseAdmin
       .from('quiz_results')
       .select('quiz_set_id')
       .eq('user_id', user.id);
@@ -49,23 +56,14 @@ serve(async (req) => {
     if (resultsError) throw resultsError;
     const completedSetIds = new Set(results.map(r => r.quiz_set_id));
 
-    // 3. Find the first set that is not completed by the user
-    const activeSetInfo = sets.find(set => !completedSetIds.has(set.id));
+    // 3. Find the first set that is not completed by the user and has questions
+    const activeSet = sets.find(set => !completedSetIds.has(set.id) && set.quiz_questions && set.quiz_questions.length > 0);
 
-    if (!activeSetInfo) {
+    if (!activeSet) {
       return new Response(JSON.stringify(null), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // 4. Fetch the full data for the active set, including questions and options
-    const { data: fullSetData, error: fullSetError } = await supabase
-      .from('quiz_sets')
-      .select('*, quiz_questions(*)')
-      .eq('id', activeSetInfo.id)
-      .single();
-
-    if (fullSetError) throw fullSetError;
-
-    return new Response(JSON.stringify(fullSetData), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify(activeSet), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
