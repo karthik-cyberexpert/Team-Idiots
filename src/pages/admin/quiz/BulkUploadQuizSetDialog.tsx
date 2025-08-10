@@ -66,10 +66,13 @@ export const BulkUploadQuizSetDialog = ({ open, onOpenChange, suggestedTitle }: 
 
     const fileName = file.name.toLowerCase();
     const reader = new FileReader();
+
     reader.onload = async (e) => {
       try {
         const content = e.target?.result;
-        if (!content) throw new Error("Could not read file content.");
+        if (!content) {
+          throw new Error("Could not read file content.");
+        }
         
         let jsonData;
 
@@ -79,10 +82,19 @@ export const BulkUploadQuizSetDialog = ({ open, onOpenChange, suggestedTitle }: 
           const workbook = XLSX.read(content, { type: 'array' });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
-          jsonData = XLSX.utils.sheet_to_json(worksheet).map((row: any) => ({
-            ...row,
-            options: JSON.parse(row.options) // Assuming options are stored as a JSON string in the sheet
-          }));
+          jsonData = XLSX.utils.sheet_to_json(worksheet).map((row: any) => {
+            if (typeof row.options !== 'string') {
+              throw new Error(`Row for question "${row.question}" has invalid 'options' format. It should be a JSON string array.`);
+            }
+            try {
+              return {
+                ...row,
+                options: JSON.parse(row.options)
+              };
+            } catch (parseError) {
+              throw new Error(`Could not parse 'options' for question "${row.question}". Please ensure it's a valid JSON array string.`);
+            }
+          });
         } else {
           throw new Error("Unsupported file type. Please use JSON or XLSX.");
         }
@@ -93,15 +105,25 @@ export const BulkUploadQuizSetDialog = ({ open, onOpenChange, suggestedTitle }: 
       } catch (error: any) {
         showError(`File Error: ${error.message}`);
       } finally {
-        if (event.target) event.target.value = "";
+        if (event.target) {
+          event.target.value = "";
+        }
       }
     };
-    reader.onerror = () => showError("Error reading file.");
+
+    reader.onerror = () => {
+      showError("Error reading file.");
+    };
 
     if (fileName.endsWith('.json')) {
       reader.readAsText(file, 'UTF-8');
     } else if (fileName.endsWith('.xlsx')) {
       reader.readAsArrayBuffer(file);
+    } else {
+      showError("Unsupported file type. Please select a .json or .xlsx file.");
+      if (event.target) {
+        event.target.value = "";
+      }
     }
   };
 
