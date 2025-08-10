@@ -12,16 +12,39 @@ serve(async (req) => {
   }
 
   try {
-    const { title, texts } = await req.json()
-    if (!title || !Array.isArray(texts) || texts.length === 0) {
-      throw new Error("Title and a non-empty array of texts are required.")
+    // Create a Supabase client with the user's auth token to check their role
+    const userSupabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    );
+
+    const { data: { user } } = await userSupabase.auth.getUser();
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Not authenticated' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    const { data: profile, error: profileError } = await userSupabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile || profile.role !== 'admin') {
+      return new Response(JSON.stringify({ error: 'Not authorized' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Now that the user is verified as an admin, proceed with the service_role client
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+    );
+
+    const { title, texts } = await req.json()
+    if (!title || !Array.isArray(texts) || texts.length === 0) {
+      throw new Error("Title and a non-empty array of texts are required.")
+    }
 
     // 1. Create the typer set
     const { data: set, error: setError } = await supabaseAdmin
