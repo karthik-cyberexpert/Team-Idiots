@@ -68,7 +68,6 @@ serve(async (req) => {
     // 4. Calculate points, apply boosts, and update profile
     let pointsAwarded = correctCount * quizSet.points_per_question;
 
-    // Check for active boosts
     const { data: boosts, error: boostError } = await supabaseAdmin
       .from('user_power_ups')
       .select('power_type')
@@ -89,15 +88,11 @@ serve(async (req) => {
 
     if (pointsAwarded > 0) {
       const rewardColumn = quizSet.reward_type === 'gp' ? 'game_points' : 'xp';
-      
-      const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select(rewardColumn).eq('id', user.id).single();
-      if (profileError) throw profileError;
-
-      const currentPoints = profile[rewardColumn] || 0;
-      const newPoints = currentPoints + pointsAwarded;
-
-      const { error: updateError } = await supabaseAdmin.from('profiles').update({ [rewardColumn]: newPoints }).eq('id', user.id);
-      if (updateError) throw updateError;
+      await supabaseAdmin.rpc('increment_profile_column', {
+        p_user_id: user.id,
+        p_column_name: rewardColumn,
+        p_increment_value: pointsAwarded
+      });
 
       if (quizSet.reward_type === 'xp') {
         await supabaseAdmin.from('xp_history').insert({ user_id: user.id, xp_change: pointsAwarded, reason: `Quiz completed: ${quizSet.title}` });
@@ -113,7 +108,26 @@ serve(async (req) => {
     });
     if (resultError) throw resultError;
 
-    return new Response(JSON.stringify({ correctCount, pointsAwarded }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // 6. Find the next available quiz for the user
+    const now = new Date().toISOString();
+    const { data: allSets, error: allSetsError } = await supabaseAdmin
+      .from('quiz_sets')
+      .select('*, quiz_questions(*)')
+      .eq('status', 'published')
+      .or(`enrollment_deadline.is.null,enrollment_deadline.gte.${now}`)
+      .order('created_at', { ascending: false });
+    if (allSetsError) throw allSetsError;
+
+    const { data: allResults, error: allResultsError } = await supabaseAdmin
+      .from('quiz_results')
+      .select('quiz_set_id')
+      .eq('user_id', user.id);
+    if (allResultsError) throw allResultsError;
+    const completedSetIds = new Set(allResults.map(r => r.quiz_set_id));
+
+    const nextQuiz = allSets.find(set => !completedSetIds.has(set.id) && set.quiz_questions && set.quiz_questions.length > 0) || null;
+
+    return new Response(JSON.stringify({ correctCount, pointsAwarded, nextQuiz }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }

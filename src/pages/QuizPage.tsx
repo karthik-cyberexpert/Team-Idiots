@@ -26,7 +26,7 @@ const fetchActiveQuiz = async (): Promise<QuizSet | null> => {
   return data;
 };
 
-const submitQuizResults = async (quizSetId: string, answers: Answer[]): Promise<{ correctCount: number; pointsAwarded: number }> => {
+const submitQuizResults = async (quizSetId: string, answers: Answer[]): Promise<{ correctCount: number; pointsAwarded: number; nextQuiz: QuizSet | null }> => {
   const { data, error } = await supabase.functions.invoke("submit-quiz-results", {
     body: { quizSetId, answers },
   });
@@ -67,10 +67,10 @@ const QuizPage = () => {
   const resultsMutation = useMutation({
     mutationFn: () => submitQuizResults(activeQuiz!.id, answers),
     onSuccess: (data) => {
-      setFinalResult(data);
+      setFinalResult({ correctCount: data.correctCount, pointsAwarded: data.pointsAwarded });
+      queryClient.setQueryData(['activeQuiz'], data.nextQuiz);
       queryClient.invalidateQueries({ queryKey: ["gameLeaderboard"] });
       queryClient.invalidateQueries({ queryKey: ["xpHistory"] });
-      queryClient.invalidateQueries({ queryKey: ["activeQuiz"] });
     },
     onError: (err: Error) => showError(err.message),
   });
@@ -284,7 +284,7 @@ const QuizPage = () => {
               </Button>
             )}
             {finalResult && (
-               <Button onClick={() => { setQuizState('idle'); queryClient.invalidateQueries({ queryKey: ['activeQuiz'] }); }}>Back to Quizzes</Button>
+               <Button onClick={() => setQuizState('idle')}>Back to Quizzes</Button>
             )}
           </CardContent>
         </Card>
