@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from '@/components/ui/button';
 import { Trophy, History } from 'lucide-react';
@@ -30,6 +30,7 @@ const fetchEndedAuctions = async (): Promise<Auction[]> => {
 
 const AuctionPage = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [isWinningsDialogOpen, setIsWinningsDialogOpen] = React.useState(false);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = React.useState(false);
   const [showWinningsIndicator, setShowWinningsIndicator] = React.useState(false);
@@ -38,21 +39,37 @@ const AuctionPage = () => {
   const { data: auctions, isLoading } = useQuery<Auction[]>({
     queryKey: ["liveAuctions"],
     queryFn: fetchLiveAuctions,
-    refetchInterval: 1000,
   });
 
   const { data: myWinnings } = useQuery<Auction[]>({
     queryKey: ["myWinnings"],
     queryFn: fetchMyWinnings,
     enabled: !!user,
-    refetchInterval: 1000,
   });
 
   const { data: endedAuctions } = useQuery<Auction[]>({
     queryKey: ["endedAuctions"],
     queryFn: fetchEndedAuctions,
-    refetchInterval: 1000,
   });
+
+  React.useEffect(() => {
+    const channel = supabase
+      .channel('public:auctions')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'auctions' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['liveAuctions'] });
+          queryClient.invalidateQueries({ queryKey: ['myWinnings'] });
+          queryClient.invalidateQueries({ queryKey: ['endedAuctions'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   React.useEffect(() => {
     const hasUnclaimed = myWinnings?.some(w => !w.is_claimed);

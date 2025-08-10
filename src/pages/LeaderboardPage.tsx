@@ -50,8 +50,24 @@ const LeaderboardPage = () => {
   const { data: profiles, isLoading, error } = useQuery<Profile[]>({
     queryKey: ["leaderboard"],
     queryFn: fetchLeaderboard,
-    refetchInterval: 1000, // Refetch every 1 second
   });
+
+  React.useEffect(() => {
+    const channel = supabase
+      .channel('public:profiles:leaderboard')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const sortedProfiles = React.useMemo(() => {
     if (!profiles) return [];

@@ -39,8 +39,24 @@ const TyperSetManagementPage = () => {
   const { data: typerSets, isLoading, error } = useQuery<TyperSet[]>({
     queryKey: ["typerSets"],
     queryFn: fetchTyperSets,
-    refetchInterval: 1000, // Refetch every 1 second
   });
+
+  React.useEffect(() => {
+    const channel = supabase
+      .channel('public:typer_sets')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'typer_sets' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['typerSets'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const updateMutation = useMutation({
     mutationFn: async (variables: { id: string; status?: 'published' | 'inactive'; }) => {

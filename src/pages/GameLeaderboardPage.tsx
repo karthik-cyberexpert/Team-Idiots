@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,12 +42,29 @@ const getInitials = (name: string | null | undefined) => {
 
 const GameLeaderboardPage = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: profiles, isLoading, error } = useQuery<GameProfile[]>({
     queryKey: ["gameLeaderboard"],
     queryFn: fetchGameLeaderboard,
-    refetchInterval: 1000, // Refetch every 1 second
   });
+
+  React.useEffect(() => {
+    const channel = supabase
+      .channel('public:profiles:game-leaderboard')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['gameLeaderboard'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const getRankIcon = (rank: number) => {
     if (rank === 0) return <Medal className="h-6 w-6 text-vibrant-gold" />;

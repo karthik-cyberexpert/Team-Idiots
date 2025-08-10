@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,12 +20,44 @@ const fetchBuddyData = async (userId: string) => {
 
 const BuddiesPage = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['buddyData', user?.id],
     queryFn: () => fetchBuddyData(user!.id),
     enabled: !!user,
-    refetchInterval: 1000, // Refetch every 1 second
   });
+
+  React.useEffect(() => {
+    if (!user) return;
+
+    const buddyChannel = supabase
+      .channel('public:buddies')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'buddies' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['buddyData', user.id] });
+        }
+      )
+      .subscribe();
+
+    const invitationChannel = supabase
+      .channel('public:buddy_invitations')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'buddy_invitations' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['buddyData', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(buddyChannel);
+      supabase.removeChannel(invitationChannel);
+    };
+  }, [queryClient, user]);
 
   if (isLoading) {
     return (
