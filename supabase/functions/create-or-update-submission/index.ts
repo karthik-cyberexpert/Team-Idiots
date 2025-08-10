@@ -28,6 +28,20 @@ serve(async (req) => {
     const { taskId, content, fileUrl } = await req.json();
     if (!taskId) throw new Error("Task ID is required.");
 
+    // Server-side validation to check if the task is overdue
+    const { data: task, error: taskError } = await supabase
+      .from('tasks')
+      .select('due_date, status')
+      .eq('id', taskId)
+      .single();
+
+    if (taskError) throw taskError;
+    if (!task) throw new Error("Task not found.");
+
+    if (task.due_date && new Date(task.due_date) < new Date()) {
+        throw new Error("This task is overdue and can no longer be submitted.");
+    }
+
     const submissionData = {
       task_id: taskId,
       user_id: user.id,
@@ -36,14 +50,12 @@ serve(async (req) => {
       submitted_at: new Date().toISOString(),
     };
 
-    // Use upsert to handle both create and edit based on the unique constraint
     const { error: upsertError } = await supabase
       .from('task_submissions')
       .upsert(submissionData, { onConflict: 'task_id,user_id' });
 
     if (upsertError) throw upsertError;
 
-    // After successful submission, update the task status to 'waiting_for_approval'
     const { error: taskUpdateError } = await supabase
       .from('tasks')
       .update({ status: 'waiting_for_approval', completed_at: new Date().toISOString() })

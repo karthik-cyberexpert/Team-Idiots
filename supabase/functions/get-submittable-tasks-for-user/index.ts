@@ -25,19 +25,21 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated.");
 
-    // Fetch tasks that are pending or rejected AND do not have a submission yet.
+    const now = new Date().toISOString();
+
+    // Fetch tasks that are pending or rejected, not yet submitted, and not overdue.
     const { data, error } = await supabase
       .from('tasks')
       .select('id, title, task_submissions!left(id)')
       .eq('assigned_to', user.id)
       .in('status', ['pending', 'rejected'])
-      .is('task_submissions.id', null);
+      .is('task_submissions.id', null)
+      .or(`due_date.is.null,due_date.gte.${now}`);
 
     if (error) throw error;
     
-    // Filter out the tasks that have submissions (the join returns them)
     const submittableTasks = data?.filter(task => !task.task_submissions || task.task_submissions.length === 0)
-      .map(({ task_submissions, ...rest }) => rest); // Remove the submissions array from the final object
+      .map(({ task_submissions, ...rest }) => rest);
 
     return new Response(JSON.stringify(submittableTasks), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {

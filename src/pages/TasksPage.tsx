@@ -92,8 +92,10 @@ const TasksPage = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {sortedTasks.map(task => {
             const statusInfo = getStatusInfo(task);
+            const dueDate = task.due_date ? new Date(task.due_date) : null;
+            const isOverdue = dueDate && isPast(dueDate) && task.status === 'pending';
             const hasSubmission = task.task_submissions && task.task_submissions.length > 0;
-            const canSubmit = (task.status === 'pending' || task.status === 'rejected') && !hasSubmission;
+            const canSubmit = (task.status === 'pending' || task.status === 'rejected') && !hasSubmission && !isOverdue;
             const isTyperTask = task.task_type === 'typer';
 
             return (
@@ -117,7 +119,7 @@ const TasksPage = () => {
                 </CardContent>
                 <CardFooter>
                   {isTyperTask ? (
-                    <Button className="w-full" onClick={() => navigate(`/dashboard/typer?taskId=${task.id}&textId=${task.related_typing_text_id}`)} disabled={task.status !== 'pending'}>
+                    <Button className="w-full" onClick={() => navigate(`/dashboard/typer?taskId=${task.id}&textId=${task.related_typing_text_id}`)} disabled={task.status !== 'pending' || isOverdue}>
                       Start Challenge
                     </Button>
                   ) : canSubmit ? (
@@ -126,7 +128,7 @@ const TasksPage = () => {
                     </Button>
                   ) : (
                     <Button className="w-full" variant="outline" disabled>
-                      {hasSubmission ? "Submitted" : "Completed"}
+                      {isOverdue ? "Overdue" : hasSubmission ? "Submitted" : "Completed"}
                     </Button>
                   )}
                 </CardFooter>
