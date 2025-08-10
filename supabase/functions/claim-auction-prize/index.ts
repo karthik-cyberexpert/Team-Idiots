@@ -54,46 +54,44 @@ serve(async (req) => {
       
       awardedPrize = contents[Math.floor(Math.random() * contents.length)];
       
-      // Check for active boosts
-      const { count: boosts4x } = await supabaseAdmin.from('user_power_ups').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('power_type', '4x_boost').eq('is_used', false).gt('expires_at', new Date().toISOString());
-      const { count: boosts2x } = await supabaseAdmin.from('user_power_ups').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('power_type', '2x_boost').eq('is_used', false).gt('expires_at', new Date().toISOString());
-      
-      let boostMultiplier = 1;
-      if (boosts4x && boosts4x > 0) {
-          boostMultiplier = 4;
-      } else if (boosts2x && boosts2x > 0) {
-          boostMultiplier = 2;
-      }
-
       const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('game_points, xp').eq('id', user.id).single();
       if (profileError) throw profileError;
 
       const updatePayload: { game_points?: number; xp?: number } = {};
       
       if (awardedPrize.type === 'gp') {
-        const boostedAmount = awardedPrize.amount * boostMultiplier;
-        updatePayload.game_points = Math.max(0, profile.game_points + boostedAmount);
-        awardedMessage = `You won ${boostedAmount} GP!`;
+        updatePayload.game_points = Math.max(0, profile.game_points + awardedPrize.amount);
+        awardedMessage = `You won ${awardedPrize.amount} GP!`;
       }
       if (awardedPrize.type === 'xp') {
-        const boostedAmount = awardedPrize.amount * boostMultiplier;
-        updatePayload.xp = Math.max(0, profile.xp + boostedAmount);
-        awardedMessage = `You won ${boostedAmount} XP!`;
+        updatePayload.xp = Math.max(0, profile.xp + awardedPrize.amount);
+        awardedMessage = `You won ${awardedPrize.amount} XP!`;
       }
       if (awardedPrize.type === 'power_up' && awardedPrize.power && awardedPrize.power !== 'nothing') {
-        const prizePowerUpPayload: any = { user_id: user.id, power_type: awardedPrize.power, uses_left: 1 };
-        if (awardedPrize.power === '2x_boost' || awardedPrize.power === '4x_boost') {
-          const expires = new Date();
-          expires.setHours(expires.getHours() + 24);
-          prizePowerUpPayload.expires_at = expires.toISOString();
+        const basePayload = { user_id: user.id, uses_left: 1 };
+        let finalPayload;
+        switch (awardedPrize.power) {
+          case 'attack':
+            finalPayload = { ...basePayload, power_type: 'attack', effect_value: 10 };
+            break;
+          case 'gp_transfer':
+            finalPayload = { ...basePayload, power_type: 'gp_transfer', effect_value: 10 };
+            break;
+          case 'shield':
+            finalPayload = { ...basePayload, power_type: 'shield' };
+            break;
+          case '2x_boost':
+          case '4x_boost':
+            const expires = new Date();
+            expires.setHours(expires.getHours() + 24);
+            finalPayload = { ...basePayload, power_type: awardedPrize.power, expires_at: expires.toISOString() };
+            break;
+          default:
+            finalPayload = null;
         }
-        if (awardedPrize.power === 'attack') {
-          prizePowerUpPayload.effect_value = 10; // Default 10% attack
+        if (finalPayload) {
+          await supabaseAdmin.from('user_power_ups').insert(finalPayload);
         }
-        if (awardedPrize.power === 'gp_transfer') {
-          prizePowerUpPayload.effect_value = 10; // Default 10% siphon
-        }
-        await supabaseAdmin.from('user_power_ups').insert(prizePowerUpPayload);
         awardedMessage = `You received the power: ${awardedPrize.power.replace(/_/g, ' ')}!`;
       }
       

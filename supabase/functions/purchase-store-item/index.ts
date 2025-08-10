@@ -95,19 +95,28 @@ serve(async (req) => {
             case 'xp': totalXpChange += prize.amount; break;
             case 'power_up':
               if (prize.power && prize.power !== 'nothing') {
-                const prizePowerUpPayload: any = { user_id: user.id, power_type: prize.power, uses_left: 1 };
-                if (prize.power === '2x_boost' || prize.power === '4x_boost') {
-                  const expires = new Date();
-                  expires.setHours(expires.getHours() + 24);
-                  prizePowerUpPayload.expires_at = expires.toISOString();
+                const basePayload = { user_id: user.id, uses_left: 1 };
+                let finalPayload;
+                switch (prize.power) {
+                  case 'attack':
+                    finalPayload = { ...basePayload, power_type: 'attack', effect_value: 10 };
+                    break;
+                  case 'gp_transfer':
+                    finalPayload = { ...basePayload, power_type: 'gp_transfer', effect_value: 10 };
+                    break;
+                  case 'shield':
+                    finalPayload = { ...basePayload, power_type: 'shield' };
+                    break;
+                  case '2x_boost':
+                  case '4x_boost':
+                    const expires = new Date();
+                    expires.setHours(expires.getHours() + 24);
+                    finalPayload = { ...basePayload, power_type: prize.power, expires_at: expires.toISOString() };
+                    break;
+                  default:
+                    continue;
                 }
-                if (prize.power === 'attack') {
-                  prizePowerUpPayload.effect_value = 10; // Default 10% attack
-                }
-                if (prize.power === 'gp_transfer') {
-                  prizePowerUpPayload.effect_value = 10; // Default 10% siphon
-                }
-                powerUpsToAdd.push(prizePowerUpPayload);
+                powerUpsToAdd.push(finalPayload);
               }
               break;
           }
