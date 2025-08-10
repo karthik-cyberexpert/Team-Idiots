@@ -27,6 +27,8 @@ serve(async (_req) => {
         created_at,
         reward_type,
         points_per_question,
+        time_limit_minutes,
+        enrollment_deadline,
         quiz_questions (
           id,
           question,
