@@ -48,40 +48,53 @@ serve(async (req) => {
     let awardedPrize = null;
     let awardedMessage = "Prize claimed successfully!";
 
-    if (auction.auction_items.is_mystery_box) {
-      const contents = auction.auction_items.mystery_box_contents;
-      if (!Array.isArray(contents) || contents.length === 0) throw new Error("Mystery box contents are invalid.");
+    if (auction.auction_items.is_mystery_box || auction.auction_items.is_power_box) {
+      const contents = auction.auction_items.is_mystery_box ? auction.auction_items.mystery_box_contents : auction.auction_items.power_box_contents;
+      if (!Array.isArray(contents) || contents.length === 0) throw new Error("Box contents are invalid.");
       
       awardedPrize = contents[Math.floor(Math.random() * contents.length)];
-      awardedMessage = `You won ${awardedPrize.amount} ${awardedPrize.type.toUpperCase()}!`;
-
-      if (awardedPrize.type !== 'nothing') {
-        const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('game_points, xp').eq('id', user.id).single();
-        if (profileError) throw profileError;
-
-        const updatePayload: { game_points?: number; xp?: number } = {};
-        if (awardedPrize.type === 'gp') updatePayload.game_points = Math.max(0, profile.game_points + awardedPrize.amount);
-        if (awardedPrize.type === 'xp') updatePayload.xp = Math.max(0, profile.xp + awardedPrize.amount);
-        
-        await supabaseAdmin.from('profiles').update(updatePayload).eq('id', user.id);
+      
+      // Check for active boosts
+      const { count: boosts4x } = await supabaseAdmin.from('user_power_ups').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('power_type', '4x_boost').eq('is_used', false).gt('expires_at', new Date().toISOString());
+      const { count: boosts2x } = await supabaseAdmin.from('user_power_ups').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('power_type', '2x_boost').eq('is_used', false).gt('expires_at', new Date().toISOString());
+      
+      let boostMultiplier = 1;
+      if (boosts4x && boosts4x > 0) {
+          boostMultiplier = 4;
+      } else if (boosts2x && boosts2x > 0) {
+          boostMultiplier = 2;
       }
-    } else if (auction.auction_items.is_power_box) {
-      const contents = auction.auction_items.power_box_contents;
-      if (!Array.isArray(contents) || contents.length === 0) throw new Error("Power box contents are invalid.");
 
-      const powerWon = contents[Math.floor(Math.random() * contents.length)];
-      awardedPrize = { type: 'power_up', power: powerWon };
-      awardedMessage = `You received the power: ${powerWon.replace(/_/g, ' ')}!`;
+      const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('game_points, xp').eq('id', user.id).single();
+      if (profileError) throw profileError;
 
-      if (powerWon !== 'nothing') {
-        const powerUpPayload: any = { user_id: user.id, power_type: powerWon };
-        if (powerWon === '2x_boost' || powerWon === '4x_boost') {
+      const updatePayload: { game_points?: number; xp?: number } = {};
+      
+      if (awardedPrize.type === 'gp') {
+        const boostedAmount = awardedPrize.amount * boostMultiplier;
+        updatePayload.game_points = Math.max(0, profile.game_points + boostedAmount);
+        awardedMessage = `You won ${boostedAmount} GP!`;
+      }
+      if (awardedPrize.type === 'xp') {
+        const boostedAmount = awardedPrize.amount * boostMultiplier;
+        updatePayload.xp = Math.max(0, profile.xp + boostedAmount);
+        awardedMessage = `You won ${boostedAmount} XP!`;
+      }
+      if (awardedPrize.type === 'power_up' && awardedPrize.power && awardedPrize.power !== 'nothing') {
+        const powerUpPayload: any = { user_id: user.id, power_type: awardedPrize.power, uses_left: 1 };
+        if (awardedPrize.power === '2x_boost' || awardedPrize.power === '4x_boost') {
           const expires = new Date();
           expires.setHours(expires.getHours() + 24);
           powerUpPayload.expires_at = expires.toISOString();
         }
         await supabaseAdmin.from('user_power_ups').insert(powerUpPayload);
+        awardedMessage = `You received the power: ${awardedPrize.power.replace(/_/g, ' ')}!`;
       }
+      
+      if (Object.keys(updatePayload).length > 0) {
+        await supabaseAdmin.from('profiles').update(updatePayload).eq('id', user.id);
+      }
+
     } else {
       const xpBonus = 25;
       const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('xp').eq('id', user.id).single();
