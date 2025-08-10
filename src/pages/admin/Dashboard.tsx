@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, ListTodo, Database, Type, UserCog, Gavel, HelpCircle } from "lucide-react";
+import { Users, ListTodo, Database, Type, UserCog, Gavel, HelpCircle, Store } from "lucide-react";
 
 const AdminDashboard = () => {
   const adminFeatures = [
@@ -45,6 +45,12 @@ const AdminDashboard = () => {
       description: "Create and manage buddy pairs for users.",
       icon: <UserCog className="h-8 w-8 text-vibrant-blue" />,
       link: "/admin/buddies-management",
+    },
+    {
+      title: "Store Management",
+      description: "Manage items and power-ups available in the store.",
+      icon: <Store className="h-8 w-8 text-vibrant-blue" />,
+      link: "/admin/store-management",
     },
   ];
 

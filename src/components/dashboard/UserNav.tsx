@@ -12,7 +12,7 @@ import {
 import { useAuth } from "@/contexts/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { Share2 } from "lucide-react";
+import { Share2, Store } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 
 export function UserNav() {
@@ -90,6 +90,10 @@ export function UserNav() {
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>
             Edit Profile
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/dashboard/store')}>
+            <Store className="mr-2 h-4 w-4" />
+            <span>Open Store</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate('/dashboard/settings')}>
             Settings

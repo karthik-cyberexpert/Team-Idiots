@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Gamepad2, Gavel, Zap, Pickaxe, UserCog, HelpCircle, Send } from "lucide-react";
+import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Gamepad2, Gavel, Zap, Pickaxe, UserCog, HelpCircle, Send, Store } from "lucide-react";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -73,6 +73,11 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       icon: <Gavel className="h-4 w-4" />,
     },
     {
+      href: "/dashboard/store",
+      label: "Store",
+      icon: <Store className="h-4 w-4" />,
+    },
+    {
       href: "/dashboard/power-ups",
       label: "My Power-ups",
       icon: <Zap className="h-4 w-4" />,
@@ -121,6 +126,12 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       href: "/admin/auction-management",
       label: "Auction Management",
       icon: <Gavel className="h-4 w-4" />,
+      adminOnly: true,
+    },
+    {
+      href: "/admin/store-management",
+      label: "Store Management",
+      icon: <Store className="h-4 w-4" />,
       adminOnly: true,
     },
     {
