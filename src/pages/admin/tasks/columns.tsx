@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, ArrowUpDown, Check, X } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, Check, X, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -18,7 +18,8 @@ export const getColumns = (
   onDelete: (taskId: string) => void, 
   onEdit: (task: Task) => void,
   onApprove: (task: Task) => void,
-  onReject: (taskId: string) => void
+  onReject: (taskId: string) => void,
+  onViewSubmission: (taskId: string) => void
 ): ColumnDef<Task>[] => [
   {
     accessorKey: "title",
@@ -92,6 +93,7 @@ export const getColumns = (
     id: "actions",
     cell: ({ row }) => {
       const task = row.original
+      const hasSubmission = ['waiting_for_approval', 'completed', 'late_completed', 'rejected'].includes(task.status);
 
       return (
         <DropdownMenu>
@@ -103,6 +105,12 @@ export const getColumns = (
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            {hasSubmission && (
+              <DropdownMenuItem onClick={() => onViewSubmission(task.id)}>
+                <Eye className="mr-2 h-4 w-4" />
+                View Submission
+              </DropdownMenuItem>
+            )}
             {task.status === 'waiting_for_approval' && (
               <>
                 <DropdownMenuItem onClick={() => onApprove(task)}>

@@ -21,3 +21,16 @@ export interface Task {
     full_name: string;
   } | null;
 }
+
+export interface Submission {
+  id: string;
+  task_id: string;
+  user_id: string;
+  submitted_at: string;
+  content: string | null;
+  file_url: string | null;
+  tasks: {
+    title: string;
+    status: Task['status'];
+  };
+}

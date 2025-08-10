@@ -27,6 +27,7 @@ import { AddCommonTaskDialog } from "./tasks/AddCommonTaskDialog";
 import { AwardMarksAndXpDialog } from "./tasks/AwardMarksAndXpDialog";
 import { BulkUploadTasksDialog } from "@/components/tasks/BulkUploadTasksDialog"; // Import new dialog
 import { useAuth } from "@/contexts/AuthProvider"; // Import useAuth to get current user ID
+import { ViewSubmissionDialog } from "@/components/tasks/ViewSubmissionDialog";
 
 const fetchAllTasks = async (): Promise<Task[]> => {
   const { data, error } = await supabase
@@ -56,6 +57,7 @@ const TaskManagement = () => {
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null);
   const [taskToEdit, setTaskToEdit] = React.useState<Task | null>(null);
   const [taskToAward, setTaskToAward] = React.useState<Task | null>(null);
+  const [taskToViewSubmission, setTaskToViewSubmission] = React.useState<string | null>(null);
   const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = React.useState(false);
   const [isAddCommonTaskDialogOpen, setIsAddCommonTaskDialogOpen] = React.useState(false);
   const [isBulkUploadTasksDialogOpen, setIsBulkUploadTasksDialogOpen] = React.useState(false); // New state for bulk upload dialog
@@ -144,10 +146,11 @@ const TaskManagement = () => {
     setTaskToAward(task);
   }, []);
   const handleRejectRequest = React.useCallback((taskId: string) => setApprovalAction({ type: 'reject', taskId }), []);
+  const handleViewSubmissionRequest = React.useCallback((taskId: string) => setTaskToViewSubmission(taskId), []);
 
   const columns = React.useMemo(
-    () => getColumns(handleDeleteRequest, handleEditRequest, handleApproveRequest, handleRejectRequest),
-    [handleDeleteRequest, handleEditRequest, handleApproveRequest, handleRejectRequest]
+    () => getColumns(handleDeleteRequest, handleEditRequest, handleApproveRequest, handleRejectRequest, handleViewSubmissionRequest),
+    [handleDeleteRequest, handleEditRequest, handleApproveRequest, handleRejectRequest, handleViewSubmissionRequest]
   );
 
   const handleDownloadTemplate = () => {
@@ -213,6 +216,7 @@ const TaskManagement = () => {
       <AddCommonTaskDialog open={isAddCommonTaskDialogOpen} onOpenChange={setIsAddCommonTaskDialogOpen} />
       <EditTaskDialog open={!!taskToEdit} onOpenChange={() => setTaskToEdit(null)} task={taskToEdit} />
       <AwardMarksAndXpDialog open={!!taskToAward} onOpenChange={() => setTaskToAward(null)} task={taskToAward} />
+      <ViewSubmissionDialog open={!!taskToViewSubmission} onOpenChange={() => setTaskToViewSubmission(null)} taskId={taskToViewSubmission} />
       {currentUser?.id && (
         <BulkUploadTasksDialog 
           open={isBulkUploadTasksDialogOpen} 
