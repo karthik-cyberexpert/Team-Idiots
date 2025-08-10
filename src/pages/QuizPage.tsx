@@ -15,7 +15,7 @@ import { QuizSet, QuizQuestion } from "@/types/quiz";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 
-type QuizState = 'idle' | 'confirming' | 'playing' | 'results';
+type QuizState = 'idle' | 'playing' | 'results';
 type Answer = { questionId: string; selectedIndex: number };
 
 const fetchActiveQuiz = async (): Promise<QuizSet | null> => {
@@ -35,6 +35,7 @@ const submitQuizResults = async (quizSetId: string, answers: Answer[]): Promise<
 const QuizPage = () => {
   const queryClient = useQueryClient();
   const [quizState, setQuizState] = React.useState<QuizState>('idle');
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = React.useState(false);
   const [shuffledQuestions, setShuffledQuestions] = React.useState<QuizQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
   const [answers, setAnswers] = React.useState<Answer[]>([]);
@@ -84,6 +85,11 @@ const QuizPage = () => {
       setTimeLeft(activeQuiz.time_limit_minutes * 60);
     }
     setQuizState('playing');
+  };
+
+  const handleConfirmStart = () => {
+    setIsConfirmDialogOpen(false);
+    startQuiz();
   };
 
   const handleAnswerClick = (selectedIndex: number) => {
@@ -143,38 +149,47 @@ const QuizPage = () => {
     );
   }
 
-  if (quizState === 'idle') {
+  if (quizState === 'playing') {
+    const currentQuestion = shuffledQuestions[currentQuestionIndex];
+    const minutes = timeLeft !== null ? Math.floor(timeLeft / 60) : 0;
+    const seconds = timeLeft !== null ? timeLeft % 60 : 0;
+
     return (
-      <Card className="max-w-2xl mx-auto text-center">
-        <CardHeader><CardTitle>{activeQuiz.title}</CardTitle><CardDescription>Are you ready to test your knowledge?</CardDescription></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-left p-4 border rounded-md">
-            <p><strong>Questions:</strong> {activeQuiz.quiz_questions.length}</p>
-            <p><strong>Reward:</strong> {activeQuiz.points_per_question} {activeQuiz.reward_type.toUpperCase()} per correct answer</p>
-            <p><strong>Time Limit:</strong> {activeQuiz.time_limit_minutes ? `${activeQuiz.time_limit_minutes} minutes` : 'None'}</p>
-            <p><strong>Enroll Before:</strong> {activeQuiz.enrollment_deadline ? format(new Date(activeQuiz.enrollment_deadline), "PPP p") : 'No deadline'}</p>
+      <Card className="max-w-3xl mx-auto">
+        <CardHeader className="flex flex-row justify-between items-center">
+          <div>
+            <CardTitle>{activeQuiz.title}</CardTitle>
+            <CardDescription>Question {currentQuestionIndex + 1} of {shuffledQuestions.length}</CardDescription>
           </div>
-          <Button size="lg" onClick={() => setQuizState('confirming')}>Start Quiz</Button>
+          {timeLeft !== null && (
+            <div className="flex items-center gap-2 font-semibold text-lg">
+              <Timer className="h-5 w-5" />
+              <span>{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</span>
+            </div>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <p className="text-xl font-semibold text-center min-h-[3em]">{currentQuestion.question}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"><Confetti active={confettiActive} /></div>
+            {currentQuestion.options.map((option, index) => {
+              const isSelected = selectedAnswer === index;
+              const isCorrectAnswer = isCorrect !== null && index === currentQuestion.correct_option_index;
+              return (
+                <Button key={index} variant="outline" className={cn("h-auto py-4 text-base whitespace-normal justify-start text-left", isSelected && isCorrect === false && "bg-destructive/80 text-destructive-foreground animate-shake", isCorrectAnswer && "bg-vibrant-green/80 text-white")} onClick={() => handleAnswerClick(index)} disabled={selectedAnswer !== null}>
+                  <div className="flex items-center">
+                    <div className="mr-4 h-8 w-8 rounded-full border flex items-center justify-center flex-shrink-0">
+                      {isSelected && isCorrect === false && <X className="h-5 w-5" />}
+                      {isCorrectAnswer && <Check className="h-5 w-5" />}
+                    </div>
+                    <span>{option}</span>
+                  </div>
+                </Button>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
-    );
-  }
-
-  if (quizState === 'confirming') {
-    return (
-      <AlertDialog open onOpenChange={() => setQuizState('idle')}>
-        <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Quiz Rules</AlertDialogTitle>
-            <AlertDialogDescription>
-              Once you start, the timer will begin. If you refresh or close the tab, your progress will be lost and you will have to start over. Are you sure you want to proceed?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={startQuiz}>Proceed</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     );
   }
 
@@ -202,46 +217,36 @@ const QuizPage = () => {
     );
   }
 
-  const currentQuestion = shuffledQuestions[currentQuestionIndex];
-  const minutes = timeLeft !== null ? Math.floor(timeLeft / 60) : 0;
-  const seconds = timeLeft !== null ? timeLeft % 60 : 0;
-
+  // Default to 'idle' state
   return (
-    <Card className="max-w-3xl mx-auto">
-      <CardHeader className="flex flex-row justify-between items-center">
-        <div>
-          <CardTitle>{activeQuiz.title}</CardTitle>
-          <CardDescription>Question {currentQuestionIndex + 1} of {shuffledQuestions.length}</CardDescription>
-        </div>
-        {timeLeft !== null && (
-          <div className="flex items-center gap-2 font-semibold text-lg">
-            <Timer className="h-5 w-5" />
-            <span>{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</span>
+    <>
+      <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>Quiz Rules</AlertDialogTitle>
+            <AlertDialogDescription>
+              Once you start, the timer will begin. If you refresh or close the tab, your progress will be lost and you will have to start over. Are you sure you want to proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmStart}>Proceed</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Card className="max-w-2xl mx-auto text-center">
+        <CardHeader><CardTitle>{activeQuiz.title}</CardTitle><CardDescription>Are you ready to test your knowledge?</CardDescription></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4 text-left p-4 border rounded-md">
+            <p><strong>Questions:</strong> {activeQuiz.quiz_questions.length}</p>
+            <p><strong>Reward:</strong> {activeQuiz.points_per_question} {activeQuiz.reward_type.toUpperCase()} per correct answer</p>
+            <p><strong>Time Limit:</strong> {activeQuiz.time_limit_minutes ? `${activeQuiz.time_limit_minutes} minutes` : 'None'}</p>
+            <p><strong>Enroll Before:</strong> {activeQuiz.enrollment_deadline ? format(new Date(activeQuiz.enrollment_deadline), "PPP p") : 'No deadline'}</p>
           </div>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <p className="text-xl font-semibold text-center min-h-[3em]">{currentQuestion.question}</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"><Confetti active={confettiActive} /></div>
-          {currentQuestion.options.map((option, index) => {
-            const isSelected = selectedAnswer === index;
-            const isCorrectAnswer = isCorrect !== null && index === currentQuestion.correct_option_index;
-            return (
-              <Button key={index} variant="outline" className={cn("h-auto py-4 text-base whitespace-normal justify-start text-left", isSelected && isCorrect === false && "bg-destructive/80 text-destructive-foreground animate-shake", isCorrectAnswer && "bg-vibrant-green/80 text-white")} onClick={() => handleAnswerClick(index)} disabled={selectedAnswer !== null}>
-                <div className="flex items-center">
-                  <div className="mr-4 h-8 w-8 rounded-full border flex items-center justify-center flex-shrink-0">
-                    {isSelected && isCorrect === false && <X className="h-5 w-5" />}
-                    {isCorrectAnswer && <Check className="h-5 w-5" />}
-                  </div>
-                  <span>{option}</span>
-                </div>
-              </Button>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+          <Button size="lg" onClick={() => setIsConfirmDialogOpen(true)}>Start Quiz</Button>
+        </CardContent>
+      </Card>
+    </>
   );
 };
 
