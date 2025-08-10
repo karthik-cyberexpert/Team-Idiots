@@ -24,10 +24,9 @@ serve(async (_req) => {
         id,
         title,
         status,
-        assign_date,
         created_at,
-        start_time,
-        end_time,
+        reward_type,
+        points_per_question,
         quiz_questions (
           id,
           question,

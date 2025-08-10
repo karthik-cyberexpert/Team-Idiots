@@ -12,23 +12,17 @@ serve(async (req) => {
   }
 
   try {
-    const { id, status, assign_date, start_time, end_time, reward_type, points_per_question } = await req.json()
+    const { id, status, reward_type, points_per_question } = await req.json()
     if (!id) {
       throw new Error("ID is required.")
     }
 
     const updatePayload: { 
         status?: string; 
-        assign_date?: string | null; 
-        start_time?: string | null; 
-        end_time?: string | null; 
         reward_type?: 'gp' | 'xp';
         points_per_question?: number;
     } = {};
     if (status) updatePayload.status = status;
-    if (assign_date !== undefined) updatePayload.assign_date = assign_date;
-    if (start_time !== undefined) updatePayload.start_time = start_time;
-    if (end_time !== undefined) updatePayload.end_time = end_time;
     if (reward_type) updatePayload.reward_type = reward_type;
     if (points_per_question !== undefined) updatePayload.points_per_question = points_per_question;
 
