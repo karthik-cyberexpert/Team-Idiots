@@ -80,17 +80,18 @@ export const RewardCards = ({ pairId, myActivity, buddyActivity, dailyRewards, p
   const myChoice = myActivity?.card_choice;
   const buddyChoice = buddyActivity?.card_choice;
   const claimedCards = progress?.claimed_cards || [];
+  const rewardsArray = dailyRewards?.rewards || Array(7).fill(null);
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-4 gap-2 sm:grid-cols-7 sm:gap-4 [perspective:1000px]">
-        {dailyRewards?.rewards.map((reward, index) => {
+        {rewardsArray.map((reward, index) => {
           const cardNumber = index + 1;
           const isMyChoice = myChoice === cardNumber;
           const isBuddyChoice = buddyChoice === cardNumber;
           const isClaimed = claimedCards.includes(cardNumber);
           const isRevealed = isMyChoice || (isBuddyChoice && myChoice !== null) || isClaimed;
-          const isDisabled = !bothCheckedIn || myChoice !== null || isClaimed || isFlipping !== null;
+          const isDisabled = !bothCheckedIn || myChoice !== null || isClaimed || isFlipping !== null || !dailyRewards;
 
           return (
             <div key={index} className="w-full aspect-[3/4]" onClick={() => !isDisabled && handleCardClick(index)}>
@@ -101,14 +102,20 @@ export const RewardCards = ({ pairId, myActivity, buddyActivity, dailyRewards, p
               )}>
                 {/* Card Back */}
                 <div className="absolute w-full h-full flex items-center justify-center bg-primary rounded-lg shadow-lg [backface-visibility:hidden]">
-                  {bothCheckedIn ? <HelpCircle className="h-12 w-12 text-primary-foreground/50" /> : <Lock className="h-12 w-12 text-primary-foreground/50" />}
+                  {bothCheckedIn && dailyRewards ? <HelpCircle className="h-12 w-12 text-primary-foreground/50" /> : <Lock className="h-12 w-12 text-primary-foreground/50" />}
                 </div>
                 {/* Card Front */}
                 <div className="absolute w-full h-full flex flex-col items-center justify-center bg-card border rounded-lg shadow-lg [transform:rotateY(180deg)] [backface-visibility:hidden]">
-                  <PrizeIcon reward={reward} />
-                  <p className="text-xs font-semibold mt-1">
-                    {reward.type === 'gp' || reward.type === 'xp' ? `${reward.amount} ${reward.type.toUpperCase()}` : reward.power?.replace('_', ' ')}
-                  </p>
+                  {reward ? (
+                    <>
+                      <PrizeIcon reward={reward} />
+                      <p className="text-xs font-semibold mt-1">
+                        {reward.type === 'gp' || reward.type === 'xp' ? `${reward.amount} ${reward.type.toUpperCase()}` : reward.power?.replace('_', ' ')}
+                      </p>
+                    </>
+                  ) : (
+                    <HelpCircle className="h-12 w-12 text-muted-foreground" />
+                  )}
                 </div>
               </div>
             </div>
@@ -116,6 +123,7 @@ export const RewardCards = ({ pairId, myActivity, buddyActivity, dailyRewards, p
         })}
       </div>
       {!bothCheckedIn && <p className="text-center text-sm text-muted-foreground">Both you and your buddy must check in today to unlock the cards.</p>}
+      {bothCheckedIn && !dailyRewards && <p className="text-center text-sm text-muted-foreground">Today's rewards are being generated. Please check back in a moment.</p>}
       {bothCheckedIn && myChoice && !buddyChoice && <p className="text-center text-sm text-muted-foreground">Your choice is locked in! Waiting for your buddy...</p>}
     </div>
   );
