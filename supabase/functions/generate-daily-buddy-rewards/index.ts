@@ -1,3 +1,4 @@
+/// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
 import { serve } from "https://deno.land/std@0.200.0/http/server.ts"
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.47.0'
 
@@ -13,10 +14,10 @@ const REWARD_POOL = [
   { type: 'gp', amount: 5000 },
   { type: 'gp', amount: 10000 },
   { type: 'gp', amount: 25000 },
-  { type: 'power_up', power: 'shield' },
-  { type: 'power_up', power: '2x_boost' },
-  { type: 'power_up', power: 'attack' },
-  { type: 'power_up', power: 'gp_transfer' },
+  { type: 'power_up', power: 'shield', uses: 1 },
+  { type: 'power_up', power: '2x_boost' }, // Boosts are activated later, no specific values needed here
+  { type: 'power_up', power: 'attack', effect: 10, uses: 1 }, // 10% effect
+  { type: 'power_up', power: 'gp_transfer', effect: 10, uses: 1 }, // 10% effect
   { type: 'nothing', amount: 0 },
   { type: 'nothing', amount: 0 },
   { type: 'nothing', amount: 0 },
