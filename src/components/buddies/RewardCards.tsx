@@ -33,7 +33,28 @@ const selectCard = async ({ pairId, cardChoice }: { pairId: string; cardChoice: 
   const { data, error } = await supabase.functions.invoke("buddy-select-card", {
     body: { pairId, cardChoice },
   });
-  if (error) throw new Error(error.message);
+
+  if (error) {
+    // Try to parse the detailed error message from the function's response
+    if (error.context && typeof error.context.json === 'function') {
+      try {
+        const errorBody = await error.context.json();
+        if (errorBody.error) {
+          throw new Error(errorBody.error);
+        }
+      } catch (e) {
+        // Fallback to the default error message if parsing fails
+        console.error("Could not parse error response from edge function:", e);
+      }
+    }
+    throw new Error(error.message);
+  }
+  
+  // Also check for custom errors in the success response data
+  if (data && data.error) {
+    throw new Error(data.error);
+  }
+
   return data;
 };
 

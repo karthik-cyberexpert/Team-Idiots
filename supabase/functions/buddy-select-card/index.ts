@@ -1,5 +1,6 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+// @ts-nocheck
+import { serve } from "https://deno.land/std@0.200.0/http/server.ts"
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.47.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +9,9 @@ const corsHeaders = {
 
 async function getAuthenticatedClient(req: Request): Promise<SupabaseClient> {
   const authHeader = req.headers.get('Authorization')!
+  if (!authHeader) {
+    throw new Error("Missing Authorization header");
+  }
   return createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -33,15 +37,20 @@ serve(async (req) => {
       p_card_choice: cardChoice
     });
 
-    if (error) throw error; // For network/postgres errors
+    if (error) {
+      // If there's a PostgREST error, throw it directly.
+      throw error;
+    }
 
-    // Check for application-level errors returned from the function
+    // Check for application-level errors returned from the function's JSON response
     if (data && data.error) {
+      // This is our custom error handling from the SQL function
       throw new Error(data.error);
     }
 
     return new Response(JSON.stringify(data), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
+    console.error('Error in buddy-select-card function:', error.message);
     return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 })
