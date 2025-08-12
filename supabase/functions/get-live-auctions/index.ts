@@ -1,3 +1,4 @@
+/// <reference lib="deno.ns" />
 import { serve } from "https://deno.land/std@0.200.0/http/server.ts"
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.47.0'
 
@@ -96,12 +97,13 @@ serve(async (req) => {
       }
     }
 
-    // 3. Fetch auctions that are currently active (after processing ended ones)
+    // 3. Fetch auctions that are currently active or scheduled (after processing ended ones)
     const { data: auctions, error: auctionsError } = await supabaseAdmin
       .from('auctions')
       .select('*, auction_items(name, description, is_mystery_box, is_power_box)')
-      .eq('status', 'active')
-      .order('end_time', { ascending: true });
+      .in('status', ['active', 'scheduled']) // Fetch both active and scheduled
+      .order('start_time', { ascending: true }) // Order by start time
+      .order('end_time', { ascending: true }); // Then by end time
 
     if (auctionsError) throw auctionsError;
 
@@ -132,6 +134,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify(auctions), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
 })

@@ -13,6 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { EventCountdown } from "@/components/game/EventCountdown"; // Import EventCountdown
+import { useQueryClient } from "@tanstack/react-query"; // Import useQueryClient
 
 interface AuctionCardProps {
   auction: Auction;
@@ -26,7 +28,9 @@ interface AuctionResult {
 
 export const AuctionCard = ({ auction }: AuctionCardProps) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient(); // Initialize queryClient
   const [isBidDialogOpen, setIsBidDialogOpen] = React.useState(false);
+  const [currentAuctionStatus, setCurrentAuctionStatus] = React.useState(auction.status);
   const [timeLeft, setTimeLeft] = React.useState<number>(() => 
     Math.round((new Date(auction.end_time).getTime() - Date.now()) / 1000)
   );
@@ -52,15 +56,39 @@ export const AuctionCard = ({ auction }: AuctionCardProps) => {
   }, [auction.id]);
 
   React.useEffect(() => {
-    if (timeLeft <= 0) {
-      if (!finalResult) fetchResult();
-      return;
+    setCurrentAuctionStatus(auction.status);
+    if (auction.status === 'active') {
+      setTimeLeft(Math.round((new Date(auction.end_time).getTime() - Date.now()) / 1000));
     }
-    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft, fetchResult, finalResult]);
+  }, [auction.status, auction.end_time]);
+
+  React.useEffect(() => {
+    if (currentAuctionStatus === 'active') {
+      if (timeLeft <= 0) {
+        if (!finalResult) fetchResult();
+        return;
+      }
+      const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+      return () => clearInterval(timer);
+    }
+  }, [timeLeft, fetchResult, finalResult, currentAuctionStatus]);
+
+  const handleAuctionStart = () => {
+    // Invalidate the query to refetch the auction data, which will update its status
+    queryClient.invalidateQueries({ queryKey: ['liveAuctions'] });
+  };
 
   const renderCardContent = () => {
+    if (currentAuctionStatus === 'scheduled') {
+      return (
+        <EventCountdown
+          startTime={new Date(auction.start_time)}
+          onEnd={handleAuctionStart}
+          title="Auction Starts In"
+          description="Get ready to bid!"
+        />
+      );
+    }
     if (finalResult) {
       return <AuctionEndDisplay isWinner={finalResult.winnerId === user?.id} winnerName={finalResult.winnerName} winningBid={finalResult.winningBid} />;
     }
@@ -114,7 +142,7 @@ export const AuctionCard = ({ auction }: AuctionCardProps) => {
           <Button 
             className={cn("w-full", (isMysteryBox || isPowerBox) && "bg-white text-vibrant-purple hover:bg-gray-200")}
             onClick={() => setIsBidDialogOpen(true)} 
-            disabled={timeLeft <= 0}
+            disabled={currentAuctionStatus !== 'active'} // Disable if not active
           >
             <Gavel className="mr-2 h-4 w-4" /> Place Bid
           </Button>
