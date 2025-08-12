@@ -29,21 +29,8 @@ const fetchTypingTextWithSet = async (textId: string): Promise<TypingTextWithSet
   return data as TypingTextWithSet;
 };
 
-const fetchAllTypingTexts = async (): Promise<TypingTextWithSet[]> => {
-  const { data, error } = await supabase
-    .from("typing_texts")
-    .select("*, typer_sets!inner(*)")
-    .neq('typer_sets.status', 'inactive');
-  if (error) throw new Error(error.message);
-  
-  return data as TypingTextWithSet[];
-};
-
-const fetchUserGameResults = async (userId: string): Promise<{ text_id: string }[]> => {
-  const { data, error } = await supabase
-    .from("typing_game_results")
-    .select("text_id")
-    .eq("user_id", userId);
+const fetchNextTypingText = async (): Promise<TypingTextWithSet | null> => {
+  const { data, error } = await supabase.functions.invoke("get-next-typer-text-for-user");
   if (error) throw new Error(error.message);
   return data;
 };
@@ -81,7 +68,7 @@ const TyperPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const taskId = searchParams.get("taskId");
-  const textId = searchParams.get("textId");
+  const textIdFromUrl = searchParams.get("textId");
 
   const { user } = useAuth();
   const [currentText, setCurrentText] = React.useState<TypingTextWithSet | null>(null);
@@ -94,24 +81,16 @@ const TyperPage = () => {
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
   const { data: challengeText, isLoading: challengeTextLoading, error: challengeTextError } = useQuery<TypingTextWithSet>({
-    queryKey: ["typingText", textId],
-    queryFn: () => fetchTypingTextWithSet(textId!),
-    enabled: !!textId,
+    queryKey: ["typingText", textIdFromUrl],
+    queryFn: () => fetchTypingTextWithSet(textIdFromUrl!),
+    enabled: !!textIdFromUrl,
     retry: false,
   });
 
-  const { data: allTexts, isLoading: textsLoading } = useQuery<TypingTextWithSet[]>({
-    queryKey: ["allTypingTexts"],
-    queryFn: fetchAllTypingTexts,
-    enabled: !textId,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-  });
-
-  const { data: completedResults, isLoading: resultsLoading } = useQuery({
-    queryKey: ["userGameResults", user?.id],
-    queryFn: () => fetchUserGameResults(user!.id),
-    enabled: !!user && !textId,
+  const { data: nextFreePlayText, isLoading: nextTextLoading } = useQuery<TypingTextWithSet | null>({
+    queryKey: ["nextTypingText", user?.id],
+    queryFn: fetchNextTypingText,
+    enabled: !textIdFromUrl && !!user,
   });
 
   const updateTaskMutation = useMutation({
@@ -129,11 +108,10 @@ const TyperPage = () => {
       setPointsAwarded(points);
       showSuccess(`You earned ${points} game points!`);
       queryClient.invalidateQueries({ queryKey: ['gameLeaderboard'] });
-      queryClient.invalidateQueries({ queryKey: ['userGameResults', user?.id] });
       if (taskId) {
         updateTaskMutation.mutate(taskId);
       } else {
-        setTimeout(resetTest, 3000);
+        queryClient.invalidateQueries({ queryKey: ["nextTypingText", user?.id] });
       }
     },
     onError: (err: Error) => showError(`Failed to save result: ${err.message}`),
@@ -178,26 +156,17 @@ const TyperPage = () => {
     setWpm(null);
     setPointsAwarded(null);
     setInputText("");
-
-    if (textId) {
-      if (challengeText) setCurrentText(challengeText);
-    } else if (allTexts) {
-      const completedIds = new Set(completedResults?.map(r => r.text_id));
-      const playableTexts = allTexts.filter(text => !completedIds.has(text.id));
-      
-      if (playableTexts.length > 0) {
-        const randomIndex = Math.floor(Math.random() * playableTexts.length);
-        setCurrentText(playableTexts[randomIndex]);
-      } else {
-        setCurrentText(null);
-      }
-    }
     inputRef.current?.focus();
-  }, [textId, challengeText, allTexts, completedResults]);
+  }, []);
 
   React.useEffect(() => {
+    if (textIdFromUrl) {
+      setCurrentText(challengeText || null);
+    } else {
+      setCurrentText(nextFreePlayText || null);
+    }
     resetTest();
-  }, [challengeText, allTexts, completedResults, resetTest]);
+  }, [challengeText, nextFreePlayText, textIdFromUrl, resetTest]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (!currentText || endTime) return;
@@ -218,7 +187,7 @@ const TyperPage = () => {
     return inputText[index] === char ? "text-vibrant-green" : "text-vibrant-red";
   };
 
-  const isLoadingData = textsLoading || resultsLoading || challengeTextLoading;
+  const isLoadingData = nextTextLoading || challengeTextLoading;
 
   if (isLoadingData) {
     return <Skeleton className="h-64 w-full" />;
@@ -242,7 +211,7 @@ const TyperPage = () => {
             <div>
               <CardTitle>{currentText ? currentText.title : "All Texts Completed!"}</CardTitle>
               <CardDescription>
-                {currentText ? "Type the text below as fast and accurately as you can." : "Great job! Check back later for new texts."}
+                {currentText ? `Set: ${currentText.typer_sets?.title || 'General'}` : "Great job! Check back later for new texts."}
               </CardDescription>
             </div>
           </div>
@@ -285,9 +254,11 @@ const TyperPage = () => {
           )}
           
           <div className="flex justify-end">
-            <Button onClick={resetTest} disabled={!!endTime} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
-              <RefreshCw className="mr-2 h-4 w-4" /> {taskId ? "Restart Challenge" : "Next Text"}
-            </Button>
+            {taskId && (
+              <Button onClick={resetTest} disabled={!!endTime} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">
+                <RefreshCw className="mr-2 h-4 w-4" /> Restart Challenge
+              </Button>
+            )}
           </div>
           
           {endTime && (
