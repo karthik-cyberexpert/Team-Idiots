@@ -44,12 +44,14 @@ const fetchMessages = async (channelId: string): Promise<Message[]> => {
       user_id,
       content,
       created_at,
-      profiles (full_name)
+      profiles!inner(full_name)
     `)
     .eq("channel_id", channelId)
     .order("created_at", { ascending: true });
   if (error) throw new Error(error.message);
-  return data;
+  
+  // The query returns profiles as an array, so we map it to a single object to match the Message type.
+  return data?.map((m: any) => ({ ...m, profiles: Array.isArray(m.profiles) ? m.profiles[0] || null : m.profiles })) || [];
 };
 
 const sendMessage = async ({ channelId, content, userId }: { channelId: string; content: string; userId: string }) => {

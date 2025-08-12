@@ -85,7 +85,7 @@ export const AvatarUpload = () => {
         )}
       </div>
       <Label htmlFor="avatar-upload" className="cursor-pointer">
-        <Button as="span" variant="outline" disabled={uploading}>
+        <Button variant="outline" disabled={uploading}>
           <Camera className="mr-2 h-4 w-4" />
           Change Avatar
         </Button>

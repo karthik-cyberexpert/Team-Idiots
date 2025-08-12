@@ -32,5 +32,6 @@ export interface Submission {
   tasks: {
     title: string;
     status: Task['status'];
+    due_date: string | null;
   };
 }

@@ -18,7 +18,10 @@ interface EndedAuction {
   id: string;
   end_time: string;
   current_price: number;
-  auction_items: { name: string } | null;
+  auction_items: { 
+    name: string;
+    is_mystery_box: boolean;
+  } | null;
   profiles: { full_name: string } | null;
 }
 

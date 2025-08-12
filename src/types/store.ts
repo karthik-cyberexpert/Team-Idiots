@@ -31,4 +31,5 @@ export interface StoreItem {
   duration_hours: number | null;
   effect_value: number | null;
   uses: number | null;
+  position: number;
 }

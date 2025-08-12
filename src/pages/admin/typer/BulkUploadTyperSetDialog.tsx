@@ -43,7 +43,7 @@ export const BulkUploadTyperSetDialog = ({ open, onOpenChange, suggestedTitle }:
   }, [suggestedTitle]);
 
   const bulkCreateMutation = useMutation({
-    mutationFn: async (texts: z.infer<typeof bulkUploadSchema>[]) => {
+    mutationFn: async (texts: z.infer<typeof bulkUploadSchema>) => {
       const { error, data } = await supabase.functions.invoke("create-typer-set", {
         body: { title, texts },
       });
@@ -96,7 +96,7 @@ export const BulkUploadTyperSetDialog = ({ open, onOpenChange, suggestedTitle }:
           content: btoa(unescape(encodeURIComponent(item.content)))
         }));
 
-        bulkCreateMutation.mutate(encodedData);
+        bulkCreateMutation.mutate(encodedData as any);
 
       } catch (error: any) {
         showError(`File Error: ${error.message}`);

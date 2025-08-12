@@ -122,7 +122,7 @@ export const CreateItemDialog = ({ open, onOpenChange, isMystery = false }: Crea
   }, [open, isMystery, form]);
 
   const { fields: mysteryFields } = useFieldArray({ control: form.control, name: "mystery_box_contents" });
-  const { fields: powerFields } = useFieldArray({ control: form.control, name: "power_box_contents" });
+  const { fields: powerFields } = useFieldArray({ control: form.control, name: "power_box_contents" as any });
 
   const isMysteryBox = form.watch("is_mystery_box");
   const isPowerBox = form.watch("is_power_box");
