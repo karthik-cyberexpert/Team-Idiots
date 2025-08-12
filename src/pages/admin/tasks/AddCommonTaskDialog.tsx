@@ -42,13 +42,18 @@ const formSchema = z.object({
 type AddCommonTaskFormValues = z.infer<typeof formSchema>;
 
 const createCommonTask = async (values: AddCommonTaskFormValues, assignedBy: string) => {
+  let dueDateISO: string | null = null;
+  if (values.dueDate) {
+    const date = new Date(values.dueDate);
+    date.setHours(23, 59, 59, 999); // Set to end of day in local time
+    dueDateISO = date.toISOString();
+  }
+
   const { error } = await supabase.functions.invoke("create-common-task", {
     body: {
       title: values.title,
       description: values.description,
-      dueDate: values.dueDate
-        ? new Date(Date.UTC(values.dueDate.getFullYear(), values.dueDate.getMonth(), values.dueDate.getDate(), 23, 59, 59, 999)).toISOString()
-        : null,
+      dueDate: dueDateISO,
       assignedBy,
     },
   });

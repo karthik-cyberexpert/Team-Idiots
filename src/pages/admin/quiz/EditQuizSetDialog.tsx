@@ -87,9 +87,9 @@ export const EditQuizSetDialog = ({ open, onOpenChange, quizSet }: EditQuizSetDi
     mutationFn: (values: FormValues) => {
         let deadline: string | null = null;
         if (values.enrollment_deadline_date && values.enrollment_deadline_time) {
-            const date = values.enrollment_deadline_date;
+            const combined = new Date(values.enrollment_deadline_date);
             const [hours, minutes] = values.enrollment_deadline_time.split(':').map(Number);
-            const combined = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes));
+            combined.setHours(hours, minutes, 0, 0);
             deadline = combined.toISOString();
         }
         const submissionValues = {

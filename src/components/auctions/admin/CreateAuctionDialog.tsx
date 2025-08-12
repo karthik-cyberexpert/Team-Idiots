@@ -90,12 +90,12 @@ export const CreateAuctionDialog = ({ open, onOpenChange, item }: CreateAuctionD
     if (!item) return;
 
     const [startHours, startMinutes] = values.startTime.split(':').map(Number);
-    const startDate = values.startDate;
-    const startDateTime = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), startHours, startMinutes));
+    const startDateTime = new Date(values.startDate);
+    startDateTime.setHours(startHours, startMinutes, 0, 0);
 
     const [endHours, endMinutes] = values.endTime.split(':').map(Number);
-    const endDate = values.endDate;
-    const endDateTime = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), endHours, endMinutes));
+    const endDateTime = new Date(values.endDate);
+    endDateTime.setHours(endHours, endMinutes, 0, 0);
 
     mutation.mutate({
       item_id: item.id,

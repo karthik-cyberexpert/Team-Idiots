@@ -63,14 +63,13 @@ const fetchAllUsers = async (): Promise<User[]> => {
 const createTask = async (values: AddTaskFormValues, assignedBy: string) => {
   let combinedDueDate: Date | null = null;
   if (values.dueDate) {
-    const date = values.dueDate;
-    combinedDueDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    combinedDueDate = new Date(values.dueDate);
     
     if (values.dueTime) {
       const [hours, minutes] = values.dueTime.split(':').map(Number);
-      combinedDueDate.setUTCHours(hours, minutes);
+      combinedDueDate.setHours(hours, minutes, 0, 0);
     } else {
-      combinedDueDate.setUTCHours(23, 59);
+      combinedDueDate.setHours(23, 59, 59, 999);
     }
   }
 
