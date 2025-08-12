@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { serve } from "https://deno.land/std@0.200.0/http/server.ts"
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.47.0'
 
@@ -8,6 +9,7 @@ const corsHeaders = {
 
 async function getAuthenticatedClient(req: Request): Promise<SupabaseClient> {
   const authHeader = req.headers.get('Authorization')!
+  if (!authHeader) throw new Error("Missing Authorization header");
   return createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -44,7 +46,7 @@ serve(async (req) => {
 
     if (setError) throw setError;
     if (!sets || sets.length === 0) {
-      return new Response(JSON.stringify(null), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify([]), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // 2. Fetch all of the user's completed quiz set IDs
@@ -56,14 +58,10 @@ serve(async (req) => {
     if (resultsError) throw resultsError;
     const completedSetIds = new Set(results.map(r => r.quiz_set_id));
 
-    // 3. Find the first set that is not completed by the user and has questions
-    const activeSet = sets.find(set => !completedSetIds.has(set.id) && set.quiz_questions && set.quiz_questions.length > 0);
+    // 3. Find all sets that are not completed by the user and have questions
+    const availableSets = sets.filter(set => !completedSetIds.has(set.id) && set.quiz_questions && set.quiz_questions.length > 0);
 
-    if (!activeSet) {
-      return new Response(JSON.stringify(null), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    return new Response(JSON.stringify(activeSet), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify(availableSets), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
