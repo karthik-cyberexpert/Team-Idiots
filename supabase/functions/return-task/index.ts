@@ -35,9 +35,9 @@ serve(async (req) => {
   }
 
   try {
-    const { taskId } = await req.json()
-    if (!taskId) {
-      throw new Error("Task ID is required.")
+    const { taskId, reason } = await req.json()
+    if (!taskId || !reason) {
+      throw new Error("Task ID and reason are required.")
     }
 
     const supabaseAdmin = await getAuthenticatedAdminClient(req);
@@ -64,7 +64,7 @@ serve(async (req) => {
     if (taskData) {
         await supabaseAdmin.from('notifications').insert({
             user_id: taskData.assigned_to,
-            message: `Your submission for "${taskData.title}" was returned. Please review and resubmit.`,
+            message: `Your submission for "${taskData.title}" was returned. Reason: ${reason}`,
             link_to: '/dashboard/tasks'
         });
     }

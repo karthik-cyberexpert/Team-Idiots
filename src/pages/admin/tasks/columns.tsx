@@ -20,7 +20,7 @@ export const getColumns = (
   onApprove: (task: Task) => void,
   onReject: (taskId: string) => void,
   onViewSubmission: (taskId: string) => void,
-  onReturn: (taskId: string) => void
+  onReturn: (task: Task) => void
 ): ColumnDef<Task>[] => [
   {
     accessorKey: "title",
@@ -118,7 +118,7 @@ export const getColumns = (
                   <Check className="mr-2 h-4 w-4 text-vibrant-green" />
                   Approve
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onReturn(task.id)}>
+                <DropdownMenuItem onClick={() => onReturn(task)}>
                   <Undo2 className="mr-2 h-4 w-4 text-vibrant-orange" />
                   Return for Revision
                 </DropdownMenuItem>
