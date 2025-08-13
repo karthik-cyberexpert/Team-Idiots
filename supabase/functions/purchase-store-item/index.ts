@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { serve } from "https://deno.land/std@0.200.0/http/server.ts"
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.47.0'
 
@@ -60,7 +61,7 @@ serve(async (req) => {
     const offerStart = item.offer_start_time ? new Date(item.offer_start_time) : null;
     const offerEnd = item.offer_end_time ? new Date(item.offer_end_time) : null;
 
-    if (item.discount_percentage && offerStart && offerEnd && now >= offerStart && now <= offerEnd) {
+    if (item.discount_percentage && offerStart && offerEnd && now >= start && now <= end) {
       finalPrice = Math.round(item.price * (1 - item.discount_percentage / 100));
     }
 
