@@ -61,7 +61,7 @@ serve(async (req) => {
     const offerStart = item.offer_start_time ? new Date(item.offer_start_time) : null;
     const offerEnd = item.offer_end_time ? new Date(item.offer_end_time) : null;
 
-    if (item.discount_percentage && offerStart && offerEnd && now >= start && now <= end) {
+    if (item.discount_percentage && offerStart && offerEnd && now >= offerStart && now <= offerEnd) {
       finalPrice = Math.round(item.price * (1 - item.discount_percentage / 100));
     }
 
