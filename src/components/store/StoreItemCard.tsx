@@ -6,11 +6,19 @@ import { StoreItem } from "@/types/store";
 import { Zap, Star, Gift, Coins } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
+interface GlobalOffer {
+  enabled: boolean;
+  discount_percentage: number;
+  start_time: string;
+  end_time: string;
+}
+
 interface StoreItemCardProps {
   item: StoreItem;
   onPurchase: (item: StoreItem) => void;
   isPurchasing: boolean;
   userGp: number;
+  globalOffer: GlobalOffer | null;
 }
 
 const itemIcons: Record<StoreItem['item_type'], React.ReactNode> = {
@@ -20,16 +28,17 @@ const itemIcons: Record<StoreItem['item_type'], React.ReactNode> = {
   power_box: <Gift className="h-6 w-6 text-vibrant-pink" />,
 };
 
-const isOfferActive = (item: StoreItem) => {
+const isOfferActive = (offer: GlobalOffer | null) => {
+  if (!offer || !offer.enabled) return false;
   const now = new Date();
-  const start = item.offer_start_time ? new Date(item.offer_start_time) : null;
-  const end = item.offer_end_time ? new Date(item.offer_end_time) : null;
-  return item.discount_percentage && start && end && now >= start && now <= end;
+  const start = new Date(offer.start_time);
+  const end = new Date(offer.end_time);
+  return now >= start && now <= end;
 };
 
-export const StoreItemCard = ({ item, onPurchase, isPurchasing, userGp }: StoreItemCardProps) => {
-  const onSale = isOfferActive(item);
-  const discountedPrice = onSale ? Math.round(item.price * (1 - (item.discount_percentage || 0) / 100)) : item.price;
+export const StoreItemCard = ({ item, onPurchase, isPurchasing, userGp, globalOffer }: StoreItemCardProps) => {
+  const onSale = isOfferActive(globalOffer);
+  const discountedPrice = onSale ? Math.round(item.price * (1 - (globalOffer?.discount_percentage || 0) / 100)) : item.price;
   const canAfford = userGp >= discountedPrice;
 
   return (

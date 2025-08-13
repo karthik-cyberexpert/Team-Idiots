@@ -12,9 +12,17 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { showSuccess, showError } from "@/utils/toast";
 import { ShoppingCart } from "lucide-react";
 
+interface GlobalOffer {
+  enabled: boolean;
+  discount_percentage: number;
+  start_time: string;
+  end_time: string;
+}
+
 interface StoreData {
   sections: StoreSection[];
   items: StoreItem[];
+  globalOffer: GlobalOffer | null;
 }
 
 const fetchActiveStoreData = async (): Promise<StoreData> => {
@@ -28,10 +36,14 @@ const fetchActiveStoreData = async (): Promise<StoreData> => {
     .from("store_items")
     .select("*")
     .eq("is_active", true)
-    .order("position", { ascending: true }); // Sort by custom position
+    .order("position", { ascending: true });
   if (itemsError) throw new Error(itemsError.message);
 
-  return { sections: sections || [], items: items || [] };
+  const { data: offerData, error: offerError } = await supabase.from('app_settings').select('value').eq('key', 'global_offer').single();
+  if (offerError && offerError.code !== 'PGRST116') throw new Error(offerError.message);
+  const globalOffer = offerData?.value?.enabled ? offerData.value as GlobalOffer : null;
+
+  return { sections: sections || [], items: items || [], globalOffer };
 };
 
 const purchaseItem = async (itemId: string): Promise<{ message: string; prizes: BoxContent[] | null }> => {
@@ -134,6 +146,7 @@ const StorePage = () => {
                           onPurchase={setItemToConfirm}
                           isPurchasing={purchaseMutation.isPending && purchaseMutation.variables === item.id}
                           userGp={profile?.game_points || 0}
+                          globalOffer={data.globalOffer}
                         />
                       ))}
                     </div>
@@ -154,6 +167,7 @@ const StorePage = () => {
                       onPurchase={setItemToConfirm}
                       isPurchasing={purchaseMutation.isPending && purchaseMutation.variables === item.id}
                       userGp={profile?.game_points || 0}
+                      globalOffer={data.globalOffer}
                     />
                   ))}
                 </div>

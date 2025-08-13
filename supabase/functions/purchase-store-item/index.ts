@@ -55,14 +55,18 @@ serve(async (req) => {
 
     if (!item.is_active) throw new Error("This item is not available for purchase.");
 
-    // Calculate final price with discount
+    // Calculate final price with global discount
+    const { data: offerData } = await supabaseAdmin.from('app_settings').select('value').eq('key', 'global_offer').single();
+    const globalOffer = offerData?.value;
+    
     let finalPrice = item.price;
     const now = new Date();
-    const offerStart = item.offer_start_time ? new Date(item.offer_start_time) : null;
-    const offerEnd = item.offer_end_time ? new Date(item.offer_end_time) : null;
-
-    if (item.discount_percentage && offerStart && offerEnd && now >= offerStart && now <= offerEnd) {
-      finalPrice = Math.round(item.price * (1 - item.discount_percentage / 100));
+    if (globalOffer && globalOffer.enabled) {
+      const offerStart = new Date(globalOffer.start_time);
+      const offerEnd = new Date(globalOffer.end_time);
+      if (now >= offerStart && now <= offerEnd) {
+        finalPrice = Math.round(item.price * (1 - globalOffer.discount_percentage / 100));
+      }
     }
 
     if (profile.game_points < finalPrice) throw new Error("Insufficient game points.");
