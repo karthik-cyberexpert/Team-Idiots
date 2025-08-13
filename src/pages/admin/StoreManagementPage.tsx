@@ -29,6 +29,7 @@ const StoreManagementPage = () => {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [itemToEdit, setItemToEdit] = React.useState<StoreItem | null>(null);
   const [itemToDelete, setItemToDelete] = React.useState<StoreItem | null>(null);
+  const [isCreatingOffer, setIsCreatingOffer] = React.useState(false);
 
   const { data, isLoading } = useQuery<StoreManagementData>({
     queryKey: ["storeManagementData"],
@@ -53,11 +54,19 @@ const StoreManagementPage = () => {
 
   const handleCreate = () => {
     setItemToEdit(null);
+    setIsCreatingOffer(false);
+    setDialogOpen(true);
+  };
+
+  const handleCreateOffer = () => {
+    setItemToEdit(null);
+    setIsCreatingOffer(true);
     setDialogOpen(true);
   };
 
   const handleEdit = (item: StoreItem) => {
     setItemToEdit(item);
+    setIsCreatingOffer(false);
     setDialogOpen(true);
   };
 
@@ -68,6 +77,7 @@ const StoreManagementPage = () => {
         onOpenChange={setDialogOpen}
         item={itemToEdit}
         sections={data?.sections || []}
+        isCreatingOffer={isCreatingOffer}
       />
       <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
         <AlertDialogContent>
@@ -87,7 +97,10 @@ const StoreManagementPage = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl sm:text-3xl font-bold">Store Management</h1>
-          <Button onClick={handleCreate}>Create New Item</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleCreateOffer}>Create Offer</Button>
+            <Button onClick={handleCreate}>Create New Item</Button>
+          </div>
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">

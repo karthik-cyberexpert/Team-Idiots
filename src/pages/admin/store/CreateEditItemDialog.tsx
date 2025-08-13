@@ -95,9 +95,10 @@ interface CreateEditItemDialogProps {
   onOpenChange: (open: boolean) => void;
   item?: StoreItem | null;
   sections: StoreSection[];
+  isCreatingOffer?: boolean;
 }
 
-export const CreateEditItemDialog = ({ open, onOpenChange, item, sections }: CreateEditItemDialogProps) => {
+export const CreateEditItemDialog = ({ open, onOpenChange, item, sections, isCreatingOffer = false }: CreateEditItemDialogProps) => {
   const queryClient = useQueryClient();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -277,7 +278,7 @@ export const CreateEditItemDialog = ({ open, onOpenChange, item, sections }: Cre
                 </div>
               )}
 
-              <Collapsible>
+              <Collapsible defaultOpen={isCreatingOffer}>
                 <CollapsibleTrigger asChild><Button variant="link" className="p-0">Offer Details</Button></CollapsibleTrigger>
                 <CollapsibleContent className="space-y-4 pt-4">
                   <FormField control={form.control} name="discount_percentage" render={({ field }) => <FormItem><FormLabel>Discount (%)</FormLabel><FormControl><Input type="number" min="0" max="100" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>} />
