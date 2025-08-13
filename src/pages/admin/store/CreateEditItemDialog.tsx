@@ -60,31 +60,27 @@ const formSchema = z.object({
   offer_end_date: z.date().optional().nullable(),
   offer_end_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid time format." }).optional().or(z.literal('')),
 }).superRefine((data, ctx) => {
-  // If a discount is set, all date/time fields are required
+  // If a discount is set, start and end dates are required. Time is optional.
   if ((data.discount_percentage || 0) > 0) {
     if (!data.offer_start_date) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Start date is required for an offer.", path: ["offer_start_date"] });
     }
-    if (!data.offer_start_time) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Start time is required for an offer.", path: ["offer_start_time"] });
-    }
     if (!data.offer_end_date) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "End date is required for an offer.", path: ["offer_end_date"] });
     }
-    if (!data.offer_end_time) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "End time is required for an offer.", path: ["offer_end_time"] });
-    }
   }
 
-  // If dates and times are set, ensure end is after start
-  if (data.offer_start_date && data.offer_end_date && data.offer_start_time && data.offer_end_time) {
-    const [startH, startM] = data.offer_start_time.split(':').map(Number);
+  // If dates are set, ensure end is after start.
+  if (data.offer_start_date && data.offer_end_date) {
+    const startH = data.offer_start_time ? parseInt(data.offer_start_time.split(':')[0]) : 0;
+    const startM = data.offer_start_time ? parseInt(data.offer_start_time.split(':')[1]) : 0;
     const start = new Date(data.offer_start_date);
     start.setHours(startH, startM, 0, 0);
 
-    const [endH, endM] = data.offer_end_time.split(':').map(Number);
+    const endH = data.offer_end_time ? parseInt(data.offer_end_time.split(':')[0]) : 23;
+    const endM = data.offer_end_time ? parseInt(data.offer_end_time.split(':')[1]) : 59;
     const end = new Date(data.offer_end_date);
-    end.setHours(endH, endM, 0, 0);
+    end.setHours(endH, endM, 59, 999);
 
     if (start >= end) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "End date/time must be after start date/time.", path: ["offer_end_date"] });
@@ -142,20 +138,24 @@ export const CreateEditItemDialog = ({ open, onOpenChange, item, sections }: Cre
     mutationFn: async (values: FormValues) => {
       const { offer_start_date, offer_start_time, offer_end_date, offer_end_time, ...rest } = values;
       
-      const getIsoString = (date?: Date | null, time?: string) => {
+      const getIsoString = (date?: Date | null, time?: string, defaultTime?: 'start' | 'end') => {
         if (!date) return null;
         const d = new Date(date);
         if (time) {
           const [h, m] = time.split(':').map(Number);
           d.setHours(h, m, 0, 0);
+        } else if (defaultTime === 'start') {
+          d.setHours(0, 0, 0, 0);
+        } else if (defaultTime === 'end') {
+          d.setHours(23, 59, 59, 999);
         }
         return d.toISOString();
       };
 
       const payload = {
         ...rest,
-        offer_start_time: getIsoString(offer_start_date, offer_start_time),
-        offer_end_time: getIsoString(offer_end_date, offer_end_time),
+        offer_start_time: getIsoString(offer_start_date, offer_start_time, 'start'),
+        offer_end_time: getIsoString(offer_end_date, offer_end_time, 'end'),
       };
 
       const functionName = item ? "update-store-item" : "create-store-item";
