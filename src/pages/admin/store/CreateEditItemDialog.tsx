@@ -56,12 +56,40 @@ const formSchema = z.object({
   uses: z.coerce.number().int().min(1).optional().nullable(),
   discount_percentage: z.coerce.number().int().min(0).max(100).optional().nullable(),
   offer_start_date: z.date().optional().nullable(),
-  offer_start_time: z.string().optional(),
+  offer_start_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid time format." }).optional().or(z.literal('')),
   offer_end_date: z.date().optional().nullable(),
-  offer_end_time: z.string().optional(),
-}).refine(data => (data.discount_percentage || 0) > 0 ? data.offer_start_date && data.offer_end_date : true, {
-  message: "Start and end dates are required for an offer.",
-  path: ["offer_start_date"],
+  offer_end_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid time format." }).optional().or(z.literal('')),
+}).superRefine((data, ctx) => {
+  // If a discount is set, all date/time fields are required
+  if ((data.discount_percentage || 0) > 0) {
+    if (!data.offer_start_date) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Start date is required for an offer.", path: ["offer_start_date"] });
+    }
+    if (!data.offer_start_time) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Start time is required for an offer.", path: ["offer_start_time"] });
+    }
+    if (!data.offer_end_date) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "End date is required for an offer.", path: ["offer_end_date"] });
+    }
+    if (!data.offer_end_time) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "End time is required for an offer.", path: ["offer_end_time"] });
+    }
+  }
+
+  // If dates and times are set, ensure end is after start
+  if (data.offer_start_date && data.offer_end_date && data.offer_start_time && data.offer_end_time) {
+    const [startH, startM] = data.offer_start_time.split(':').map(Number);
+    const start = new Date(data.offer_start_date);
+    start.setHours(startH, startM, 0, 0);
+
+    const [endH, endM] = data.offer_end_time.split(':').map(Number);
+    const end = new Date(data.offer_end_date);
+    end.setHours(endH, endM, 0, 0);
+
+    if (start >= end) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "End date/time must be after start date/time.", path: ["offer_end_date"] });
+    }
+  }
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -254,11 +282,11 @@ export const CreateEditItemDialog = ({ open, onOpenChange, item, sections }: Cre
                 <CollapsibleContent className="space-y-4 pt-4">
                   <FormField control={form.control} name="discount_percentage" render={({ field }) => <FormItem><FormLabel>Discount (%)</FormLabel><FormControl><Input type="number" min="0" max="100" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>} />
                   <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="offer_start_date" render={({ field }) => <FormItem><FormLabel>Start Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>} />
+                    <FormField control={form.control} name="offer_start_date" render={({ field }) => <FormItem><FormLabel>Start Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>} />
                     <FormField control={form.control} name="offer_start_time" render={({ field }) => <FormItem><FormLabel>Start Time</FormLabel><FormControl><TimePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="offer_end_date" render={({ field }) => <FormItem><FormLabel>End Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>} />
+                    <FormField control={form.control} name="offer_end_date" render={({ field }) => <FormItem><FormLabel>End Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>} />
                     <FormField control={form.control} name="offer_end_time" render={({ field }) => <FormItem><FormLabel>End Time</FormLabel><FormControl><TimePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>} />
                   </div>
                 </CollapsibleContent>
