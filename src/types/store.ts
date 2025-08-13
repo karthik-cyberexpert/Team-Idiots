@@ -32,4 +32,7 @@ export interface StoreItem {
   effect_value: number | null;
   uses: number | null;
   position: number;
+  discount_percentage: number | null;
+  offer_start_time: string | null;
+  offer_end_time: string | null;
 }

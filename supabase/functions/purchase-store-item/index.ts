@@ -53,11 +53,22 @@ serve(async (req) => {
     if (profileError) throw new Error("User profile not found.");
 
     if (!item.is_active) throw new Error("This item is not available for purchase.");
-    if (profile.game_points < item.price) throw new Error("Insufficient game points.");
+
+    // Calculate final price with discount
+    let finalPrice = item.price;
+    const now = new Date();
+    const offerStart = item.offer_start_time ? new Date(item.offer_start_time) : null;
+    const offerEnd = item.offer_end_time ? new Date(item.offer_end_time) : null;
+
+    if (item.discount_percentage && offerStart && offerEnd && now >= offerStart && now <= offerEnd) {
+      finalPrice = Math.round(item.price * (1 - item.discount_percentage / 100));
+    }
+
+    if (profile.game_points < finalPrice) throw new Error("Insufficient game points.");
 
     let awardedPrizes: any[] = [];
     let message = "Purchase successful!";
-    let totalGpChange = -item.price;
+    let totalGpChange = -finalPrice;
     let totalXpChange = 0;
     let powerUpsToAdd: any[] = [];
 
