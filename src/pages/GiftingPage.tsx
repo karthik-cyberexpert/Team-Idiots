@@ -57,7 +57,7 @@ const sendGift = async (values: FormValues) => {
 const GiftingPage = () => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
-  const [giftSentSuccessfully, setGiftSentSuccessfully] = React.useState(false);
+  const [viewState, setViewState] = React.useState<'idle' | 'form' | 'success'>('idle');
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { giftType: "gp" },
@@ -75,30 +75,28 @@ const GiftingPage = () => {
       queryClient.invalidateQueries({ queryKey: ["myPowerUps"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       form.reset({ giftType: "gp", message: "" });
-      setGiftSentSuccessfully(true);
+      setViewState('success');
     },
     onError: (err: Error) => showError(err.message),
   });
 
   const giftType = form.watch("giftType");
 
-  return (
-    <Card className="max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Gift className="h-6 w-6 text-vibrant-pink" /> Send a Gift</CardTitle>
-        <CardDescription>Share your resources with other users.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {giftSentSuccessfully ? (
+  const renderContent = () => {
+    switch (viewState) {
+      case 'success':
+        return (
           <div className="text-center py-10 flex flex-col items-center space-y-4">
             <PartyPopper className="h-16 w-16 text-vibrant-green" />
             <p className="text-xl font-semibold">Gift Sent!</p>
             <p className="text-muted-foreground">Your gift is on its way to the recipient.</p>
-            <Button onClick={() => setGiftSentSuccessfully(false)}>
+            <Button onClick={() => setViewState('idle')}>
               Send Another Gift
             </Button>
           </div>
-        ) : (
+        );
+      case 'form':
+        return (
           <Form {...form}>
             <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
               <FormField control={form.control} name="receiverId" render={({ field }) => (
@@ -163,7 +161,30 @@ const GiftingPage = () => {
               </Button>
             </form>
           </Form>
-        )}
+        );
+      case 'idle':
+      default:
+        return (
+          <div className="text-center py-10 flex flex-col items-center space-y-4">
+            <Gift className="h-16 w-16 text-vibrant-pink" />
+            <p className="text-muted-foreground">Want to send a gift to another user? Click the button below to get started.</p>
+            <Button onClick={() => setViewState('form')}>
+              <Send className="mr-2 h-4 w-4" />
+              Send a Gift
+            </Button>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <Card className="max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Gift className="h-6 w-6 text-vibrant-pink" /> Send a Gift</CardTitle>
+        <CardDescription>Share your resources with other users.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {renderContent()}
       </CardContent>
     </Card>
   );
