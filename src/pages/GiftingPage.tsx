@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { showSuccess, showError } from "@/utils/toast";
-import { Gift, Send } from "lucide-react";
+import { Gift, Send, PartyPopper } from "lucide-react";
 import { UserPowerUp } from "@/types/powerup";
 import { User } from "@/types/user";
 
@@ -57,6 +57,7 @@ const sendGift = async (values: FormValues) => {
 const GiftingPage = () => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
+  const [giftSentSuccessfully, setGiftSentSuccessfully] = React.useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { giftType: "gp" },
@@ -74,6 +75,7 @@ const GiftingPage = () => {
       queryClient.invalidateQueries({ queryKey: ["myPowerUps"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       form.reset({ giftType: "gp", message: "" });
+      setGiftSentSuccessfully(true);
     },
     onError: (err: Error) => showError(err.message),
   });
@@ -87,70 +89,81 @@ const GiftingPage = () => {
         <CardDescription>Share your resources with other users.</CardDescription>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
-            <FormField control={form.control} name="receiverId" render={({ field }) => (
-              <FormItem><FormLabel>Recipient</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Select a user..." /></SelectTrigger></FormControl>
-                  <SelectContent>{isLoading ? <SelectItem value="loading" disabled>Loading...</SelectItem> : data?.users.map(user => <SelectItem key={user.id} value={user.id}>{user.full_name}</SelectItem>)}</SelectContent>
-                </Select><FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="giftType" render={({ field }) => (
-              <FormItem><FormLabel>Gift Type</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    <SelectItem value="gp">Game Points (GP)</SelectItem>
-                    <SelectItem value="xp">Experience (XP)</SelectItem>
-                    <SelectItem value="power_up">Power-up</SelectItem>
-                  </SelectContent>
-                </Select><FormMessage />
-              </FormItem>
-            )} />
-            
-            {giftType === 'gp' && (
-              <FormField control={form.control} name="amount" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Amount of GP</FormLabel>
-                  <FormControl><Input type="number" {...field} /></FormControl>
-                  <FormDescription>Your GP: {profile?.game_points || 0}</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            )}
-            {giftType === 'xp' && (
-              <FormField control={form.control} name="amount" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Amount of XP</FormLabel>
-                  <FormControl><Input type="number" {...field} /></FormControl>
-                  <FormDescription>Your XP: {profile?.xp || 0}</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            )}
-            {giftType === 'power_up' && (
-              <FormField control={form.control} name="powerUpId" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Power-up</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select a power-up..." /></SelectTrigger></FormControl>
-                    <SelectContent>{isLoading ? <SelectItem value="loading" disabled>Loading...</SelectItem> : data?.powerUps.map(p => <SelectItem key={p.id} value={p.id}>{p.power_type.replace(/_/g, ' ')}</SelectItem>)}</SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            )}
-
-            <FormField control={form.control} name="message" render={({ field }) => <FormItem><FormLabel>Message</FormLabel><FormControl><Textarea placeholder="Write a nice message..." {...field} /></FormControl><FormMessage /></FormItem>} />
-            
-            <Button type="submit" className="w-full" disabled={mutation.isPending}>
-              <Send className="mr-2 h-4 w-4" />
-              {mutation.isPending ? "Sending..." : "Send Gift"}
+        {giftSentSuccessfully ? (
+          <div className="text-center py-10 flex flex-col items-center space-y-4">
+            <PartyPopper className="h-16 w-16 text-vibrant-green" />
+            <p className="text-xl font-semibold">Gift Sent!</p>
+            <p className="text-muted-foreground">Your gift is on its way to the recipient.</p>
+            <Button onClick={() => setGiftSentSuccessfully(false)}>
+              Send Another Gift
             </Button>
-          </form>
-        </Form>
+          </div>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
+              <FormField control={form.control} name="receiverId" render={({ field }) => (
+                <FormItem><FormLabel>Recipient</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select a user..." /></SelectTrigger></FormControl>
+                    <SelectContent>{isLoading ? <SelectItem value="loading" disabled>Loading...</SelectItem> : data?.users.map(user => <SelectItem key={user.id} value={user.id}>{user.full_name}</SelectItem>)}</SelectContent>
+                  </Select><FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="giftType" render={({ field }) => (
+                <FormItem><FormLabel>Gift Type</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="gp">Game Points (GP)</SelectItem>
+                      <SelectItem value="xp">Experience (XP)</SelectItem>
+                      <SelectItem value="power_up">Power-up</SelectItem>
+                    </SelectContent>
+                  </Select><FormMessage />
+                </FormItem>
+              )} />
+              
+              {giftType === 'gp' && (
+                <FormField control={form.control} name="amount" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amount of GP</FormLabel>
+                    <FormControl><Input type="number" {...field} /></FormControl>
+                    <FormDescription>Your GP: {profile?.game_points || 0}</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
+              {giftType === 'xp' && (
+                <FormField control={form.control} name="amount" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amount of XP</FormLabel>
+                    <FormControl><Input type="number" {...field} /></FormControl>
+                    <FormDescription>Your XP: {profile?.xp || 0}</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
+              {giftType === 'power_up' && (
+                <FormField control={form.control} name="powerUpId" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Power-up</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Select a power-up..." /></SelectTrigger></FormControl>
+                      <SelectContent>{isLoading ? <SelectItem value="loading" disabled>Loading...</SelectItem> : data?.powerUps.map(p => <SelectItem key={p.id} value={p.id}>{p.power_type.replace(/_/g, ' ')}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
+
+              <FormField control={form.control} name="message" render={({ field }) => <FormItem><FormLabel>Message</FormLabel><FormControl><Textarea placeholder="Write a nice message..." {...field} /></FormControl><FormMessage /></FormItem>} />
+              
+              <Button type="submit" className="w-full" disabled={mutation.isPending}>
+                <Send className="mr-2 h-4 w-4" />
+                {mutation.isPending ? "Sending..." : "Send Gift"}
+              </Button>
+            </form>
+          </Form>
+        )}
       </CardContent>
     </Card>
   );
