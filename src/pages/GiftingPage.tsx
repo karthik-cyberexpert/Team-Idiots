@@ -82,6 +82,24 @@ const GiftingPage = () => {
 
   const giftType = form.watch("giftType");
 
+  const getPowerUpLabel = (powerUp: UserPowerUp) => {
+    let label = powerUp.power_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    const details = [];
+    if (powerUp.effect_value) {
+      details.push(`${powerUp.effect_value}% effect`);
+    }
+    if (powerUp.power_type.includes('boost')) {
+      details.push('24h duration');
+    }
+    if (powerUp.uses_left) {
+      details.push(`${powerUp.uses_left} use(s)`);
+    }
+    if (details.length > 0) {
+      label += ` (${details.join(', ')})`;
+    }
+    return label;
+  };
+
   const renderContent = () => {
     switch (viewState) {
       case 'success':
@@ -146,7 +164,7 @@ const GiftingPage = () => {
                     <FormLabel>Power-up</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Select a power-up..." /></SelectTrigger></FormControl>
-                      <SelectContent>{isLoading ? <SelectItem value="loading" disabled>Loading...</SelectItem> : data?.powerUps.map(p => <SelectItem key={p.id} value={p.id}>{p.power_type.replace(/_/g, ' ')}</SelectItem>)}</SelectContent>
+                      <SelectContent>{isLoading ? <SelectItem value="loading" disabled>Loading...</SelectItem> : data?.powerUps.map(p => <SelectItem key={p.id} value={p.id}>{getPowerUpLabel(p)}</SelectItem>)}</SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
