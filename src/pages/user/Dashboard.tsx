@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, MessageSquare, ListTodo, Type, Gamepad2, Zap, Users, HelpCircle } from "lucide-react";
+import { FileText, MessageSquare, ListTodo, Type, Gamepad2, Zap, Users, HelpCircle, Gift } from "lucide-react";
 import { XpBar } from "@/components/dashboard/XpBar";
 
 const UserDashboard = () => {
@@ -52,6 +52,12 @@ const UserDashboard = () => {
       description: "Collaborate and connect with your buddy.",
       icon: <Users className="h-8 w-8 text-vibrant-red" />,
       link: "/dashboard/buddies",
+    },
+    {
+      title: "Gifting",
+      description: "Send gifts to other users.",
+      icon: <Gift className="h-8 w-8 text-vibrant-pink" />,
+      link: "/dashboard/gifting",
     },
   ];
 

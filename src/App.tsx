@@ -9,6 +9,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { SettingsProvider } from "./contexts/SettingsProvider";
 import { AppRoutes } from "./AppRoutes";
 import { QuizStateProvider } from "./contexts/QuizStateProvider";
+import { GiftingProvider } from "./contexts/GiftingProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,9 +42,11 @@ const App = () => (
           <AuthProvider>
             <SettingsProvider>
               <QuizStateProvider>
-                <ErrorBoundary>
-                  <AppRoutes />
-                </ErrorBoundary>
+                <GiftingProvider>
+                  <ErrorBoundary>
+                    <AppRoutes />
+                  </ErrorBoundary>
+                </GiftingProvider>
               </QuizStateProvider>
             </SettingsProvider>
           </AuthProvider>
