@@ -74,7 +74,9 @@ export const Notifications = () => {
         () => queryClient.invalidateQueries({ queryKey: ["myNotifications", user.id] })
       )
       .subscribe();
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, queryClient]);
 
   const markSingleAsReadMutation = useMutation({

@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -110,16 +110,38 @@ const GiftingPage = () => {
               </FormItem>
             )} />
             
-            {giftType === 'gp' && <FormField control={form.control} name="amount" render={({ field }) => <FormItem><FormLabel>Amount of GP</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormDescription>Your GP: {profile?.game_points || 0}</FormDescription><FormMessage /></FormItem>} />}
-            {giftType === 'xp' && <FormField control={form.control} name="amount" render={({ field }) => <FormItem><FormLabel>Amount of XP</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormDescription>Your XP: {profile?.xp || 0}</FormDescription><FormMessage /></FormItem>} />}
-            {giftType === 'power_up' && <FormField control={form.control} name="powerUpId" render={({ field }) => (
-              <FormItem><FormLabel>Power-up</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Select a power-up..." /></SelectTrigger></FormControl>
-                  <SelectContent>{isLoading ? <SelectItem value="loading" disabled>Loading...</SelectItem> : data?.powerUps.map(p => <SelectItem key={p.id} value={p.id}>{p.power_type.replace(/_/g, ' ')}</SelectItem>)}</SelectContent>
-                </Select><FormMessage />
-              </FormItem>
-            )} />
+            {giftType === 'gp' && (
+              <FormField control={form.control} name="amount" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount of GP</FormLabel>
+                  <FormControl><Input type="number" {...field} /></FormControl>
+                  <FormDescription>Your GP: {profile?.game_points || 0}</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
+            {giftType === 'xp' && (
+              <FormField control={form.control} name="amount" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount of XP</FormLabel>
+                  <FormControl><Input type="number" {...field} /></FormControl>
+                  <FormDescription>Your XP: {profile?.xp || 0}</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
+            {giftType === 'power_up' && (
+              <FormField control={form.control} name="powerUpId" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Power-up</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select a power-up..." /></SelectTrigger></FormControl>
+                    <SelectContent>{isLoading ? <SelectItem value="loading" disabled>Loading...</SelectItem> : data?.powerUps.map(p => <SelectItem key={p.id} value={p.id}>{p.power_type.replace(/_/g, ' ')}</SelectItem>)}</SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
 
             <FormField control={form.control} name="message" render={({ field }) => <FormItem><FormLabel>Message</FormLabel><FormControl><Textarea placeholder="Write a nice message..." {...field} /></FormControl><FormMessage /></FormItem>} />
             
