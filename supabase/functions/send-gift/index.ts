@@ -63,9 +63,15 @@ serve(async (req) => {
       if (powerUp.user_id !== user.id) throw new Error("You do not own this power-up.");
       if (powerUp.is_used) throw new Error("This power-up has already been used.");
 
-      // The power-up is transferred immediately upon sending.
-      await supabaseAdmin.from('user_power_ups').update({ user_id: receiverId }).eq('id', powerUpId);
-      gift_payload.power_up = { type: 'power_up', power: powerUp.power_type };
+      // Mark the sender's power-up as used to take it out of their inventory
+      await supabaseAdmin.from('user_power_ups').update({ is_used: true }).eq('id', powerUpId);
+
+      // Store the details of the power-up in the payload for the receiver to claim later
+      gift_payload.power_up = {
+        power: powerUp.power_type,
+        effect_value: powerUp.effect_value,
+        uses_left: powerUp.uses_left,
+      };
     } else {
       throw new Error("Invalid gift type.");
     }

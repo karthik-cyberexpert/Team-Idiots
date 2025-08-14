@@ -54,8 +54,21 @@ serve(async (req) => {
       if (gift.type === 'xp') {
         await supabaseAdmin.from('xp_history').insert({ user_id: user.id, xp_change: gift.amount, reason: `Gift from ${gift.sender_name}` });
       }
+    } else if (gift.type === 'power_up') {
+      const powerUpData = gift.power_up;
+      if (!powerUpData || !powerUpData.power) {
+        throw new Error("Invalid power-up gift payload.");
+      }
+      // Create a new power-up for the receiver
+      await supabaseAdmin.from('user_power_ups').insert({
+        user_id: user.id,
+        power_type: powerUpData.power,
+        effect_value: powerUpData.effect_value,
+        uses_left: powerUpData.uses_left,
+        is_used: false,
+        expires_at: null,
+      });
     }
-    // For power-ups, the item is already transferred. This step just marks it as claimed.
 
     const updatedPayload = { ...gift, is_claimed: true };
     await supabaseAdmin.from('notifications').update({ gift_payload: updatedPayload }).eq('id', notificationId);

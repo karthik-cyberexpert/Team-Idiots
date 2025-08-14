@@ -1,9 +1,15 @@
-import { BoxContent } from "./store";
+import { PowerUpType } from "./auction";
+
+export interface GiftedPowerUp {
+  power: PowerUpType;
+  effect_value: number | null;
+  uses_left: number;
+}
 
 export interface GiftPayload {
   type: 'gp' | 'xp' | 'power_up';
   amount?: number;
-  power_up?: BoxContent;
+  power_up?: GiftedPowerUp;
   sender_name: string;
   message: string;
   is_claimed?: boolean;
