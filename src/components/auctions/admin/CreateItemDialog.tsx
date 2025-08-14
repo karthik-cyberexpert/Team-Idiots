@@ -193,7 +193,7 @@ export const CreateItemDialog = ({ open, onOpenChange, isMystery = false }: Crea
                   <h3 className="text-sm font-medium">Mystery Box Prizes</h3>
                   {mysteryFields.map((field, index) => (
                     <div key={field.id}>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField control={form.control} name={`mystery_box_contents.${index}.type`} render={({ field }) => (
                           <FormItem><FormLabel>Prize {index + 1} Type</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>

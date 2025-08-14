@@ -18,15 +18,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Terminal, FileUp, Download } from "lucide-react"; // Import FileUp and Download
+import { Terminal, FileUp, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
 import { AddTaskDialog } from "./tasks/AddTaskDialog";
 import { EditTaskDialog } from "./tasks/EditTaskDialog";
 import { AddCommonTaskDialog } from "./tasks/AddCommonTaskDialog";
 import { AwardMarksAndXpDialog } from "./tasks/AwardMarksAndXpDialog";
-import { BulkUploadTasksDialog } from "@/components/tasks/BulkUploadTasksDialog"; // Import new dialog
-import { useAuth } from "@/contexts/AuthProvider"; // Import useAuth to get current user ID
+import { BulkUploadTasksDialog } from "@/components/tasks/BulkUploadTasksDialog";
+import { useAuth } from "@/contexts/AuthProvider";
 import { ViewSubmissionDialog } from "@/components/tasks/ViewSubmissionDialog";
 import { ReturnTaskDialog } from "./tasks/ReturnTaskDialog";
 
@@ -54,7 +54,7 @@ const deleteTask = async (taskId: string) => {
 
 const TaskManagement = () => {
   const queryClient = useQueryClient();
-  const { user: currentUser } = useAuth(); // Get current user for assignedByUserId
+  const { user: currentUser } = useAuth();
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null);
   const [taskToEdit, setTaskToEdit] = React.useState<Task | null>(null);
   const [taskToAward, setTaskToAward] = React.useState<Task | null>(null);
@@ -62,7 +62,7 @@ const TaskManagement = () => {
   const [taskToReturn, setTaskToReturn] = React.useState<Task | null>(null);
   const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = React.useState(false);
   const [isAddCommonTaskDialogOpen, setIsAddCommonTaskDialogOpen] = React.useState(false);
-  const [isBulkUploadTasksDialogOpen, setIsBulkUploadTasksDialogOpen] = React.useState(false); // New state for bulk upload dialog
+  const [isBulkUploadTasksDialogOpen, setIsBulkUploadTasksDialogOpen] = React.useState(false);
   const [approvalAction, setApprovalAction] = React.useState<{ type: 'approve' | 'reject'; taskId: string } | null>(null);
 
   const { data: tasks, isLoading, error } = useQuery<Task[]>({
@@ -70,7 +70,6 @@ const TaskManagement = () => {
     queryFn: fetchAllTasks,
   });
 
-  // Real-time subscription for task changes
   React.useEffect(() => {
     const channel = supabase
       .channel('admin-tasks-realtime')
@@ -161,14 +160,14 @@ const TaskManagement = () => {
       {
         title: "Example Task 1",
         description: "This is a sample description for task 1.",
-        assignedToFullName: "John Doe", // Use full name for template
-        dueDate: "2024-12-31T17:00:00Z" // ISO 8601 format
+        assignedToFullName: "John Doe",
+        dueDate: "2024-12-31T17:00:00Z"
       },
       {
         title: "Example Task 2",
-        description: null, // Optional description
+        description: null,
         assignedToFullName: "Jane Smith",
-        dueDate: null // Optional due date
+        dueDate: null
       }
     ];
     const jsonString = JSON.stringify(template, null, 2);
@@ -244,7 +243,9 @@ const TaskManagement = () => {
             <Button onClick={() => setIsAddTaskDialogOpen(true)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">Add Task</Button>
           </div>
         </div>
-        <DataTable columns={columns} data={tasks || []} />
+        <div className="overflow-x-auto">
+          <DataTable columns={columns} data={tasks || []} />
+        </div>
       </div>
 
       <AlertDialog open={!!taskToDelete} onOpenChange={() => setTaskToDelete(null)}>

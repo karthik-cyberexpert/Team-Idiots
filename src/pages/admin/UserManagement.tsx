@@ -49,7 +49,6 @@ const deleteUser = async (userId: string) => {
   if (error) {
     throw new Error(`Failed to delete user: ${error.message}`);
   }
-  // Defensive check: if the edge function returns 2xx but with an error in the body
   if (data && data.error) {
     throw new Error(`Failed to delete user: ${data.error}`);
   }
@@ -73,7 +72,6 @@ const UserManagement = () => {
     queryFn: () => fetchUsers(pagination.pageIndex + 1, pagination.pageSize),
   });
 
-  // Real-time subscription for user changes
   React.useEffect(() => {
     const channel = supabase
       .channel('user-management-realtime')
@@ -81,7 +79,6 @@ const UserManagement = () => {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'profiles' },
         () => {
-          // Invalidate queries to refetch data when profiles table changes
           queryClient.invalidateQueries({ queryKey: ['users'] });
           queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
           queryClient.invalidateQueries({ queryKey: ['gameLeaderboard'] });
@@ -89,7 +86,6 @@ const UserManagement = () => {
       )
       .subscribe();
 
-    // Cleanup subscription on component unmount
     return () => {
       supabase.removeChannel(channel);
     };
@@ -176,13 +172,15 @@ const UserManagement = () => {
           <h1 className="text-2xl sm:text-3xl font-bold text-vibrant-purple dark:text-vibrant-pink">User Management</h1>
           <Button onClick={() => setIsAddUserDialogOpen(true)} className="transform transition-transform-shadow duration-200 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95">Add User</Button>
         </div>
-        <DataTable
-          columns={columns}
-          data={data?.users || []}
-          pageCount={Math.ceil((data?.totalCount || 0) / pagination.pageSize)}
-          pagination={pagination}
-          setPagination={setPagination}
-        />
+        <div className="overflow-x-auto">
+          <DataTable
+            columns={columns}
+            data={data?.users || []}
+            pageCount={Math.ceil((data?.totalCount || 0) / pagination.pageSize)}
+            pagination={pagination}
+            setPagination={setPagination}
+          />
+        </div>
       </div>
 
       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>

@@ -70,7 +70,7 @@ const BuddiesManagementPage = () => {
   const { data, isLoading, error } = useQuery<BuddyPair[]>({
     queryKey: ["allBuddyPairs"],
     queryFn: fetchAllBuddyPairs,
-    refetchInterval: 1000, // Refetch every 1 second
+    refetchInterval: 1000,
   });
 
   const generateRewardsMutation = useMutation({
@@ -129,7 +129,9 @@ const BuddiesManagementPage = () => {
                 <AlertDescription>{error.message}</AlertDescription>
               </Alert>
             ) : data && data.length > 0 ? (
-              <DataTable columns={columns} data={data} />
+              <div className="overflow-x-auto">
+                <DataTable columns={columns} data={data} />
+              </div>
             ) : (
               <div className="text-center py-10 text-muted-foreground">
                 <Users className="mx-auto h-12 w-12 mb-4" />

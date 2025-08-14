@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/utils/toast";
 import { ShowQuestionsDialog } from "./ShowQuestionsDialog";
 import { BulkUploadQuizSetDialog } from "./BulkUploadQuizSetDialog";
-import { EditQuizSetDialog } from "./EditQuizSetDialog"; // Import new dialog
+import { EditQuizSetDialog } from "./EditQuizSetDialog";
 
 const fetchQuizSets = async (): Promise<QuizSet[]> => {
   const { data, error } = await supabase.functions.invoke("get-quiz-sets");
@@ -35,7 +35,7 @@ const QuizManagementPage = () => {
   const queryClient = useQueryClient();
   const [setToDelete, setSetToDelete] = React.useState<string | null>(null);
   const [setToShow, setSetToShow] = React.useState<QuizSet | null>(null);
-  const [setToEdit, setSetToEdit] = React.useState<QuizSet | null>(null); // State for editing
+  const [setToEdit, setSetToEdit] = React.useState<QuizSet | null>(null);
   const [isUploadOpen, setIsUploadOpen] = React.useState(false);
 
   const { data: quizSets, isLoading, error } = useQuery<QuizSet[]>({
@@ -75,7 +75,7 @@ const QuizManagementPage = () => {
     onShowContent: (set) => setSetToShow(set),
     onUpdateStatus: (id, status) => updateStatusMutation.mutate({ id, status }),
     onDelete: (id) => setSetToDelete(id),
-    onEdit: (set) => setSetToEdit(set), // Add onEdit handler
+    onEdit: (set) => setSetToEdit(set),
   }), [updateStatusMutation]);
 
   const suggestedTitle = `Quiz Week ${ (quizSets?.length || 0) + 1 }`;
@@ -117,7 +117,9 @@ const QuizManagementPage = () => {
             <FileUp className="mr-2 h-4 w-4" /> Upload Quiz Set
           </Button>
         </div>
-        <DataTable columns={columns} data={quizSets || []} filterColumn="title" filterPlaceholder="Filter by title..." />
+        <div className="overflow-x-auto">
+          <DataTable columns={columns} data={quizSets || []} filterColumn="title" filterPlaceholder="Filter by title..." />
+        </div>
       </div>
       <AlertDialog open={!!setToDelete} onOpenChange={() => setSetToDelete(null)}>
         <AlertDialogContent>

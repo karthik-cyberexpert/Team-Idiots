@@ -52,7 +52,7 @@ const AuctionManagementPage = () => {
   const { data, isLoading } = useQuery<AuctionData>({
     queryKey: ["auctionData"],
     queryFn: fetchAuctionData,
-    refetchInterval: 1000, // Refetch every 1 second
+    refetchInterval: 1000,
   });
 
   const availableItems = React.useMemo(() => {
@@ -173,7 +173,9 @@ const AuctionManagementPage = () => {
             <CardDescription>Manage items available for auction.</CardDescription>
           </CardHeader>
           <CardContent>
-            <DataTable columns={itemsColumns} data={availableItems} />
+            <div className="overflow-x-auto">
+              <DataTable columns={itemsColumns} data={availableItems} />
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -216,7 +218,9 @@ const AuctionManagementPage = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <DataTable columns={auctionsColumns} data={filteredAuctions} />
+            <div className="overflow-x-auto">
+              <DataTable columns={auctionsColumns} data={filteredAuctions} />
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -40,7 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { User } from "@/types/user";
-import { TimePicker } from "@/components/ui/time-picker"; // Import TimePicker
+import { TimePicker } from "@/components/ui/time-picker";
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }),
@@ -211,7 +211,7 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
                     </FormItem>
                   )}
                 />
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <FormField
                     control={form.control}
                     name="dueDate"
@@ -257,7 +257,7 @@ export const EditTaskDialog = ({ open, onOpenChange, task }: EditTaskDialogProps
                     control={form.control}
                     name="dueTime"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col w-1/3">
+                      <FormItem className="flex flex-col w-full sm:w-1/3">
                         <FormLabel>Time</FormLabel>
                         <FormControl>
                           <TimePicker value={field.value} onChange={field.onChange} />

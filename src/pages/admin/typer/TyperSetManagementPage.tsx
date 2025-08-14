@@ -130,7 +130,9 @@ const TyperSetManagementPage = () => {
             <FileUp className="mr-2 h-4 w-4" /> Upload Set
           </Button>
         </div>
-        <DataTable columns={columns} data={typerSets || []} filterColumn="title" filterPlaceholder="Filter by title..." />
+        <div className="overflow-x-auto">
+          <DataTable columns={columns} data={typerSets || []} filterColumn="title" filterPlaceholder="Filter by title..." />
+        </div>
       </div>
       <AlertDialog open={!!setToDelete} onOpenChange={() => setSetToDelete(null)}>
         <AlertDialogContent>
