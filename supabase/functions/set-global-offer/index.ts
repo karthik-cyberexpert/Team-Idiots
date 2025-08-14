@@ -36,16 +36,13 @@ serve(async (req) => {
 
   try {
     const supabaseAdmin = await getAuthenticatedAdminClient(req);
-    const { discount, date } = await req.json();
+    const { discount, date } = await req.json(); // date is now YYYY-MM-DD string
     if (!discount || !date) {
       throw new Error("Discount percentage and date are required.");
     }
 
-    const startDate = new Date(date);
-    startDate.setUTCHours(0, 0, 0, 0);
-
-    const endDate = new Date(date);
-    endDate.setUTCHours(23, 59, 59, 999);
+    const startDate = new Date(`${date}T00:00:00.000Z`);
+    const endDate = new Date(`${date}T23:59:59.999Z`);
 
     const offerValue = {
       enabled: true,

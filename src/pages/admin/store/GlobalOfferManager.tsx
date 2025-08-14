@@ -32,15 +32,19 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+const setGlobalOffer = async (values: FormValues) => {
+  // Convert date to YYYY-MM-DD format to avoid timezone issues.
+  const date = values.date;
+  const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+  const { error } = await supabase.functions.invoke("set-global-offer", { body: { discount: values.discount, date: dateString } });
+  if (error) throw new Error(error.message);
+};
+
 const fetchGlobalOffer = async (): Promise<GlobalOffer | null> => {
   const { data, error } = await supabase.from("app_settings").select("value").eq("key", "global_offer").single();
   if (error && error.code !== 'PGRST116') throw new Error(error.message);
   return data?.value as GlobalOffer | null;
-};
-
-const setGlobalOffer = async (values: FormValues) => {
-  const { error } = await supabase.functions.invoke("set-global-offer", { body: values });
-  if (error) throw new Error(error.message);
 };
 
 const clearGlobalOffer = async () => {
