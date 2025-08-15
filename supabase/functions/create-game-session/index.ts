@@ -24,22 +24,36 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Function started.");
     const supabase = await getAuthenticatedClient(req);
+    console.log("Authenticated client created.");
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("User not authenticated.");
+    if (!user) {
+      console.log("User not authenticated, throwing error.");
+      throw new Error("User not authenticated.");
+    }
+    console.log("User authenticated:", user.id);
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { autoRefreshToken: false, persistSession: false } }
     );
+    console.log("Admin client created.");
 
     let joinCode;
     let isUnique = false;
     while (!isUnique) {
       joinCode = Math.floor(100000 + Math.random() * 900000).toString();
+      console.log("Attempting to generate unique join code:", joinCode);
       const { data: existing, error } = await supabaseAdmin.from('game_sessions').select('id').eq('join_code', joinCode).single();
+      if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found, which is good for uniqueness check
+        console.error("Error checking join code uniqueness:", error.message);
+        throw error;
+      }
       if (!existing) {
         isUnique = true;
+        console.log("Unique join code generated:", joinCode);
       }
     }
 
@@ -47,7 +61,9 @@ serve(async (req) => {
       board: Array(9).fill(null),
       current_turn: user.id,
     };
+    console.log("Initial game state prepared.");
 
+    console.log("Attempting to insert new game session.");
     const { data: newSession, error } = await supabaseAdmin
       .from('game_sessions')
       .insert({
@@ -60,10 +76,18 @@ serve(async (req) => {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error inserting new game session:", error.message);
+      throw error;
+    }
+    console.log("New game session created:", newSession.id);
 
     return new Response(JSON.stringify(newSession), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    console.error("Caught error in function:", error.message);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 })
