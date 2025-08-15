@@ -6,7 +6,7 @@ import { Smile, Sparkles } from "lucide-react";
 
 const FunSpacePage = () => {
   return (
-    <div className="flex flex-col items-center justify-center h-full p-4">
+    <div className="flex flex-col items-center justify-center p-4">
       <Card className="w-full max-w-2xl text-center">
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-vibrant-purple dark:text-vibrant-pink">
