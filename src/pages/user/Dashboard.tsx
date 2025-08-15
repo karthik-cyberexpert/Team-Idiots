@@ -59,6 +59,12 @@ const UserDashboard = () => {
       icon: <Gift className="h-8 w-8 text-vibrant-pink" />,
       link: "/dashboard/gifting",
     },
+    {
+      title: "Fun Space",
+      description: "Your dedicated area for fun activities and relaxation!",
+      icon: <Sparkles className="h-8 w-8 text-vibrant-purple" />,
+      link: "/dashboard/fun-space",
+    },
   ];
 
   return (

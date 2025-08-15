@@ -92,11 +92,12 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       label: "Gifting",
       icon: <Gift className="h-4 w-4" />,
     },
-    {
-      href: "/dashboard/fun-space",
-      label: "Fun Space",
-      icon: <Sparkles className="h-4 w-4" />,
-    },
+    // Removed Fun Space from here, it now has its own layout
+    // {
+    //   href: "/dashboard/fun-space",
+    //   label: "Fun Space",
+    //   icon: <Sparkles className="h-4 w-4" />,
+    // },
     {
       href: "/admin/users",
       label: "Users",
