@@ -24,18 +24,21 @@ const TwoDBuilderPage = () => {
   };
 
   const handleCapture = () => {
-    if (canvasRef.current) {
-      html2canvas(canvasRef.current, { backgroundColor: null }).then(canvas => {
-        canvas.toBlob(blob => {
-          if (blob) {
-            saveAs(blob, '2d-creation.png');
-            showSuccess("Image captured!");
-          } else {
-            showError("Failed to capture image.");
-          }
+    setSelectedShapeId(null); // Deselect to hide Moveable controls before capture
+    setTimeout(() => {
+      if (canvasRef.current) {
+        html2canvas(canvasRef.current, { backgroundColor: null }).then(canvas => {
+          canvas.toBlob(blob => {
+            if (blob) {
+              saveAs(blob, '2d-creation.png');
+              showSuccess("Image captured!");
+            } else {
+              showError("Failed to capture image.");
+            }
+          });
         });
-      });
-    }
+      }
+    }, 100); // Small delay to allow UI to update
   };
 
   const handleDeleteSelected = () => {
@@ -44,14 +47,6 @@ const TwoDBuilderPage = () => {
       setSelectedShapeId(null);
     }
   };
-
-  const handleRotateSelected = (rotation: number) => {
-    if (selectedShapeId) {
-      setShapes(prev => prev.map(s => s.id === selectedShapeId ? { ...s, rotation } : s));
-    }
-  };
-
-  const selectedShape = shapes.find(s => s.id === selectedShapeId);
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -76,8 +71,6 @@ const TwoDBuilderPage = () => {
               onReset={handleReset}
               onCapture={handleCapture}
               onDeleteSelected={handleDeleteSelected}
-              onRotateSelected={handleRotateSelected}
-              selectedShapeRotation={selectedShape?.rotation || 0}
               hasSelection={!!selectedShapeId}
             />
           </CardContent>
