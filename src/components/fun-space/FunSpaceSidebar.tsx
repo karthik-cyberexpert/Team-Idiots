@@ -4,7 +4,7 @@ import * as React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Sparkles, Smile, Gamepad2, Box } from "lucide-react"; // Changed Cube to Box
+import { Sparkles, Gamepad2, Square } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface FunSpaceNavLink {
@@ -33,9 +33,9 @@ export function FunSpaceSidebar({ isCollapsed, onLinkClick }: FunSpaceSidebarPro
       icon: <Gamepad2 className="h-4 w-4" />,
     },
     {
-      href: "/dashboard/fun-space/3d-builder",
-      label: "3D Builder",
-      icon: <Box className="h-4 w-4" />, // Changed Cube to Box
+      href: "/dashboard/fun-space/2d-builder",
+      label: "2D Builder",
+      icon: <Square className="h-4 w-4" />,
     },
   ];
 

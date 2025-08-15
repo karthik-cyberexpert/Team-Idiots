@@ -38,7 +38,7 @@ import StoreManagementPage from "./pages/admin/StoreManagementPage";
 import GiftingPage from "./pages/GiftingPage";
 import FunSpacePage from "./pages/FunSpacePage";
 import { FunSpaceLayout } from "./layouts/FunSpaceLayout";
-import ThreeDBuilderPage from "./pages/fun-space/ThreeDBuilderPage"; // Import the new 3D Builder page
+import TwoDBuilderPage from "./pages/fun-space/TwoDBuilderPage.tsx";
 
 export const AppRoutes = () => {
   const { maintenanceMode, loading: settingsLoading } = useSettings();
@@ -102,7 +102,7 @@ export const AppRoutes = () => {
           <Route element={<FunSpaceLayout />}>
             <Route index element={<ErrorBoundary><FunSpacePage /></ErrorBoundary>} />
             <Route path="games" element={<ErrorBoundary><FunSpacePage /></ErrorBoundary>} />
-            <Route path="3d-builder" element={<ErrorBoundary><ThreeDBuilderPage /></ErrorBoundary>} /> {/* New 3D Builder route */}
+            <Route path="2d-builder" element={<ErrorBoundary><TwoDBuilderPage /></ErrorBoundary>} />
           </Route>
         </Route>
       </Route>
