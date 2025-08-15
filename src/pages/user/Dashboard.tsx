@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, MessageSquare, ListTodo, Type, Gamepad2, Zap, Users, HelpCircle, Gift } from "lucide-react";
+import { FileText, MessageSquare, ListTodo, Type, Gamepad2, Zap, Users, HelpCircle, Gift, Sparkles } from "lucide-react";
 import { XpBar } from "@/components/dashboard/XpBar";
 
 const UserDashboard = () => {
