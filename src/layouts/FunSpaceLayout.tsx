@@ -69,7 +69,7 @@ export function FunSpaceLayout() {
           <UserNav />
         </div>
       </header>
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <main className="flex flex-1 flex-col">
         <Outlet />
       </main>
     </div>
@@ -101,7 +101,7 @@ export function FunSpaceLayout() {
           </div>
         </div>
       </div>
-      <div className="flex flex-col">
+      <div className="flex flex-col h-screen">
         <header className={cn(
           "flex h-14 items-center justify-between gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 flex-shrink-0"
         )}>
@@ -122,7 +122,7 @@ export function FunSpaceLayout() {
             <UserNav />
           </div>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+        <main className="flex flex-1 flex-col overflow-hidden">
           <Outlet />
         </main>
       </div>
