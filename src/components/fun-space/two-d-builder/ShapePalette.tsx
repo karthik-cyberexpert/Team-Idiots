@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from 'react';
-import { useDrag } from 'react-d-nd';
+import { useDrag } from 'react-dnd';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Square, RectangleHorizontal, Circle, Triangle, Star, Hexagon, Diamond, Pentagon, Octagon } from 'lucide-react';
 import { ShapeType } from '@/types/two-d-builder';
