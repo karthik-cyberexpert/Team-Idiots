@@ -97,12 +97,13 @@ export const AppRoutes = () => {
             <Route path="/admin/store-management" element={<ErrorBoundary><StoreManagementPage /></ErrorBoundary>} />
           </Route>
         </Route>
-        
         {/* Fun Space with its dedicated layout */}
-        <Route path="/dashboard/fun-space" element={<FunSpaceLayout />}>
-          <Route index element={<ErrorBoundary><FunSpacePage /></ErrorBoundary>} />
-          <Route path="games" element={<ErrorBoundary><FunSpacePage /></ErrorBoundary>} />
-          <Route path="2d-builder" element={<ErrorBoundary><TwoDBuilderPage /></ErrorBoundary>} />
+        <Route path="/dashboard/fun-space/*" element={<ProtectedRoute />}>
+          <Route element={<FunSpaceLayout />}>
+            <Route index element={<ErrorBoundary><FunSpacePage /></ErrorBoundary>} />
+            <Route path="games" element={<ErrorBoundary><FunSpacePage /></ErrorBoundary>} />
+            <Route path="2d-builder" element={<ErrorBoundary><TwoDBuilderPage /></ErrorBoundary>} />
+          </Route>
         </Route>
       </Route>
 

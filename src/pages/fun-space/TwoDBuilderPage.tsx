@@ -5,12 +5,12 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import html2canvas from 'html2canvas';
 import { saveAs } from 'file-saver';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BuilderCanvas } from '@/components/fun-space/two-d-builder/BuilderCanvas';
 import { ShapePalette } from '@/components/fun-space/two-d-builder/ShapePalette';
+import { Toolbar } from '@/components/fun-space/two-d-builder/Toolbar';
 import { PlacedShape } from '@/types/two-d-builder';
 import { showSuccess, showError } from '@/utils/toast';
-import { Button } from '@/components/ui/button';
-import { RefreshCcw, Camera, Trash2 } from 'lucide-react';
 
 const TwoDBuilderPage = () => {
   const [shapes, setShapes] = React.useState<PlacedShape[]>([]);
@@ -24,24 +24,21 @@ const TwoDBuilderPage = () => {
   };
 
   const handleCapture = () => {
-    setSelectedShapeId(null);
+    setSelectedShapeId(null); // Deselect to hide Moveable controls before capture
     setTimeout(() => {
       if (canvasRef.current) {
-        const canvasContent = canvasRef.current.querySelector('.canvas-content') as HTMLElement;
-        if (canvasContent) {
-          html2canvas(canvasContent, { backgroundColor: null, scale: 1 }).then(canvas => {
-            canvas.toBlob(blob => {
-              if (blob) {
-                saveAs(blob, '2d-creation.png');
-                showSuccess("Image captured!");
-              } else {
-                showError("Failed to capture image.");
-              }
-            });
+        html2canvas(canvasRef.current, { backgroundColor: null }).then(canvas => {
+          canvas.toBlob(blob => {
+            if (blob) {
+              saveAs(blob, '2d-creation.png');
+              showSuccess("Image captured!");
+            } else {
+              showError("Failed to capture image.");
+            }
           });
-        }
+        });
       }
-    }, 100);
+    }, 100); // Small delay to allow UI to update
   };
 
   const handleDeleteSelected = () => {
@@ -53,38 +50,31 @@ const TwoDBuilderPage = () => {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="flex h-full border rounded-lg bg-card text-card-foreground shadow-sm overflow-hidden">
-        {/* Left Panel: Palette */}
-        <div className="w-64 border-r flex flex-col flex-shrink-0">
-          <div className="p-4 border-b">
-            <h1 className="text-xl font-bold">2D Builder</h1>
-            <p className="text-sm text-muted-foreground">Drag shapes to the canvas.</p>
-          </div>
-          <ShapePalette />
-        </div>
-
-        {/* Right Panel: Canvas + Toolbar */}
-        <div className="flex-1 flex flex-col">
-          <div className="p-4 border-b flex justify-end items-center gap-2 flex-shrink-0">
-            <Button variant="outline" onClick={handleDeleteSelected} disabled={!selectedShapeId}>
-              <Trash2 className="mr-2 h-4 w-4" /> Delete
-            </Button>
-            <Button variant="outline" onClick={handleReset}>
-              <RefreshCcw className="mr-2 h-4 w-4" /> Reset
-            </Button>
-            <Button onClick={handleCapture}>
-              <Camera className="mr-2 h-4 w-4" /> Capture
-            </Button>
-          </div>
-          <div className="flex-grow relative overflow-auto" ref={canvasRef}>
-            <BuilderCanvas
-              shapes={shapes}
-              setShapes={setShapes}
-              selectedShapeId={selectedShapeId}
-              setSelectedShapeId={setSelectedShapeId}
+      <div className="flex flex-col h-full">
+        <Card className="flex-grow flex flex-col">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold">2D Builder</CardTitle>
+            <CardDescription>Drag shapes onto the canvas to create your masterpiece!</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-grow flex flex-col p-0">
+            <ShapePalette />
+            <div className="flex-grow relative min-h-[400px]">
+              <BuilderCanvas
+                shapes={shapes}
+                setShapes={setShapes}
+                selectedShapeId={selectedShapeId}
+                setSelectedShapeId={setSelectedShapeId}
+                canvasRef={canvasRef}
+              />
+            </div>
+            <Toolbar
+              onReset={handleReset}
+              onCapture={handleCapture}
+              onDeleteSelected={handleDeleteSelected}
+              hasSelection={!!selectedShapeId}
             />
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </DndProvider>
   );

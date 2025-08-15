@@ -11,7 +11,7 @@ import { RefreshButton } from "@/components/RefreshButton";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/contexts/ThemeProvider";
 import { UserNav } from "@/components/dashboard/UserNav";
-import { FunSpaceSidebar } from "@/components/fun-space/FunSpaceSidebar";
+import { FunSpaceSidebar } from "@/components/fun-space/FunSpaceSidebar"; // Import the new sidebar
 
 export function FunSpaceLayout() {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
@@ -34,7 +34,9 @@ export function FunSpaceLayout() {
 
   const mobileLayout = (
     <div className="flex min-h-screen w-full flex-col">
-      <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
+      <header className={cn(
+        "sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50"
+      )}>
         <Sheet open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="shrink-0 md:hidden">
@@ -103,7 +105,7 @@ export function FunSpaceLayout() {
       </div>
       <div className="flex flex-col">
         <header className={cn(
-          "flex h-14 items-center justify-between gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 flex-shrink-0"
+          "flex h-14 items-center justify-between gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6"
         )}>
           <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
             <ArrowLeft className="h-5 w-5" />
@@ -127,5 +129,11 @@ export function FunSpaceLayout() {
         </main>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {isMobile ? mobileLayout : desktopLayout}
+    </>
   );
 }
