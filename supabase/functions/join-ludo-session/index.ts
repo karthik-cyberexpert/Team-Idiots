@@ -1,0 +1,95 @@
+import { serve } from "https://deno.land/std@0.200.0/http/server.ts"
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.47.0'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+async function getAuthenticatedClient(req: Request): Promise<SupabaseClient> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    throw new Error("Missing Authorization header.");
+  }
+  return createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { global: { headers: { Authorization: authHeader } } }
+  )
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
+  try {
+    const { joinCode } = await req.json();
+    if (!joinCode) throw new Error("Join code is required.");
+
+    const supabase = await getAuthenticatedClient(req);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated.");
+
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    const { data: session, error: fetchError } = await supabaseAdmin
+      .from('ludo_sessions')
+      .select('id, status, max_players')
+      .eq('join_code', joinCode)
+      .single();
+
+    if (fetchError || !session) throw new Error("Game not found or invalid code.");
+    if (session.status !== 'waiting') throw new Error("Game has already started or ended.");
+
+    // Check if user is already a participant
+    const { data: existingParticipant, error: existingParticipantError } = await supabaseAdmin
+      .from('ludo_participants')
+      .select('user_id')
+      .eq('session_id', session.id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (existingParticipantError && existingParticipantError.code !== 'PGRST116') {
+      throw existingParticipantError;
+    }
+    if (existingParticipant) {
+      return new Response(JSON.stringify({ message: "You are already in this game.", id: session.id }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Get current number of participants to assign player_number
+    const { count: currentParticipants, error: countError } = await supabaseAdmin
+      .from('ludo_participants')
+      .select('user_id', { count: 'exact', head: true })
+      .eq('session_id', session.id);
+
+    if (countError) throw countError;
+    if (currentParticipants && currentParticipants >= session.max_players) {
+      throw new Error("Game is full.");
+    }
+
+    const newPlayerNumber = currentParticipants || 0;
+
+    const { error: participantError } = await supabaseAdmin
+      .from('ludo_participants')
+      .insert({
+        session_id: session.id,
+        user_id: user.id,
+        player_number: newPlayerNumber,
+        is_ready: false,
+      });
+
+    if (participantError) throw participantError;
+
+    return new Response(JSON.stringify({ message: "Joined game successfully!", id: session.id }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+})
