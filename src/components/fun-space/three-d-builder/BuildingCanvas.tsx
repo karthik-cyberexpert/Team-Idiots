@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, Grid } from '@react-three/drei';
-import { PlacedShape, ShapeType } from '@/types/three-d-builder';
+import { PlacedShape } from '@/types/three-d-builder';
 import { DraggableShape } from './DraggableShape';
 
 interface BuildingCanvasProps {
@@ -35,12 +35,13 @@ export const BuildingCanvas = ({ shapes, onShapesChange, selectedShapeId, onSele
       className="w-full h-full bg-gray-100 dark:bg-gray-900 rounded-lg"
       onPointerMissed={() => onSelectShape(null)}
       ref={canvasRef}
+      gl={{ preserveDrawingBuffer: true }} // Important for image capture
     >
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
-      <directionalLight position={[-10, -10, -5]} intensity={0.5} />
-
-      <Environment preset="sunset" background />
+      <color attach="background" args={['#f0f0f0']} /> {/* Simple background color */}
+      <ambientLight intensity={0.8} />
+      <directionalLight position={[10, 10, 5]} intensity={1.5} castShadow />
+      
+      <Environment preset="sunset" /> {/* For reflections, but not as background */}
 
       <Grid
         renderOrder={-1}

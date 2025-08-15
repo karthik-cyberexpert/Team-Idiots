@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { MeshProps, useThree } from '@react-three/fiber';
+import { MeshProps } from '@react-three/fiber';
 import { TransformControls } from '@react-three/drei';
 import { PlacedShape } from '@/types/three-d-builder';
 import { Mesh } from 'three';
@@ -12,20 +12,7 @@ interface DraggableShapeProps extends MeshProps {
 }
 
 export const DraggableShape = ({ shape, onTransformChange, selected, onSelect, ...props }: DraggableShapeProps) => {
-  const meshRef = React.useRef<Mesh>(null);
-  const controlsRef = React.useRef<any>(null); // Ref for TransformControls
-  const { camera, gl } = useThree();
-
-  React.useEffect(() => {
-    if (controlsRef.current) {
-      controlsRef.current.enabled = selected;
-      if (selected) {
-        controlsRef.current.attach(meshRef.current);
-      } else {
-        controlsRef.current.detach();
-      }
-    }
-  }, [selected]);
+  const meshRef = React.useRef<Mesh>(null!);
 
   const handleTransformEnd = React.useCallback(() => {
     if (meshRef.current) {
@@ -39,41 +26,21 @@ export const DraggableShape = ({ shape, onTransformChange, selected, onSelect, .
     }
   }, [shape.id, onTransformChange]);
 
-  const handlePointerDown = React.useCallback((event: any) => {
-    event.stopPropagation(); // Prevent canvas click from deselecting
+  const handleClick = React.useCallback((event: any) => {
+    event.stopPropagation();
     onSelect(shape.id);
   }, [shape.id, onSelect]);
 
-  const geometryProps = { args: [1, 1, 1] }; // Default args for box, sphere, cylinder, cone, torus
-
-  switch (shape.type) {
-    case 'box':
-      geometryProps.args = [1, 1, 1];
-      break;
-    case 'sphere':
-      geometryProps.args = [0.5, 32, 32]; // radius, widthSegments, heightSegments
-      break;
-    case 'cylinder':
-      geometryProps.args = [0.5, 0.5, 1, 32]; // radiusTop, radiusBottom, height, radialSegments
-      break;
-    case 'cone':
-      geometryProps.args = [0.5, 1, 32]; // radius, height, radialSegments
-      break;
-    case 'torus':
-      geometryProps.args = [0.4, 0.1, 16, 32]; // radius, tube, radialSegments, tubularSegments
-      break;
-  }
-
   const GeometryComponent = React.useMemo(() => {
     switch (shape.type) {
-      case 'box': return <boxGeometry {...geometryProps} />;
-      case 'sphere': return <sphereGeometry {...geometryProps} />;
-      case 'cylinder': return <cylinderGeometry {...geometryProps} />;
-      case 'cone': return <coneGeometry {...geometryProps} />;
-      case 'torus': return <torusGeometry {...geometryProps} />;
-      default: return <boxGeometry {...geometryProps} />;
+      case 'box': return <boxGeometry args={[1, 1, 1]} />;
+      case 'sphere': return <sphereGeometry args={[0.5, 32, 32]} />;
+      case 'cylinder': return <cylinderGeometry args={[0.5, 0.5, 1, 32]} />;
+      case 'cone': return <coneGeometry args={[0.5, 1, 32]} />;
+      case 'torus': return <torusGeometry args={[0.4, 0.1, 16, 32]} />;
+      default: return <boxGeometry args={[1, 1, 1]} />;
     }
-  }, [shape.type, geometryProps]);
+  }, [shape.type]);
 
   return (
     <>
@@ -82,8 +49,7 @@ export const DraggableShape = ({ shape, onTransformChange, selected, onSelect, .
         position={shape.position}
         rotation={shape.rotation}
         scale={shape.scale}
-        onClick={handlePointerDown}
-        onPointerMissed={() => onSelect(null)} // Deselect if clicking outside
+        onClick={handleClick}
         {...props}
       >
         {GeometryComponent}
@@ -91,10 +57,9 @@ export const DraggableShape = ({ shape, onTransformChange, selected, onSelect, .
       </mesh>
       {selected && (
         <TransformControls
-          ref={controlsRef}
+          object={meshRef}
           mode="translate"
           onMouseUp={handleTransformEnd}
-          // Removed onDraggingChanged as TransformControls handles cursor internally
         />
       )}
     </>
