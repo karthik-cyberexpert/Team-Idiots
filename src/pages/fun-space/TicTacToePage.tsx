@@ -42,8 +42,9 @@ const TicTacToePage = () => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'game_sessions', filter: `id=eq.${sessionId}` },
-        (payload) => {
-          queryClient.setQueryData(['gameSession', sessionId], payload.new);
+        // Instead of directly setting data, invalidate the query to force a refetch
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['gameSession', sessionId] });
         }
       )
       .subscribe();
