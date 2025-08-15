@@ -94,11 +94,7 @@ export const DraggableShape = ({ shape, onTransformChange, selected, onSelect, .
           ref={controlsRef}
           mode="translate"
           onMouseUp={handleTransformEnd}
-          onDraggingChanged={(isDragging) => {
-            if (gl && gl.domElement && gl.domElement.style) {
-              gl.domElement.style.cursor = isDragging ? 'grabbing' : 'grab';
-            }
-          }}
+          // Removed onDraggingChanged as TransformControls handles cursor internally
         />
       )}
     </>
