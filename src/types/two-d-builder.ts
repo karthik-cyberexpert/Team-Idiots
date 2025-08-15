@@ -3,6 +3,7 @@ export type ShapeType = 'square' | 'rectangle' | 'circle' | 'triangle' | 'star' 
 export interface PlacedShape {
   id: string;
   type: ShapeType;
+  variant: 'filled' | 'outline';
   x: number;
   y: number;
   width: number;

@@ -1,21 +1,22 @@
 "use client";
 
 import * as React from 'react';
-import { useDrag } from 'react-dnd';
+import { useDrag } from 'react-d-nd';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Square, RectangleHorizontal, Circle, Triangle, Star, Hexagon, Diamond, Pentagon, Octagon } from 'lucide-react';
 import { ShapeType } from '@/types/two-d-builder';
 
 interface PaletteShapeProps {
   type: ShapeType;
+  variant: 'filled' | 'outline';
   label: string;
   icon: React.ReactNode;
 }
 
-const PaletteShape = ({ type, label, icon }: PaletteShapeProps) => {
+const PaletteShape = ({ type, variant, label, icon }: PaletteShapeProps) => {
   const [, drag] = useDrag(() => ({
     type: 'shape',
-    item: { type },
+    item: { type, variant },
   }));
 
   return (
@@ -30,7 +31,7 @@ const PaletteShape = ({ type, label, icon }: PaletteShapeProps) => {
 };
 
 export const ShapePalette = () => {
-  const shapes = [
+  const shapes: Omit<PaletteShapeProps, 'variant'>[] = [
     { type: 'square', label: 'Square', icon: <Square className="h-8 w-8" /> },
     { type: 'rectangle', label: 'Rectangle', icon: <RectangleHorizontal className="h-8 w-8" /> },
     { type: 'circle', label: 'Circle', icon: <Circle className="h-8 w-8" /> },
@@ -45,11 +46,20 @@ export const ShapePalette = () => {
 
   return (
     <div className="border-b p-4">
-      <h3 className="text-lg font-semibold mb-2">Shapes</h3>
+      <h3 className="text-lg font-semibold mb-2">Filled Shapes</h3>
       <ScrollArea className="w-full whitespace-nowrap pb-4">
         <div className="flex space-x-3">
           {shapes.map((shape) => (
-            <PaletteShape key={shape.type} {...shape} />
+            <PaletteShape key={shape.type} {...shape} variant="filled" />
+          ))}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+      <h3 className="text-lg font-semibold my-2">Outline Shapes</h3>
+      <ScrollArea className="w-full whitespace-nowrap pb-4">
+        <div className="flex space-x-3">
+          {shapes.map((shape) => (
+            <PaletteShape key={`${shape.type}-outline`} {...shape} variant="outline" icon={React.cloneElement(shape.icon as React.ReactElement, { fill: 'none', stroke: 'currentColor' })} />
           ))}
         </div>
         <ScrollBar orientation="horizontal" />

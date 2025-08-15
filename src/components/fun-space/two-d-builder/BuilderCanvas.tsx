@@ -28,7 +28,7 @@ export const BuilderCanvas = ({ shapes, setShapes, selectedShapeId, setSelectedS
 
   const [, drop] = useDrop(() => ({
     accept: 'shape',
-    drop: (item: { type: ShapeType }, monitor) => {
+    drop: (item: { type: ShapeType; variant: 'filled' | 'outline' }, monitor) => {
       const offset = monitor.getClientOffset();
       const canvasBounds = canvasRef.current?.getBoundingClientRect();
       if (!offset || !canvasBounds) return;
@@ -36,6 +36,7 @@ export const BuilderCanvas = ({ shapes, setShapes, selectedShapeId, setSelectedS
       const newShape: PlacedShape = {
         id: crypto.randomUUID(),
         type: item.type,
+        variant: item.variant,
         x: offset.x - canvasBounds.left - 50,
         y: offset.y - canvasBounds.top - 50,
         width: item.type === 'rectangle' ? 150 : 100,
