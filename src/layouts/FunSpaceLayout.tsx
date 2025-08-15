@@ -109,9 +109,9 @@ export function FunSpaceLayout() {
           </div>
         </div>
       </div>
-      <div className="flex flex-col h-screen">
+      <div className="flex flex-col max-h-screen overflow-hidden">
         <header className={cn(
-          "flex h-14 items-center justify-between gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6"
+          "flex h-14 items-center justify-between gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 flex-shrink-0"
         )}>
           <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
             <ArrowLeft className="h-5 w-5" />
@@ -131,7 +131,7 @@ export function FunSpaceLayout() {
           </div>
         </header>
         <main className={cn(
-          "flex flex-1 flex-col overflow-hidden",
+          "flex flex-1 flex-col overflow-auto",
           !isBuilderPage && "gap-4 p-4 lg:gap-6 lg:p-6"
         )}>
           <Outlet />
