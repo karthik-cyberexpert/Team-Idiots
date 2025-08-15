@@ -1,4 +1,4 @@
-export type ShapeType = 'square' | 'rectangle' | 'circle' | 'triangle' | 'star' | 'hexagon';
+export type ShapeType = 'square' | 'rectangle' | 'circle' | 'triangle' | 'star' | 'hexagon' | 'rhombus' | 'pentagon' | 'octagon' | 'trapezoid';
 
 export interface PlacedShape {
   id: string;

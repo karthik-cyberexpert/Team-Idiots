@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useDrag } from 'react-dnd';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Square, RectangleHorizontal, Circle, Triangle, Star, Hexagon } from 'lucide-react';
+import { Square, RectangleHorizontal, Circle, Triangle, Star, Hexagon, Diamond, Pentagon, Octagon } from 'lucide-react';
 import { ShapeType } from '@/types/two-d-builder';
 
 interface PaletteShapeProps {
@@ -37,6 +37,10 @@ export const ShapePalette = () => {
     { type: 'triangle', label: 'Triangle', icon: <Triangle className="h-8 w-8" /> },
     { type: 'star', label: 'Star', icon: <Star className="h-8 w-8" /> },
     { type: 'hexagon', label: 'Hexagon', icon: <Hexagon className="h-8 w-8" /> },
+    { type: 'rhombus', label: 'Rhombus', icon: <Diamond className="h-8 w-8" /> },
+    { type: 'pentagon', label: 'Pentagon', icon: <Pentagon className="h-8 w-8" /> },
+    { type: 'octagon', label: 'Octagon', icon: <Octagon className="h-8 w-8" /> },
+    { type: 'trapezoid', label: 'Trapezoid', icon: <RectangleHorizontal className="h-8 w-8" /> },
   ];
 
   return (
