@@ -37,7 +37,8 @@ import StorePage from "./pages/StorePage";
 import StoreManagementPage from "./pages/admin/StoreManagementPage";
 import GiftingPage from "./pages/GiftingPage";
 import FunSpacePage from "./pages/FunSpacePage";
-import { FunSpaceLayout } from "./layouts/FunSpaceLayout"; // Import the new layout
+import { FunSpaceLayout } from "./layouts/FunSpaceLayout";
+import ThreeDBuilderPage from "./pages/fun-space/ThreeDBuilderPage"; // Import the new 3D Builder page
 
 export const AppRoutes = () => {
   const { maintenanceMode, loading: settingsLoading } = useSettings();
@@ -84,7 +85,7 @@ export const AppRoutes = () => {
           <Route path="/dashboard/quiz" element={<ErrorBoundary><QuizPage /></ErrorBoundary>} />
           <Route path="/dashboard/store" element={<ErrorBoundary><StorePage /></ErrorBoundary>} />
           <Route path="/dashboard/gifting" element={<ErrorBoundary><GiftingPage /></ErrorBoundary>} />
-          {/* Fun Space now uses its own layout */}
+          {/* Admin Routes */}
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<ErrorBoundary><UserManagement /></ErrorBoundary>} />
             <Route path="/admin/tasks" element={<ErrorBoundary><TaskManagement /></ErrorBoundary>} />
@@ -96,12 +97,12 @@ export const AppRoutes = () => {
             <Route path="/admin/store-management" element={<ErrorBoundary><StoreManagementPage /></ErrorBoundary>} />
           </Route>
         </Route>
-        {/* New route for Fun Space with its dedicated layout */}
+        {/* Fun Space with its dedicated layout */}
         <Route path="/dashboard/fun-space/*" element={<ProtectedRoute />}>
           <Route element={<FunSpaceLayout />}>
             <Route index element={<ErrorBoundary><FunSpacePage /></ErrorBoundary>} />
-            {/* Add nested routes for Fun Space here if needed */}
-            <Route path="games" element={<ErrorBoundary><FunSpacePage /></ErrorBoundary>} /> {/* Example nested route */}
+            <Route path="games" element={<ErrorBoundary><FunSpacePage /></ErrorBoundary>} />
+            <Route path="3d-builder" element={<ErrorBoundary><ThreeDBuilderPage /></ErrorBoundary>} /> {/* New 3D Builder route */}
           </Route>
         </Route>
       </Route>
