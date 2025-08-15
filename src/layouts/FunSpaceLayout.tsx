@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Outlet, Link, useNavigate } from "react-router-dom";
+import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu, Rocket, ChevronsLeft, ArrowLeft, Sun, Moon } from "lucide-react";
@@ -11,7 +11,7 @@ import { RefreshButton } from "@/components/RefreshButton";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/contexts/ThemeProvider";
 import { UserNav } from "@/components/dashboard/UserNav";
-import { FunSpaceSidebar } from "@/components/fun-space/FunSpaceSidebar"; // Import the new sidebar
+import { FunSpaceSidebar } from "@/components/fun-space/FunSpaceSidebar";
 
 export function FunSpaceLayout() {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
@@ -19,6 +19,9 @@ export function FunSpaceLayout() {
   const isMobile = useIsMobile();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isBuilderPage = location.pathname.includes('/2d-builder');
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -71,7 +74,10 @@ export function FunSpaceLayout() {
           <UserNav />
         </div>
       </header>
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <main className={cn(
+        "flex flex-1 flex-col",
+        !isBuilderPage && "gap-4 p-4 md:gap-8 md:p-8"
+      )}>
         <Outlet />
       </main>
     </div>
@@ -103,7 +109,7 @@ export function FunSpaceLayout() {
           </div>
         </div>
       </div>
-      <div className="flex flex-col">
+      <div className="flex flex-col h-screen">
         <header className={cn(
           "flex h-14 items-center justify-between gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6"
         )}>
@@ -124,16 +130,13 @@ export function FunSpaceLayout() {
             <UserNav />
           </div>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+        <main className={cn(
+          "flex flex-1 flex-col overflow-hidden",
+          !isBuilderPage && "gap-4 p-4 lg:gap-6 lg:p-6"
+        )}>
           <Outlet />
         </main>
       </div>
     </div>
-  );
-
-  return (
-    <>
-      {isMobile ? mobileLayout : desktopLayout}
-    </>
   );
 }

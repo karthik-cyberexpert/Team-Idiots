@@ -58,29 +58,36 @@ const TwoDBuilderPage = () => {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="flex flex-col h-full border rounded-lg bg-card text-card-foreground shadow-sm">
-        <div className="p-4 border-b">
-          <h1 className="text-2xl font-bold">2D Builder</h1>
-          <p className="text-muted-foreground">Drag shapes onto the canvas to create your masterpiece!</p>
+      <div className="flex h-full border rounded-lg bg-card text-card-foreground shadow-sm overflow-hidden">
+        {/* Left Panel: Palette */}
+        <div className="w-64 border-r flex flex-col flex-shrink-0">
+          <div className="p-4 border-b">
+            <h1 className="text-xl font-bold">2D Builder</h1>
+            <p className="text-sm text-muted-foreground">Drag shapes to the canvas.</p>
+          </div>
+          <ShapePalette />
         </div>
-        <ShapePalette />
-        <div className="flex-grow relative overflow-hidden" ref={canvasRef}>
-          <BuilderCanvas
-            shapes={shapes}
-            setShapes={setShapes}
-            selectedShapeId={selectedShapeId}
-            setSelectedShapeId={setSelectedShapeId}
+
+        {/* Right Panel: Canvas + Toolbar */}
+        <div className="flex-1 flex flex-col">
+          <Toolbar
+            onReset={handleReset}
+            onCapture={handleCapture}
+            onDeleteSelected={handleDeleteSelected}
+            hasSelection={!!selectedShapeId}
             zoom={zoom}
+            onZoomChange={handleZoomChange}
           />
+          <div className="flex-grow relative overflow-hidden" ref={canvasRef}>
+            <BuilderCanvas
+              shapes={shapes}
+              setShapes={setShapes}
+              selectedShapeId={selectedShapeId}
+              setSelectedShapeId={setSelectedShapeId}
+              zoom={zoom}
+            />
+          </div>
         </div>
-        <Toolbar
-          onReset={handleReset}
-          onCapture={handleCapture}
-          onDeleteSelected={handleDeleteSelected}
-          hasSelection={!!selectedShapeId}
-          zoom={zoom}
-          onZoomChange={handleZoomChange}
-        />
       </div>
     </DndProvider>
   );
