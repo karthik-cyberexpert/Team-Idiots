@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from 'react';
-import { PlacedShape } from '@/types/two-d-builder';
+import { PlacedShape, ShapeType } from '@/types/two-d-builder';
 import { cn } from '@/lib/utils';
 
 interface ShapeProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -9,6 +9,19 @@ interface ShapeProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export const Shape = React.forwardRef<HTMLDivElement, ShapeProps>(({ shape, ...props }, ref) => {
+  const getClipPath = (type: ShapeType) => {
+    switch (type) {
+      case 'triangle':
+        return 'polygon(50% 0%, 0% 100%, 100% 100%)';
+      case 'star':
+        return 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)';
+      case 'hexagon':
+        return 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)';
+      default:
+        return 'none';
+    }
+  };
+
   const shapeStyle: React.CSSProperties = {
     position: 'absolute',
     left: 0,
@@ -17,6 +30,7 @@ export const Shape = React.forwardRef<HTMLDivElement, ShapeProps>(({ shape, ...p
     height: `${shape.height}px`,
     backgroundColor: shape.color,
     transform: `translate(${shape.x}px, ${shape.y}px) rotate(${shape.rotation}deg)`,
+    clipPath: getClipPath(shape.type),
   };
 
   return (
