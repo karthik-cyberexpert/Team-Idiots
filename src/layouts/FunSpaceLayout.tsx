@@ -32,53 +32,9 @@ export function FunSpaceLayout() {
     setTheme(checked ? 'dark' : 'light');
   };
 
-  const mobileLayout = (
-    <div className="flex min-h-screen w-full flex-col">
-      <header className={cn(
-        "sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50"
-      )}>
-        <Sheet open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="shrink-0 md:hidden">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle navigation menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="flex flex-col">
-            <nav className="grid gap-6 text-lg font-medium">
-              <Link to="/" className="flex items-center gap-2 text-lg font-semibold mb-4">
-                <Rocket className="h-6 w-6" />
-                <span>Team-Idiots</span>
-              </Link>
-              <FunSpaceSidebar isCollapsed={false} onLinkClick={handleMobileLinkClick} />
-            </nav>
-          </SheetContent>
-        </Sheet>
-        <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="mr-auto">
-          <ArrowLeft className="h-5 w-5" />
-          <span className="sr-only">Back to Dashboard</span>
-        </Button>
-        <div className="flex items-center justify-end gap-4 md:ml-auto md:gap-2 lg:gap-4">
-          <Switch
-            checked={theme === 'dark'}
-            onCheckedChange={handleThemeToggle}
-            className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-gray-200"
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? <Moon className="h-4 w-4 text-white" /> : <Sun className="h-4 w-4 text-gray-800" />}
-          </Switch>
-          <RefreshButton />
-          <UserNav />
-        </div>
-      </header>
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <Outlet />
-      </main>
-    </div>
-  );
-
-  const desktopLayout = (
+  return (
     <div className="grid min-h-screen w-full md:grid-cols-[auto_1fr]">
+      {/* Desktop Sidebar (always in DOM, hidden by CSS on mobile) */}
       <div
         data-collapsed={isCollapsed}
         className={cn(
@@ -103,11 +59,34 @@ export function FunSpaceLayout() {
           </div>
         </div>
       </div>
+
+      {/* Main Content Area (always in DOM) */}
       <div className="flex flex-col">
+        {/* Header (always in DOM) */}
         <header className={cn(
           "flex h-14 items-center justify-between gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6"
         )}>
-          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
+          {/* Mobile Menu Trigger (only rendered on mobile) */}
+          {isMobile && (
+            <Sheet open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="shrink-0 md:hidden">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle navigation menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="flex flex-col">
+                <nav className="grid gap-6 text-lg font-medium">
+                  <Link to="/" className="flex items-center gap-2 text-lg font-semibold mb-4">
+                    <Rocket className="h-6 w-6" />
+                    <span>Team-Idiots</span>
+                  </Link>
+                  <FunSpaceSidebar isCollapsed={false} onLinkClick={handleMobileLinkClick} />
+                </nav>
+              </SheetContent>
+            </Sheet>
+          )}
+          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className={cn(isMobile ? "mr-auto" : "")}>
             <ArrowLeft className="h-5 w-5" />
             <span className="sr-only">Back to Dashboard</span>
           </Button>
@@ -124,16 +103,11 @@ export function FunSpaceLayout() {
             <UserNav />
           </div>
         </header>
+        {/* Main Content Outlet (always in DOM) */}
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
           <Outlet />
         </main>
       </div>
     </div>
-  );
-
-  return (
-    <>
-      {isMobile ? mobileLayout : desktopLayout}
-    </>
   );
 }
