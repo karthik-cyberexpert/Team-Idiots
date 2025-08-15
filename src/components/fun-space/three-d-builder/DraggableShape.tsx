@@ -90,7 +90,16 @@ export const DraggableShape = ({ shape, onTransformChange, selected, onSelect, .
         <meshStandardMaterial color={shape.color} />
       </mesh>
       {selected && (
-        <TransformControls ref={controlsRef} mode="translate" onMouseUp={handleTransformEnd} onDraggingChanged={(isDragging) => gl.domElement.style.cursor = isDragging ? 'grabbing' : 'grab'} />
+        <TransformControls
+          ref={controlsRef}
+          mode="translate"
+          onMouseUp={handleTransformEnd}
+          onDraggingChanged={(isDragging) => {
+            if (gl && gl.domElement && gl.domElement.style) {
+              gl.domElement.style.cursor = isDragging ? 'grabbing' : 'grab';
+            }
+          }}
+        />
       )}
     </>
   );
