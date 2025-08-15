@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Cube, Sphere, Cylinder, Cone, Torus } from 'lucide-react';
+import { Box, Sphere, Cylinder, Cone, Torus } from 'lucide-react'; // Changed Cube to Box
 import { ShapeType } from '@/types/three-d-builder';
 
 interface ShapePaletteProps {
@@ -9,7 +9,7 @@ interface ShapePaletteProps {
 }
 
 const shapes = [
-  { type: 'box', label: 'Box', icon: Cube },
+  { type: 'box', label: 'Box', icon: Box }, // Changed Cube to Box
   { type: 'sphere', label: 'Sphere', icon: Sphere },
   { type: 'cylinder', label: 'Cylinder', icon: Cylinder },
   { type: 'cone', label: 'Cone', icon: Cone },
