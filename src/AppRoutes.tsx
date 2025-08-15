@@ -39,6 +39,8 @@ import GiftingPage from "./pages/GiftingPage";
 import FunSpacePage from "./pages/FunSpacePage";
 import { FunSpaceLayout } from "./layouts/FunSpaceLayout";
 import TwoDBuilderPage from "./pages/fun-space/TwoDBuilderPage.tsx";
+import GamesPage from "./pages/fun-space/GamesPage";
+import TicTacToePage from "./pages/fun-space/TicTacToePage";
 
 export const AppRoutes = () => {
   const { maintenanceMode, loading: settingsLoading } = useSettings();
@@ -101,7 +103,8 @@ export const AppRoutes = () => {
         <Route path="/dashboard/fun-space/*" element={<ProtectedRoute />}>
           <Route element={<FunSpaceLayout />}>
             <Route index element={<ErrorBoundary><FunSpacePage /></ErrorBoundary>} />
-            <Route path="games" element={<ErrorBoundary><FunSpacePage /></ErrorBoundary>} />
+            <Route path="games" element={<ErrorBoundary><GamesPage /></ErrorBoundary>} />
+            <Route path="tic-tac-toe/:sessionId" element={<ErrorBoundary><TicTacToePage /></ErrorBoundary>} />
             <Route path="2d-builder" element={<ErrorBoundary><TwoDBuilderPage /></ErrorBoundary>} />
           </Route>
         </Route>
