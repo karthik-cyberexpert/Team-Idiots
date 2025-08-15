@@ -37,18 +37,20 @@ const TicTacToePage = () => {
 
   React.useEffect(() => {
     if (!sessionId) return;
+    console.log(`Subscribing to game-session-${sessionId}`);
     const channel = supabase
       .channel(`game-session-${sessionId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'game_sessions', filter: `id=eq.${sessionId}` },
-        // Instead of directly setting data, invalidate the query to force a refetch
-        () => {
+        (payload) => {
+          console.log('Real-time update received for game session:', payload); // Added console.log
           queryClient.invalidateQueries({ queryKey: ['gameSession', sessionId] });
         }
       )
       .subscribe();
     return () => {
+      console.log(`Unsubscribing from game-session-${sessionId}`);
       supabase.removeChannel(channel);
     };
   }, [sessionId, queryClient]);
