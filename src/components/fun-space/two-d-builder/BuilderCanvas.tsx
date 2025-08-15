@@ -16,10 +16,9 @@ interface BuilderCanvasProps {
   setShapes: React.Dispatch<React.SetStateAction<PlacedShape[]>>;
   selectedShapeId: string | null;
   setSelectedShapeId: (id: string | null) => void;
-  zoom: number;
 }
 
-export const BuilderCanvas = ({ shapes, setShapes, selectedShapeId, setSelectedShapeId, zoom }: BuilderCanvasProps) => {
+export const BuilderCanvas = ({ shapes, setShapes, selectedShapeId, setSelectedShapeId }: BuilderCanvasProps) => {
   const [target, setTarget] = React.useState<HTMLElement | null>(null);
   const canvasContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -34,8 +33,8 @@ export const BuilderCanvas = ({ shapes, setShapes, selectedShapeId, setSelectedS
       const canvasBounds = canvasContainerRef.current?.getBoundingClientRect();
       if (!offset || !canvasBounds) return;
 
-      const x = (offset.x - canvasBounds.left) / zoom;
-      const y = (offset.y - canvasBounds.top) / zoom;
+      const x = offset.x - canvasBounds.left;
+      const y = offset.y - canvasBounds.top;
 
       const newShape: PlacedShape = {
         id: crypto.randomUUID(),
@@ -65,7 +64,6 @@ export const BuilderCanvas = ({ shapes, setShapes, selectedShapeId, setSelectedS
       <div
         ref={canvasContainerRef}
         className="w-full h-full relative canvas-content"
-        style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}
       >
         {shapes.map(shape => (
           <Shape
@@ -88,7 +86,7 @@ export const BuilderCanvas = ({ shapes, setShapes, selectedShapeId, setSelectedS
         throttleRotate={0}
         renderDirections={["nw", "n", "ne", "w", "e", "sw", "s", "se"]}
         edge={false}
-        zoom={zoom}
+        zoom={1}
         origin={true}
         padding={{ "left": 0, "top": 0, "right": 0, "bottom": 0 }}
         onDrag={e => {

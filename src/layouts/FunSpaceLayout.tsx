@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
+import { Outlet, Link, useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu, Rocket, ChevronsLeft, ArrowLeft, Sun, Moon } from "lucide-react";
@@ -19,9 +19,6 @@ export function FunSpaceLayout() {
   const isMobile = useIsMobile();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const isBuilderPage = location.pathname.includes('/2d-builder');
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -37,9 +34,7 @@ export function FunSpaceLayout() {
 
   const mobileLayout = (
     <div className="flex min-h-screen w-full flex-col">
-      <header className={cn(
-        "sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50"
-      )}>
+      <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
         <Sheet open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="shrink-0 md:hidden">
@@ -74,10 +69,7 @@ export function FunSpaceLayout() {
           <UserNav />
         </div>
       </header>
-      <main className={cn(
-        "flex flex-1 flex-col",
-        !isBuilderPage && "gap-4 p-4 md:gap-8 md:p-8"
-      )}>
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Outlet />
       </main>
     </div>
@@ -109,7 +101,7 @@ export function FunSpaceLayout() {
           </div>
         </div>
       </div>
-      <div className="flex flex-col max-h-screen overflow-hidden">
+      <div className="flex flex-col">
         <header className={cn(
           "flex h-14 items-center justify-between gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 flex-shrink-0"
         )}>
@@ -130,10 +122,7 @@ export function FunSpaceLayout() {
             <UserNav />
           </div>
         </header>
-        <main className={cn(
-          "flex flex-1 flex-col overflow-auto",
-          !isBuilderPage && "gap-4 p-4 lg:gap-6 lg:p-6"
-        )}>
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
           <Outlet />
         </main>
       </div>
