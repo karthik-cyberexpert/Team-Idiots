@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ListTodo, CheckCircle, Clock, AlertCircle, XCircle, Hourglass, ThumbsUp, Type } from "lucide-react";
+import { ListTodo, CheckCircle, Clock, AlertCircle, XCircle, Hourglass, ThumbsUp, Type, Star, Award as AwardIcon } from "lucide-react";
 import { Task } from "@/types/task";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -97,6 +97,7 @@ const TasksPage = () => {
             const hasSubmission = task.task_submissions && task.task_submissions.length > 0;
             const canSubmit = (task.status === 'pending' || task.status === 'rejected') && !hasSubmission && !isOverdue;
             const isTyperTask = task.task_type === 'typer';
+            const isCompleted = task.status === 'completed' || task.status === 'late_completed';
 
             return (
               <Card key={task.id} className="flex flex-col">
@@ -122,6 +123,22 @@ const TasksPage = () => {
                       </div>
                     )}
                     {isTyperTask && <Badge variant="outline"><Type className="mr-1 h-3 w-3" />Typer Challenge</Badge>}
+                    {isCompleted && (
+                      <div className="flex items-center gap-4 pt-2">
+                        {task.marks_awarded !== null && (
+                          <div className="flex items-center gap-1 text-sm text-vibrant-blue">
+                            <AwardIcon className="h-4 w-4" />
+                            <strong>{task.marks_awarded}/10 Marks</strong>
+                          </div>
+                        )}
+                        {task.xp_awarded_manual !== null && (
+                          <div className="flex items-center gap-1 text-sm text-vibrant-gold">
+                            <Star className="h-4 w-4" />
+                            <strong>+{task.xp_awarded_manual} XP</strong>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
                 <CardFooter>
