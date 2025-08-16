@@ -39,6 +39,7 @@ const getStatusInfo = (task: TaskWithSubmission) => {
     case 'completed': return { icon: <CheckCircle className="h-5 w-5 text-vibrant-green" />, text: "Completed", color: "text-vibrant-green" };
     case 'late_completed': return { icon: <CheckCircle className="h-5 w-5 text-vibrant-brown" />, text: "Completed (Late)", color: "text-vibrant-brown" };
     case 'rejected': return { icon: <XCircle className="h-5 w-5 text-vibrant-red" />, text: "Rejected", color: "text-vibrant-red" };
+    case 'failed': return { icon: <XCircle className="h-5 w-5 text-destructive" />, text: "Failed", color: "text-destructive" };
     default: return { icon: <Clock className="h-5 w-5 text-muted-foreground" />, text: status, color: "text-muted-foreground" };
   }
 };
@@ -97,7 +98,7 @@ const TasksPage = () => {
             const hasSubmission = task.task_submissions && task.task_submissions.length > 0;
             const canSubmit = (task.status === 'pending' || task.status === 'rejected') && !hasSubmission && !isOverdue;
             const isTyperTask = task.task_type === 'typer';
-            const isCompleted = task.status === 'completed' || task.status === 'late_completed';
+            const shouldShowAwards = ['completed', 'late_completed', 'failed'].includes(task.status);
 
             return (
               <Card key={task.id} className="flex flex-col">
@@ -123,7 +124,7 @@ const TasksPage = () => {
                       </div>
                     )}
                     {isTyperTask && <Badge variant="outline"><Type className="mr-1 h-3 w-3" />Typer Challenge</Badge>}
-                    {isCompleted && (
+                    {shouldShowAwards && (
                       <div className="flex items-center gap-4 pt-2">
                         {task.marks_awarded !== null && (
                           <div className="flex items-center gap-1 text-sm text-vibrant-blue">
