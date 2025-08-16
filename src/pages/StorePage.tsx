@@ -54,6 +54,14 @@ const purchaseItem = async (itemId: string): Promise<{ message: string; prizes: 
   return data;
 };
 
+const isOfferActive = (offer: GlobalOffer | null) => {
+  if (!offer || !offer.enabled) return false;
+  const now = new Date();
+  const start = new Date(offer.start_time);
+  const end = new Date(offer.end_time);
+  return now >= start && now <= end;
+};
+
 const StorePage = () => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
@@ -96,6 +104,11 @@ const StorePage = () => {
 
   const uncategorizedItems = itemsBySection['uncategorized'] || [];
 
+  const onSale = isOfferActive(data?.globalOffer);
+  const priceToShow = itemToConfirm && onSale
+    ? Math.round(itemToConfirm.price * (1 - (data?.globalOffer?.discount_percentage || 0) / 100))
+    : itemToConfirm?.price;
+
   return (
     <>
       <AlertDialog open={!!itemToConfirm} onOpenChange={() => setItemToConfirm(null)}>
@@ -103,7 +116,7 @@ const StorePage = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Purchase</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to buy "{itemToConfirm?.name}" (x{itemToConfirm?.quantity || 1}) for {itemToConfirm?.price} GP?
+              Are you sure you want to buy "{itemToConfirm?.name}" (x{itemToConfirm?.quantity || 1}) for {priceToShow} GP?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
