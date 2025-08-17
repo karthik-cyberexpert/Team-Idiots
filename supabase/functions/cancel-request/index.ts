@@ -21,32 +21,23 @@ serve(async (req) => {
   }
 
   try {
-    const { recipientId, requestType, amount, powerUpType, message } = await req.json();
-    if (!recipientId || !requestType || !message) {
-      throw new Error("Missing required fields.");
-    }
+    const { requestId } = await req.json();
+    if (!requestId) throw new Error("Request ID is required.");
 
     const supabase = await getAuthenticatedClient(req);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated.");
 
-    const isGlobal = recipientId === 'global';
-    
-    const requestData = {
-      requester_id: user.id,
-      recipient_id: isGlobal ? null : recipientId,
-      is_global: isGlobal,
-      request_type: requestType,
-      amount: amount || null,
-      power_up_type: powerUpType || null,
-      message: message,
-      status: 'pending',
-    };
+    const { error } = await supabase
+      .from('requests')
+      .update({ status: 'cancelled' })
+      .eq('id', requestId)
+      .eq('requester_id', user.id)
+      .eq('status', 'pending');
 
-    const { error } = await supabase.from('requests').insert(requestData);
     if (error) throw error;
 
-    return new Response(JSON.stringify({ message: "Request created." }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ message: "Request cancelled." }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }

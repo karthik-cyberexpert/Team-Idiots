@@ -93,8 +93,8 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       icon: <Gift className="h-4 w-4" />,
     },
     {
-      href: "/dashboard/request-center",
-      label: "Request Center",
+      href: "/dashboard/requests",
+      label: "Requests",
       icon: <Handshake className="h-4 w-4" />,
     },
     {

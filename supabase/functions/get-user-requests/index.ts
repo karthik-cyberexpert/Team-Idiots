@@ -21,32 +21,28 @@ serve(async (req) => {
   }
 
   try {
-    const { recipientId, requestType, amount, powerUpType, message } = await req.json();
-    if (!recipientId || !requestType || !message) {
-      throw new Error("Missing required fields.");
-    }
-
     const supabase = await getAuthenticatedClient(req);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated.");
 
-    const isGlobal = recipientId === 'global';
-    
-    const requestData = {
-      requester_id: user.id,
-      recipient_id: isGlobal ? null : recipientId,
-      is_global: isGlobal,
-      request_type: requestType,
-      amount: amount || null,
-      power_up_type: powerUpType || null,
-      message: message,
-      status: 'pending',
-    };
+    // Fetch incoming requests (global or direct)
+    const { data: incoming, error: incomingError } = await supabase
+      .from('requests')
+      .select('*, requester:requester_id(id, full_name)')
+      .or(`recipient_id.eq.${user.id},is_global.eq.true`)
+      .eq('status', 'pending')
+      .neq('requester_id', user.id); // Don't show your own global requests as incoming
+    if (incomingError) throw incomingError;
 
-    const { error } = await supabase.from('requests').insert(requestData);
-    if (error) throw error;
+    // Fetch outgoing requests
+    const { data: outgoing, error: outgoingError } = await supabase
+      .from('requests')
+      .select('*, recipient:recipient_id(id, full_name)')
+      .eq('requester_id', user.id)
+      .order('created_at', { ascending: false });
+    if (outgoingError) throw outgoingError;
 
-    return new Response(JSON.stringify({ message: "Request created." }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ incoming, outgoing }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
