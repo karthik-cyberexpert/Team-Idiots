@@ -98,7 +98,8 @@ export const Notifications = () => {
     if (!notification.is_read) {
       markSingleAsReadMutation.mutate(notification.id);
     }
-    if (notification.gift_payload && !notification.gift_payload.is_claimed) {
+    const payload = notification.gift_payload;
+    if (payload && 'is_claimed' in payload && !payload.is_claimed) {
       openGift(notification);
     } else if (notification.link_to) {
       navigate(notification.link_to);
@@ -125,20 +126,25 @@ export const Notifications = () => {
         <DropdownMenuSeparator />
         <ScrollArea className="h-[300px]">
           {notifications && notifications.length > 0 ? (
-            notifications.map((notification) => (
-              <DropdownMenuItem
-                key={notification.id}
-                className={cn("flex flex-col items-start space-y-1 cursor-pointer", !notification.is_read && "bg-accent/10 font-semibold")}
-                onClick={() => handleNotificationClick(notification)}
-              >
-                <p className="text-sm leading-tight">{notification.message}</p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>{formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}</span>
-                  {notification.link_to && <ExternalLink className="h-3 w-3" />}
-                  {notification.gift_payload && !notification.gift_payload.is_claimed && <Gift className="h-3 w-3 text-vibrant-pink" />}
-                </div>
-              </DropdownMenuItem>
-            ))
+            notifications.map((notification) => {
+              const payload = notification.gift_payload;
+              const isUnclaimedGift = payload && 'is_claimed' in payload && !payload.is_claimed;
+
+              return (
+                <DropdownMenuItem
+                  key={notification.id}
+                  className={cn("flex flex-col items-start space-y-1 cursor-pointer", !notification.is_read && "bg-accent/10 font-semibold")}
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <p className="text-sm leading-tight">{notification.message}</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>{formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}</span>
+                    {notification.link_to && <ExternalLink className="h-3 w-3" />}
+                    {isUnclaimedGift && <Gift className="h-3 w-3 text-vibrant-pink" />}
+                  </div>
+                </DropdownMenuItem>
+              );
+            })
           ) : (
             <p className="p-4 text-center text-sm text-muted-foreground">No notifications yet.</p>
           )}

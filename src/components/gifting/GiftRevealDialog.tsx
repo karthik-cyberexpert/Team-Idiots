@@ -4,7 +4,7 @@ import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Notification } from "@/types/notification";
+import { Notification, GiftPayload } from "@/types/notification";
 import { Gift, Coins, Star, Zap, Shield, Swords, Handshake, X } from "lucide-react";
 import { showError } from "@/utils/toast";
 import "./GiftRevealDialog.css";
@@ -15,7 +15,7 @@ const claimGift = async (notificationId: string) => {
   if (error) throw new Error(error.message);
 };
 
-const PrizeIcon = ({ prize }: { prize: Notification['gift_payload'] }) => {
+const PrizeIcon = ({ prize }: { prize: GiftPayload | null }) => {
   if (!prize) return null;
   const iconProps = { className: "h-16 w-16" };
   switch (prize.type) {
@@ -33,7 +33,7 @@ const PrizeIcon = ({ prize }: { prize: Notification['gift_payload'] }) => {
   }
 };
 
-const PrizeText = ({ prize }: { prize: Notification['gift_payload'] }) => {
+const PrizeText = ({ prize }: { prize: GiftPayload | null }) => {
   if (!prize) return null;
   if (prize.type === 'gp' || prize.type === 'xp') {
     return <p className="text-2xl font-bold mt-2">{prize.amount} {prize.type.toUpperCase()}</p>;
@@ -55,9 +55,10 @@ export const GiftRevealDialog = ({ open, onOpenChange, notification }: GiftRevea
   const queryClient = useQueryClient();
   const [isOpened, setIsOpened] = React.useState(false);
 
+  const giftPayload = notification?.gift_payload && 'is_claimed' in notification.gift_payload ? notification.gift_payload : null;
+
   React.useEffect(() => {
     if (!open) {
-      // Reset state after dialog closes
       setTimeout(() => setIsOpened(false), 300);
     }
   }, [open]);
@@ -73,7 +74,7 @@ export const GiftRevealDialog = ({ open, onOpenChange, notification }: GiftRevea
   });
 
   const handleOpenGift = () => {
-    if (isOpened || !notification || notification.gift_payload?.is_claimed) return;
+    if (isOpened || !notification || !giftPayload || giftPayload.is_claimed) return;
     setIsOpened(true);
     claimMutation.mutate();
   };
@@ -83,10 +84,10 @@ export const GiftRevealDialog = ({ open, onOpenChange, notification }: GiftRevea
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>A Gift For You!</DialogTitle>
-          <DialogDescription>From: {notification?.gift_payload?.sender_name}</DialogDescription>
+          <DialogDescription>From: {giftPayload?.sender_name}</DialogDescription>
         </DialogHeader>
         <div className="py-8 flex flex-col items-center justify-center space-y-4">
-          <p className="italic text-center">"{notification?.gift_payload?.message}"</p>
+          <p className="italic text-center">"{giftPayload?.message}"</p>
           <div className="gift-box-container" onClick={handleOpenGift}>
             <div className={cn("gift-box", isOpened && "opened")}>
               <div className="gift-box-lid">
@@ -96,14 +97,14 @@ export const GiftRevealDialog = ({ open, onOpenChange, notification }: GiftRevea
             </div>
             {isOpened && (
               <div className="prize-reveal">
-                <PrizeIcon prize={notification?.gift_payload} />
+                <PrizeIcon prize={giftPayload} />
               </div>
             )}
           </div>
           {isOpened && (
             <div className="text-center animate-fade-in">
               <p className="text-lg">You received:</p>
-              <PrizeText prize={notification?.gift_payload} />
+              <PrizeText prize={giftPayload} />
             </div>
           )}
         </div>
