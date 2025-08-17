@@ -87,14 +87,28 @@ serve(async (req) => {
     pointsAwarded = pointsAwarded * boost_multiplier;
 
     if (pointsAwarded > 0) {
-      const rewardColumn = quizSet.reward_type === 'gp' ? 'game_points' : 'xp';
-      await supabaseAdmin.rpc('increment_profile_column', {
-        p_user_id: user.id,
-        p_column_name: rewardColumn,
-        p_increment_value: pointsAwarded
-      });
+      if (quizSet.reward_type === 'gp') {
+        await supabaseAdmin.rpc('increment_profile_column', {
+          p_user_id: user.id,
+          p_column_name: 'game_points',
+          p_increment_value: pointsAwarded
+        });
+      } else if (quizSet.reward_type === 'xp') {
+        const { data: profile, error: profileError } = await supabaseAdmin
+          .from('profiles')
+          .select('staged_xp')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileError) throw profileError;
 
-      if (quizSet.reward_type === 'xp') {
+        const newStagedXp = (profile.staged_xp || 0) + pointsAwarded;
+
+        await supabaseAdmin
+          .from('profiles')
+          .update({ staged_xp: newStagedXp })
+          .eq('id', user.id);
+
         await supabaseAdmin.from('xp_history').insert({ user_id: user.id, xp_change: pointsAwarded, reason: `Quiz completed: ${quizSet.title}` });
       }
     }
