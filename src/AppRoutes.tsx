@@ -36,6 +36,7 @@ import QuizPage from "./pages/QuizPage";
 import StorePage from "./pages/StorePage";
 import StoreManagementPage from "./pages/admin/StoreManagementPage";
 import GiftingPage from "./pages/GiftingPage";
+import RequestCenterPage from "./pages/RequestCenterPage"; // Import new page
 import FunSpacePage from "./pages/FunSpacePage";
 import { FunSpaceLayout } from "./layouts/FunSpaceLayout";
 import TwoDBuilderPage from "./pages/fun-space/TwoDBuilderPage.tsx";
@@ -88,6 +89,7 @@ export const AppRoutes = () => {
           <Route path="/dashboard/quiz" element={<ErrorBoundary><QuizPage /></ErrorBoundary>} />
           <Route path="/dashboard/store" element={<ErrorBoundary><StorePage /></ErrorBoundary>} />
           <Route path="/dashboard/gifting" element={<ErrorBoundary><GiftingPage /></ErrorBoundary>} />
+          <Route path="/dashboard/request-center" element={<ErrorBoundary><RequestCenterPage /></ErrorBoundary>} /> {/* Add new route */}
           {/* Admin Routes */}
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<ErrorBoundary><UserManagement /></ErrorBoundary>} />
