@@ -45,7 +45,12 @@ export const OutgoingRequests = () => {
           requests.map(req => (
             <div key={req.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
               <div>
-                <p>You requested <span className="font-semibold">{getRequestDetails(req.gift_payload)}</span> from <span className="font-semibold">{req.recipient?.full_name || 'Everyone'}</span>.</p>
+                <p>
+                  You requested <span className="font-semibold">{getRequestDetails(req.gift_payload)}</span> from{' '}
+                  <span className="font-semibold">
+                    {req.gift_payload.is_global ? 'Everyone' : req.recipient?.full_name || 'Unknown User'}
+                  </span>.
+                </p>
                 <p className="text-sm text-muted-foreground italic">"{req.message}"</p>
               </div>
               <Badge variant={req.gift_payload.status === 'fulfilled' ? 'default' : req.gift_payload.status === 'rejected' ? 'destructive' : 'secondary'}>{req.gift_payload.status}</Badge>

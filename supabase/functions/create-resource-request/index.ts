@@ -39,6 +39,8 @@ serve(async (req) => {
     const { data: requesterProfile, error: profileError } = await supabaseAdmin.from('profiles').select('full_name').eq('id', user.id).single();
     if (profileError) throw profileError;
 
+    const isGlobal = recipientId === 'global'; // Determine if it's a global request
+
     const request_payload = {
       type: 'resource_request',
       requester_id: user.id,
@@ -46,11 +48,12 @@ serve(async (req) => {
       request_type: requestType,
       amount: amount,
       status: 'pending',
+      is_global: isGlobal, // Add this line
     };
 
     let notificationMessage = `${requesterProfile.full_name} is requesting ${amount} ${requestType.toUpperCase()}.`;
 
-    if (recipientId === 'global') {
+    if (isGlobal) {
       const { data: users, error: usersError } = await supabaseAdmin.from('profiles').select('id').neq('id', user.id).neq('role', 'admin');
       if (usersError) throw usersError;
 

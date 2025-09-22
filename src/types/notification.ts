@@ -1,5 +1,3 @@
-import { PowerUpType } from "./auction";
-
 export interface GiftedPowerUp {
   power: PowerUpType;
   effect_value: number | null;
@@ -22,6 +20,7 @@ export interface RequestPayload {
   request_type: 'gp' | 'xp';
   amount?: number;
   status: 'pending' | 'fulfilled' | 'rejected';
+  is_global?: boolean; // Added this line
 }
 
 export interface Notification {
