@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, MessageSquare, ListTodo, Type, Gamepad2, Zap, Users, HelpCircle, Gift, Sparkles } from "lucide-react";
+import { FileText, MessageSquare, ListTodo, Type, Gamepad2, Zap, Users, HelpCircle, Gift, Sparkles, Rocket } from "lucide-react";
 import { XpBar } from "@/components/dashboard/XpBar";
 
 const UserDashboard = () => {
@@ -64,6 +64,12 @@ const UserDashboard = () => {
       description: "Your dedicated area for fun activities and relaxation!",
       icon: <Sparkles className="h-8 w-8 text-vibrant-purple" />,
       link: "/dashboard/fun-space",
+    },
+    {
+      title: "Boss Battle",
+      description: "Team up and defeat the Space Boss in real-time challenges!",
+      icon: <Rocket className="h-8 w-8 text-vibrant-blue" />,
+      link: "/dashboard/space-boss-battle",
     },
   ];
 

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, ListTodo, Database, Type, UserCog, Gavel, HelpCircle, Store } from "lucide-react";
+import { Users, ListTodo, Database, Type, UserCog, Gavel, HelpCircle, Store, Rocket } from "lucide-react";
 
 const AdminDashboard = () => {
   const adminFeatures = [
@@ -51,6 +51,12 @@ const AdminDashboard = () => {
       description: "Manage items and power-ups available in the store.",
       icon: <Store className="h-8 w-8 text-vibrant-blue" />,
       link: "/admin/store-management",
+    },
+    {
+      title: "Boss Battle Mgmt",
+      description: "Configure challenges and schedule boss battles.",
+      icon: <Rocket className="h-8 w-8 text-vibrant-red" />,
+      link: "/admin/space-boss-battle-management",
     },
   ];
 

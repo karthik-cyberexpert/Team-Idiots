@@ -42,7 +42,9 @@ import { FunSpaceLayout } from "./layouts/FunSpaceLayout";
 import TwoDBuilderPage from "./pages/fun-space/TwoDBuilderPage.tsx";
 import GamesPage from "./pages/fun-space/GamesPage";
 import TicTacToePage from "./pages/fun-space/TicTacToePage";
-import LudoPage from "./pages/fun-space/LudoPage"; // Import LudoPage
+import LudoPage from "./pages/fun-space/LudoPage";
+import SpaceBossBattlePage from "./pages/SpaceBossBattlePage"; // Import new user page
+import SpaceBossBattleManagementPage from "./pages/admin/SpaceBossBattleManagementPage"; // Import new admin page
 
 export const AppRoutes = () => {
   const { maintenanceMode, loading: settingsLoading } = useSettings();
@@ -81,25 +83,26 @@ export const AppRoutes = () => {
           <Route path="/dashboard/settings" element={<ErrorBoundary><SettingsPage /></ErrorBoundary>} />
           <Route path="/dashboard/xp-history" element={<ErrorBoundary><XpHistoryPage /></ErrorBoundary>} />
           <Route path="/dashboard/typer" element={<ErrorBoundary><TyperPage /></ErrorBoundary>} />
+          <Route path="/dashboard/quiz" element={<ErrorBoundary><QuizPage /></ErrorBoundary>} />
           <Route path="/dashboard/game-leaderboard" element={<ErrorBoundary><GameLeaderboardPage /></ErrorBoundary>} />
           <Route path="/dashboard/auction" element={<ErrorBoundary><AuctionPage /></ErrorBoundary>} />
           <Route path="/dashboard/power-ups" element={<ErrorBoundary><PowerUpsPage /></ErrorBoundary>} />
           <Route path="/dashboard/buddies" element={<ErrorBoundary><BuddiesPage /></ErrorBoundary>} />
           <Route path="/dashboard/gold-mine" element={<ErrorBoundary><GoldMinePage /></ErrorBoundary>} />
-          <Route path="/dashboard/quiz" element={<ErrorBoundary><QuizPage /></ErrorBoundary>} />
-          <Route path="/dashboard/store" element={<ErrorBoundary><StorePage /></ErrorBoundary>} />
           <Route path="/dashboard/gifting" element={<ErrorBoundary><GiftingPage /></ErrorBoundary>} />
           <Route path="/dashboard/requests" element={<ErrorBoundary><RequestsPage /></ErrorBoundary>} />
+          <Route path="/dashboard/space-boss-battle" element={<ErrorBoundary><SpaceBossBattlePage /></ErrorBoundary>} /> {/* New User Route */}
           {/* Admin Routes */}
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<ErrorBoundary><UserManagement /></ErrorBoundary>} />
             <Route path="/admin/tasks" element={<ErrorBoundary><TaskManagement /></ErrorBoundary>} />
             <Route path="/admin/data-management" element={<ErrorBoundary><DataManagementPage /></ErrorBoundary>} />
             <Route path="/admin/typer-management" element={<ErrorBoundary><TyperSetManagementPage /></ErrorBoundary>} />
+            <Route path="/admin/quiz-management" element={<ErrorBoundary><QuizManagementPage /></ErrorBoundary>} />
             <Route path="/admin/auction-management" element={<ErrorBoundary><AuctionManagementPage /></ErrorBoundary>} />
             <Route path="/admin/buddies-management" element={<ErrorBoundary><BuddiesManagementPage /></ErrorBoundary>} />
-            <Route path="/admin/quiz-management" element={<ErrorBoundary><QuizManagementPage /></ErrorBoundary>} />
             <Route path="/admin/store-management" element={<ErrorBoundary><StoreManagementPage /></ErrorBoundary>} />
+            <Route path="/admin/space-boss-battle-management" element={<ErrorBoundary><SpaceBossBattleManagementPage /></ErrorBoundary>} /> {/* New Admin Route */}
           </Route>
         </Route>
         {/* Fun Space with its dedicated layout */}
@@ -108,7 +111,7 @@ export const AppRoutes = () => {
             <Route index element={<ErrorBoundary><FunSpacePage /></ErrorBoundary>} />
             <Route path="games" element={<ErrorBoundary><GamesPage /></ErrorBoundary>} />
             <Route path="tic-tac-toe/:sessionId" element={<ErrorBoundary><TicTacToePage /></ErrorBoundary>} />
-            <Route path="ludo/:sessionId" element={<ErrorBoundary><LudoPage /></ErrorBoundary>} /> {/* New Ludo Route */}
+            <Route path="ludo/:sessionId" element={<ErrorBoundary><LudoPage /></ErrorBoundary>} />
             <Route path="2d-builder" element={<ErrorBoundary><TwoDBuilderPage /></ErrorBoundary>} />
           </Route>
         </Route>

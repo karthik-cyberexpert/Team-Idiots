@@ -1,0 +1,40 @@
+import { serve } from "https://deno.land/std@0.200.0/http/server.ts"
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.47.0'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+async function getAuthenticatedClient(req: Request): Promise<SupabaseClient> {
+  const authHeader = req.headers.get('Authorization')!
+  return createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { global: { headers: { Authorization: authHeader } } }
+  )
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
+  try {
+    const supabase = await getAuthenticatedClient(req);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated.");
+
+    // --- Placeholder Logic ---
+    // In a real implementation, this would query the 'battle_requests' and 'boss_battles' tables.
+    
+    const data = {
+      pendingRequests: 3,
+      activeBattles: 1,
+    };
+
+    return new Response(JSON.stringify(data), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+})

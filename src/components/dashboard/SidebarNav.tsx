@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Gamepad2, Gavel, Zap, Pickaxe, UserCog, HelpCircle, Send, Store, Gift, Smile, Sparkles, Handshake } from "lucide-react";
+import { Home, Users, FileText, MessageSquare, ListTodo, Database, Trophy, Type, Gamepad2, Gavel, Zap, Pickaxe, UserCog, HelpCircle, Send, Store, Gift, Smile, Sparkles, Handshake, Rocket } from "lucide-react";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -103,6 +103,11 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       icon: <Sparkles className="h-4 w-4" />,
     },
     {
+      href: "/dashboard/space-boss-battle",
+      label: "Boss Battle",
+      icon: <Rocket className="h-4 w-4" />,
+    },
+    {
       href: "/admin/users",
       label: "Users",
       icon: <Users className="h-4 w-4" />,
@@ -148,6 +153,12 @@ export function SidebarNav({ isCollapsed, onLinkClick }: SidebarNavProps) {
       href: "/admin/buddies-management",
       label: "Buddies Management",
       icon: <UserCog className="h-4 w-4" />,
+      adminOnly: true,
+    },
+    {
+      href: "/admin/space-boss-battle-management",
+      label: "Boss Battle Mgmt",
+      icon: <Rocket className="h-4 w-4" />,
       adminOnly: true,
     },
   ];
