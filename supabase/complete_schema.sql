@@ -5,7 +5,7 @@ create extension if not exists "uuid-ossp";
 -- -----------------------------------------------------------------------------
 -- 1. PROFILES & USERS
 -- -----------------------------------------------------------------------------
-create table public.profiles (
+create table if not exists public.profiles (
   id uuid references auth.users(id) on delete cascade primary key,
   full_name text,
   email text,
@@ -22,11 +22,14 @@ create or replace function public.handle_new_user()
 returns trigger as $$
 begin
   insert into public.profiles (id, email, full_name, role)
-  values (new.id, new.email, new.raw_user_meta_data->>'full_name', 'user');
+  values (new.id, new.email, new.raw_user_meta_data->>'full_name', 'user')
+  on conflict (id) do nothing;
   return new;
 end;
 $$ language plpgsql security definer;
 
+-- Drop trigger if exists to avoid error on recreation
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
@@ -34,23 +37,30 @@ create trigger on_auth_user_created
 -- -----------------------------------------------------------------------------
 -- 2. APP SETTINGS
 -- -----------------------------------------------------------------------------
-create table public.app_settings (
+create table if not exists public.app_settings (
   key text primary key,
   value jsonb not null,
   description text,
   updated_at timestamp with time zone default now()
 );
 
+-- Seed default settings
+insert into public.app_settings (key, value, description)
+values 
+  ('maintenance_mode', 'false'::jsonb, 'Toggle maintenance mode for the application'),
+  ('global_offer', 'null'::jsonb, 'Current global store offer')
+on conflict (key) do nothing;
+
 -- -----------------------------------------------------------------------------
 -- 3. CHAT SYSTEM
 -- -----------------------------------------------------------------------------
-create table public.channels (
+create table if not exists public.channels (
   id uuid default gen_random_uuid() primary key,
   name text not null unique,
   created_at timestamp with time zone default now()
 );
 
-create table public.messages (
+create table if not exists public.messages (
   id uuid default gen_random_uuid() primary key,
   channel_id uuid references public.channels(id) on delete cascade not null,
   user_id uuid references public.profiles(id) on delete set null,
@@ -61,7 +71,7 @@ create table public.messages (
 -- -----------------------------------------------------------------------------
 -- 4. TASKS & SUBMISSIONS
 -- -----------------------------------------------------------------------------
-create table public.tasks (
+create table if not exists public.tasks (
   id uuid default gen_random_uuid() primary key,
   title text not null,
   description text,
@@ -79,7 +89,7 @@ create table public.tasks (
   completed_at timestamp with time zone
 );
 
-create table public.submissions (
+create table if not exists public.submissions (
   id uuid default gen_random_uuid() primary key,
   task_id uuid references public.tasks(id) on delete cascade not null,
   user_id uuid references public.profiles(id) on delete cascade not null,
@@ -91,7 +101,7 @@ create table public.submissions (
 -- -----------------------------------------------------------------------------
 -- 5. NOTES
 -- -----------------------------------------------------------------------------
-create table public.notes (
+create table if not exists public.notes (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
   title text not null,
@@ -104,13 +114,13 @@ create table public.notes (
 -- -----------------------------------------------------------------------------
 -- 6. STORE & INVENTORY
 -- -----------------------------------------------------------------------------
-create table public.store_sections (
+create table if not exists public.store_sections (
   id uuid default gen_random_uuid() primary key,
   name text not null,
   position integer default 0
 );
 
-create table public.store_items (
+create table if not exists public.store_items (
   id uuid default gen_random_uuid() primary key,
   section_id uuid references public.store_sections(id),
   name text not null,
@@ -132,7 +142,7 @@ create table public.store_items (
   created_at timestamp with time zone default now()
 );
 
-create table public.user_power_ups (
+create table if not exists public.user_power_ups (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
   item_id uuid references public.store_items(id),
@@ -146,7 +156,7 @@ create table public.user_power_ups (
 -- -----------------------------------------------------------------------------
 -- 7. AUCTION SYSTEM
 -- -----------------------------------------------------------------------------
-create table public.auction_items (
+create table if not exists public.auction_items (
   id uuid default gen_random_uuid() primary key,
   name text not null,
   description text,
@@ -159,7 +169,7 @@ create table public.auction_items (
   created_at timestamp with time zone default now()
 );
 
-create table public.auctions (
+create table if not exists public.auctions (
   id uuid default gen_random_uuid() primary key,
   item_id uuid references public.auction_items(id) on delete cascade not null,
   start_time timestamp with time zone not null,
@@ -172,7 +182,7 @@ create table public.auctions (
   created_at timestamp with time zone default now()
 );
 
-create table public.bids (
+create table if not exists public.bids (
   id uuid default gen_random_uuid() primary key,
   auction_id uuid references public.auctions(id) on delete cascade not null,
   user_id uuid references public.profiles(id) not null,
@@ -183,7 +193,7 @@ create table public.bids (
 -- -----------------------------------------------------------------------------
 -- 8. QUIZ SYSTEM
 -- -----------------------------------------------------------------------------
-create table public.quiz_sets (
+create table if not exists public.quiz_sets (
   id uuid default gen_random_uuid() primary key,
   title text not null,
   status text default 'draft' check (status in ('draft', 'published', 'inactive')),
@@ -194,7 +204,7 @@ create table public.quiz_sets (
   created_at timestamp with time zone default now()
 );
 
-create table public.quiz_questions (
+create table if not exists public.quiz_questions (
   id uuid default gen_random_uuid() primary key,
   quiz_set_id uuid references public.quiz_sets(id) on delete cascade not null,
   question text not null,
@@ -203,7 +213,7 @@ create table public.quiz_questions (
   created_at timestamp with time zone default now()
 );
 
-create table public.quiz_submissions (
+create table if not exists public.quiz_submissions (
   id uuid default gen_random_uuid() primary key,
   quiz_set_id uuid references public.quiz_sets(id) on delete cascade not null,
   user_id uuid references public.profiles(id) on delete cascade not null,
@@ -215,7 +225,7 @@ create table public.quiz_submissions (
 -- -----------------------------------------------------------------------------
 -- 9. BUDDIES
 -- -----------------------------------------------------------------------------
-create table public.buddies (
+create table if not exists public.buddies (
   id uuid default gen_random_uuid() primary key,
   user1_id uuid references public.profiles(id) not null,
   user2_id uuid references public.profiles(id) not null,
@@ -227,7 +237,7 @@ create table public.buddies (
 -- -----------------------------------------------------------------------------
 -- 10. TYPER
 -- -----------------------------------------------------------------------------
-create table public.typer_texts (
+create table if not exists public.typer_texts (
   id uuid default gen_random_uuid() primary key,
   title text not null,
   content text not null,
@@ -235,7 +245,7 @@ create table public.typer_texts (
   created_at timestamp with time zone default now()
 );
 
-create table public.typer_scores (
+create table if not exists public.typer_scores (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) not null,
   text_id uuid references public.typer_texts(id),
@@ -247,11 +257,26 @@ create table public.typer_scores (
 -- -----------------------------------------------------------------------------
 -- 11. SPACE BOSS BATTLE (Integrated)
 -- -----------------------------------------------------------------------------
-create type public.game_mode as enum ('programming', 'software', 'learning');
-create type public.battle_status as enum ('scheduled', 'active', 'completed', 'cancelled');
-create type public.difficulty_level as enum ('easy', 'medium', 'hard', 'insane');
+-- Create types safely
+DO $$ BEGIN
+    CREATE TYPE public.game_mode AS ENUM ('programming', 'software', 'learning');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
-create table public.space_questions (
+DO $$ BEGIN
+    CREATE TYPE public.battle_status AS ENUM ('scheduled', 'active', 'completed', 'cancelled');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE public.difficulty_level AS ENUM ('easy', 'medium', 'hard', 'insane');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+create table if not exists public.space_questions (
   id uuid default gen_random_uuid() primary key,
   title text not null,
   description text,
@@ -262,7 +287,7 @@ create table public.space_questions (
   created_at timestamp with time zone default now()
 );
 
-create table public.space_battles (
+create table if not exists public.space_battles (
   id uuid default gen_random_uuid() primary key,
   title text not null,
   status public.battle_status default 'scheduled',
@@ -278,7 +303,7 @@ create table public.space_battles (
   created_at timestamp with time zone default now()
 );
 
-create table public.space_battle_participants (
+create table if not exists public.space_battle_participants (
   id uuid default gen_random_uuid() primary key,
   battle_id uuid references public.space_battles(id) on delete cascade not null,
   user_id uuid references public.profiles(id) not null,
@@ -288,7 +313,7 @@ create table public.space_battle_participants (
   constraint unique_battle_participant unique (battle_id, user_id)
 );
 
-create table public.space_battle_logs (
+create table if not exists public.space_battle_logs (
   id uuid default gen_random_uuid() primary key,
   battle_id uuid references public.space_battles(id) on delete cascade not null,
   user_id uuid references public.profiles(id),
@@ -301,7 +326,7 @@ create table public.space_battle_logs (
 -- -----------------------------------------------------------------------------
 -- 12. FUN SPACE (2D Builder, etc)
 -- -----------------------------------------------------------------------------
-create table public.saved_2d_builds (
+create table if not exists public.saved_2d_builds (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
   name text not null,
@@ -312,20 +337,45 @@ create table public.saved_2d_builds (
 );
 
 -- -----------------------------------------------------------------------------
+-- 13. NOTIFICATIONS
+-- -----------------------------------------------------------------------------
+create table if not exists public.notifications (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  message text not null,
+  is_read boolean default false,
+  link_to text,
+  gift_payload jsonb, -- Stores GiftPayload or RequestPayload
+  created_at timestamp with time zone default now()
+);
+
+-- -----------------------------------------------------------------------------
 -- RLS POLICIES (Basic Setup)
 -- -----------------------------------------------------------------------------
 alter table public.profiles enable row level security;
+
+-- Drop policies if they exist to avoid errors on recreation
+drop policy if exists "Public profiles are viewable by everyone" on public.profiles;
+drop policy if exists "Users can update own profile" on public.profiles;
+
 create policy "Public profiles are viewable by everyone" on public.profiles for select using (true);
 create policy "Users can update own profile" on public.profiles for update using (auth.uid() = id);
 
--- (Repeat similar policies for other tables as needed. 
--- For brevity, I am enabling RLS on all but allowing public read for most, 
--- and authenticated write for user-owned data.)
-
 -- Realtime Publication
-alter publication supabase_realtime add table public.messages;
-alter publication supabase_realtime add table public.space_battles;
-alter publication supabase_realtime add table public.space_battle_participants;
-alter publication supabase_realtime add table public.space_battle_logs;
-alter publication supabase_realtime add table public.auctions;
-alter publication supabase_realtime add table public.bids;
+-- Add tables to publication if not already added (idempotent via 'alter publication ... add table' usually throws if exists, so we can ignore or wrap)
+-- Supabase realtime publication usually handles this gracefully or we can just run it. 
+-- However, 'alter publication' might fail if table is already in it.
+-- A safe way is to just let it fail or check. For simplicity in this script, we'll assume it might error if added twice, 
+-- but usually it's fine to re-run or we can leave it as is. 
+-- Actually, 'alter publication ... add table' throws if table is already part of publication.
+-- We'll wrap in DO block to be safe.
+
+DO $$
+BEGIN
+  BEGIN alter publication supabase_realtime add table public.messages; EXCEPTION WHEN duplicate_object THEN NULL; WHEN OTHERS THEN NULL; END;
+  BEGIN alter publication supabase_realtime add table public.space_battles; EXCEPTION WHEN duplicate_object THEN NULL; WHEN OTHERS THEN NULL; END;
+  BEGIN alter publication supabase_realtime add table public.space_battle_participants; EXCEPTION WHEN duplicate_object THEN NULL; WHEN OTHERS THEN NULL; END;
+  BEGIN alter publication supabase_realtime add table public.space_battle_logs; EXCEPTION WHEN duplicate_object THEN NULL; WHEN OTHERS THEN NULL; END;
+  BEGIN alter publication supabase_realtime add table public.auctions; EXCEPTION WHEN duplicate_object THEN NULL; WHEN OTHERS THEN NULL; END;
+  BEGIN alter publication supabase_realtime add table public.bids; EXCEPTION WHEN duplicate_object THEN NULL; WHEN OTHERS THEN NULL; END;
+END $$;
